@@ -41,27 +41,11 @@ export async function onRequestPost({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           inline_query_id: update.inline_query.id,
-          results: [
-            {
-              type: "article",
-              id: "qubo-game",
-              title: "🎮 Play Qubo",
-              description: "بازی Qubo را در تلگرام باز کن",
-              input_message_content: {
-                message_text: "🎮 بیا Qubo بازی کنیم!",
-              },
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    {
-                      text: "▶️ Play Qubo",
-                      url: gameUrl,
-                    },
-                  ],
-                ],
-              },
-            },
-          ],
+          results: [],
+          button: {
+            text: "▶️ Play Qubo",
+            web_app: { url: gameUrl },
+          },
           cache_time: 0,
           is_personal: true,
         }),
