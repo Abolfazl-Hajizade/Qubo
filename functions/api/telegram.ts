@@ -1,6 +1,5 @@
 type Env = {
   BOT_TOKEN?: string;
-  WEBHOOK_SECRET?: string;
 };
 
 type TelegramUpdate = {
@@ -17,12 +16,8 @@ export async function onRequestPost({
   request: Request;
   env: Env;
 }): Promise<Response> {
-  if (!env.BOT_TOKEN || !env.WEBHOOK_SECRET) {
+  if (!env.BOT_TOKEN) {
     return new Response("Bot is not configured", { status: 500 });
-  }
-
-  if (request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) {
-    return new Response("Unauthorized", { status: 403 });
   }
 
   let update: TelegramUpdate;
