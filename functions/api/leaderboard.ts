@@ -60,7 +60,7 @@ async function authenticate(initData: string, botToken: string): Promise<{ user:
 
   const secret = new Uint8Array(await hmac(encoder.encode("WebAppData"), botToken));
   const expectedHash = hex(await hmac(secret, dataCheckString));
-  if (expectedHash.length !== receivedHash.length) return null;
+  if (expectedHash.length !== receivedHash.length) return { user: null, reason: "signature_length_mismatch" };
   let mismatch = 0;
   for (let i = 0; i < expectedHash.length; i++) mismatch |= expectedHash.charCodeAt(i) ^ receivedHash.toLowerCase().charCodeAt(i);
   if (mismatch !== 0) return { user: null, reason: "signature_mismatch" };
