@@ -34,7 +34,7 @@ telegramWebApp?.expand?.();
 
 $('play-btn').addEventListener('click', start);
 $('leaderboard-btn').addEventListener('click', openLeaderboard);
-$('leaderboard-close').addEventListener('click', () => $('leaderboard-dialog').close());
+$('leaderboard-close').addEventListener('click', () => $<HTMLDialogElement>('leaderboard-dialog').close());
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
 
