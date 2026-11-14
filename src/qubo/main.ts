@@ -27,7 +27,14 @@ const endDialog = $<HTMLDialogElement>('end-dialog');
 
 const screens = new Screens({ leaveGame: stopLoop, renderHome });
 
+type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => void };
+const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
+telegramWebApp?.ready?.();
+telegramWebApp?.expand?.();
+
 $('play-btn').addEventListener('click', start);
+$('leaderboard-btn').addEventListener('click', openLeaderboard);
+$('leaderboard-close').addEventListener('click', () => $('leaderboard-dialog').close());
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
 
@@ -90,6 +97,7 @@ function finish() {
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
   saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
   history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
+  if (world.score > 0) void submitScore(world.score);
   $('best').textContent = String(best);
   $('end-summary').textContent = `${numberFormat.format(world.score)} ${world.score === 1 ? 'tower' : 'towers'} crossed`
     + (isBest && world.score > 0 ? '. A new best!' : `. Your best is ${numberFormat.format(best)}.`);
@@ -112,6 +120,74 @@ function loop(now: number) {
   }
   draw();
   raf = requestAnimationFrame(loop);
+}
+
+
+interface LeaderboardEntry {
+  rank: number;
+  display_name: string;
+  best_score: number;
+  telegram_user_id: string;
+}
+
+async function submitScore(score: number) {
+  const initData = telegramWebApp?.initData;
+  if (!initData) return;
+  try {
+    await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initData, score }),
+    });
+  } catch {
+    // A failed network request must not interrupt the game.
+  }
+}
+
+async function openLeaderboard() {
+  const dialog = $('leaderboard-dialog') as HTMLDialogElement;
+  const status = $('leaderboard-status');
+  const list = $('leaderboard-list');
+  const me = $('leaderboard-me');
+  list.replaceChildren();
+  me.textContent = '';
+  dialog.showModal();
+
+  const initData = telegramWebApp?.initData;
+  if (!initData) {
+    status.textContent = 'برای دیدن رکوردهای جهانی، بازی را از داخل ربات تلگرام باز کن.';
+    return;
+  }
+
+  status.textContent = 'در حال دریافت رکوردها...';
+  try {
+    const response = await fetch('/api/leaderboard', {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    const data = await response.json() as {
+      error?: string;
+      entries?: LeaderboardEntry[];
+      me?: { rank: number; best_score: number } | null;
+    };
+    if (!response.ok) throw new Error(data.error || 'دریافت رکوردها ناموفق بود');
+    const entries = data.entries ?? [];
+    if (!entries.length) {
+      status.textContent = 'هنوز رکوردی ثبت نشده؛ اولین نفر باش!';
+    } else {
+      status.textContent = '۵۰ رکورد برتر بازیکنان';
+      for (const entry of entries) {
+        const item = document.createElement('li');
+        item.textContent = `#${entry.rank}  ${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
+        if (entry.telegram_user_id && data.me && entry.rank === data.me.rank) item.classList.add('is-me');
+        list.append(item);
+      }
+    }
+    me.textContent = data.me
+      ? `رتبه تو: #${data.me.rank}  |  رکورد: ${numberFormat.format(data.me.best_score)}`
+      : 'هنوز رکوردی برای تو ثبت نشده است.';
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : 'خطا در دریافت رکوردها';
+  }
 }
 
 // ---------- Drawing ----------
