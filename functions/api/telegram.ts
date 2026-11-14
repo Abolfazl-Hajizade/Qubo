@@ -35,6 +35,8 @@ export async function onRequestPost({
     return new Response("ok");
   }
 
+  const gameUrl = "https://qubo-c0i.pages.dev/qubo/index.html";
+
   const telegramResponse = await fetch(
     `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
     {
@@ -48,9 +50,13 @@ export async function onRequestPost({
             [
               {
                 text: "🎮 شروع بازی Qubo",
-                web_app: {
-                  url: "https://qubo-c0i.pages.dev/qubo/index.html",
-                },
+                web_app: { url: gameUrl },
+              },
+            ],
+            [
+              {
+                text: "▶️ play Qubo",
+                web_app: { url: gameUrl },
               },
             ],
           ],
