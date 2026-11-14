@@ -51,7 +51,7 @@ async function authenticate(initData: string, botToken: string): Promise<Authent
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
-  const secret = new Uint8Array(await hmac(encoder.encode("WebAppData"), botToken));
+  const secret = new Uint8Array(await hmac(encoder.encode(botToken), "WebAppData"));
   const expectedHash = hex(await hmac(secret, dataCheckString));
   if (expectedHash.length !== receivedHash.length) return null;
   let mismatch = 0;
