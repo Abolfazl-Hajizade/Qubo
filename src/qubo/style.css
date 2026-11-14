@@ -63,3 +63,10 @@
 }
 .stage-status:empty { display: none; }
 .stage-status small { display: block; margin-top: 6px; font-size: 1.3rem; font-weight: 600; color: var(--ink-2); }
+
+
+.leaderboard-dialog { width: min(92vw, 420px); max-height: 82dvh; overflow: auto; }
+.leaderboard-list { margin: 12px 0; padding: 0 28px 0 0; text-align: right; }
+.leaderboard-list li { padding: 7px 4px; border-bottom: 1px solid var(--rule-2); font-variant-numeric: tabular-nums; }
+.leaderboard-list li.is-me { color: var(--c); font-weight: 800; }
+.leaderboard-me { font-weight: 700; }
