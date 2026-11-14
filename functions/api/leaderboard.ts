@@ -34,15 +34,22 @@ async function hmac(keyBytes: Uint8Array, message: string): Promise<ArrayBuffer>
   return crypto.subtle.sign("HMAC", key, encoder.encode(message));
 }
 
-async function authenticate(initData: string, botToken: string): Promise<AuthenticatedUser | null> {
-  if (!initData || initData.length > 10_000) return null;
+async function authenticate(initData: string, botToken: string): Promise<{ user: AuthenticatedUser | null; reason?: string }> {
+  if (!initData) return { user: null, reason: "empty_init_data" };
+  if (initData.length > 10_000) return { user: null, reason: "init_data_too_large" };
 
   const params = new URLSearchParams(initData);
   const receivedHash = params.get("hash");
-  const authDate = Number(params.get("auth_date"));
+  const authDateValue = params.get("auth_date");
   const userValue = params.get("user");
-  if (!receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash) || !userValue) return null;
-  if (!Number.isFinite(authDate) || authDate > Date.now() / 1000 + 60 || Date.now() / 1000 - authDate > 86_400) return null;
+  if (!receivedHash) return { user: null, reason: "missing_hash" };
+  if (!/^[a-f0-9]{64}$/i.test(receivedHash)) return { user: null, reason: "invalid_hash_format" };
+  if (!authDateValue) return { user: null, reason: "missing_auth_date" };
+  if (!userValue) return { user: null, reason: "missing_user" };
+  const authDate = Number(authDateValue);
+  if (!Number.isFinite(authDate)) return { user: null, reason: "invalid_auth_date" };
+  if (authDate > Date.now() / 1000 + 60) return { user: null, reason: "auth_date_in_future" };
+  if (Date.now() / 1000 - authDate > 86_400) return { user: null, reason: "auth_data_expired" };
 
   params.delete("hash");
   params.delete("signature");
@@ -56,16 +63,16 @@ async function authenticate(initData: string, botToken: string): Promise<Authent
   if (expectedHash.length !== receivedHash.length) return null;
   let mismatch = 0;
   for (let i = 0; i < expectedHash.length; i++) mismatch |= expectedHash.charCodeAt(i) ^ receivedHash.toLowerCase().charCodeAt(i);
-  if (mismatch !== 0) return null;
+  if (mismatch !== 0) return { user: null, reason: "signature_mismatch" };
 
   try {
     const user = JSON.parse(userValue) as TelegramUser;
-    if (!Number.isSafeInteger(user.id) || user.id <= 0) return null;
+    if (!Number.isSafeInteger(user.id) || user.id <= 0) return { user: null, reason: "invalid_user_id" };
     const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
       || (user.username ? `@${user.username}` : `Player ${user.id}`);
-    return { id: String(user.id), displayName: displayName.slice(0, 80) };
+    return { user: { id: String(user.id), displayName: displayName.slice(0, 80) } };
   } catch {
-    return null;
+    return { user: null, reason: "invalid_user_json" };
   }
 }
 
@@ -76,8 +83,8 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-async function getUser(request: Request, env: Env): Promise<AuthenticatedUser | null> {
-  if (!env.BOT_TOKEN) return null;
+async function getUser(request: Request, env: Env): Promise<{ user: AuthenticatedUser | null; reason?: string }> {
+  if (!env.BOT_TOKEN) return { user: null, reason: "missing_bot_token" };
   const initData = request.method === "POST"
     ? String((await request.clone().json().catch(() => ({})) as { initData?: unknown }).initData ?? "")
     : request.headers.get("x-telegram-init-data") ?? "";
@@ -93,8 +100,9 @@ type LeaderboardRow = {
 
 export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Leaderboard is not configured" }, 500);
-  const user = await getUser(request, env);
-  if (!user) return json({ error: "اعتبار تلگرام نامعتبر یا منقضی شده است." }, 401);
+  const auth = await getUser(request, env);
+  if (!auth.user) return json({ error: `اعتبار تلگرام تأیید نشد. کد خطا: ${auth.reason ?? "unknown"}` }, 401);
+  const user = auth.user;
 
   const entries = await env.DB.prepare(`
     WITH ranked AS (
@@ -128,8 +136,9 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     return json({ error: "Invalid JSON" }, 400);
   }
 
-  const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
-  if (!user) return json({ error: "اعتبار تلگرام نامعتبر یا منقضی شده است." }, 401);
+  const auth = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
+  if (!auth.user) return json({ error: `اعتبار تلگرام تأیید نشد. کد خطا: ${auth.reason ?? "unknown"}` }, 401);
+  const user = auth.user;
 
   const score = body.score;
   if (!Number.isSafeInteger(score) || typeof score !== "number" || score < 1 || score > 100_000) {
