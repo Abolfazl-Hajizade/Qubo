@@ -52,7 +52,6 @@ async function authenticate(initData: string, botToken: string): Promise<{ user:
   if (Date.now() / 1000 - authDate > 86_400) return { user: null, reason: "auth_data_expired" };
 
   params.delete("hash");
-  params.delete("signature");
   const dataCheckString = [...params.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => `${key}=${value}`)
