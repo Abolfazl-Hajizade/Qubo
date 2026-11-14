@@ -219,3 +219,7 @@ Expert uses the bank's "diabolical" puzzles with ratings up to 7.0. Harder ones 
 
 `public/icon.svg` is the source. Regenerate with `npx pwa-assets-generator --preset minimal-2023 public/icon.svg`
 (web) and `npx capacitor-assets generate --android` (Android, from `assets/icon-only.png`).
+
+## Qubo deployment
+
+The Qubo game and its leaderboard are built from the `master` branch and published through Cloudflare Pages.
