@@ -204,6 +204,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // Either end can run out from under the cube, including the rear edge.
       const alongSupport = half * (Math.abs(Math.cos(ca - a)) + Math.abs(Math.sin(ca - a)));
       if (w.offset > landedTower.w / 2 + alongSupport || w.offset < -landedTower.w / 2 - alongSupport || w.angle >= FALL_AT) {
+        w.fallen.push({ pivot: pivotX(landedTower), w: landedTower.w, len: towerLen(landedTower), angle: w.angle, vel: w.vel });
         w.vx = w.slide * Math.cos(a) + towerLen(landedTower) * rad(w.vel) * Math.cos(a);
         w.vy = w.slide * Math.sin(a) + towerLen(landedTower) * rad(w.vel) * Math.sin(a);
         w.phase = 'drop';
