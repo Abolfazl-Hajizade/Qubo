@@ -35,7 +35,8 @@ export interface World {
   offset: number; // how far the cube sits from the middle of its tower's top, along the top; it stays where it landed
   slide: number; // px/s the cube is sliding along the tower's top
   landed: number; // which tower ahead the cube came down on: 1 is the next, 2 the one beyond
-  cubeAngle: number; // degrees the cube is tilted: with the tower, easing upright in the air
+  cubeAngle: number; // degrees the cube is tilted; it keeps rotating while airborne
+  cubeSpin: number; // degrees/s angular velocity, carried from the tower into the jump
   cubeX: number; // left edge
   cubeY: number; // bottom edge
   vx: number;
@@ -74,7 +75,7 @@ export function createWorld(rng: () => number = Math.random): World {
   const b = nextTower(a, rng, 0);
   const w: World = {
     phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: START_VEL,
-    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false,
   };
   seat(w);
   return w;
@@ -88,6 +89,8 @@ export function launch(w: World) {
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
+  // The cube inherits the tower's angular motion and gains a little extra spin from sliding.
+  w.cubeSpin = w.vel * 0.8 + w.slide * 0.12;
   w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
   w.phase = 'air';
 }
@@ -120,33 +123,44 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       }
       break;
     case 'air': {
-      const prev = w.cubeY;
-      w.cubeAngle *= Math.exp(-6 * dt);
+      const prevY = w.cubeY;
+      const prevAngle = w.cubeAngle;
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      const left = w.cubeX + 3;
-      const right = w.cubeX + CUBE - 3;
+      w.cubeAngle += w.cubeSpin * dt;
+      // A rotated cube can touch a platform with a corner before its centre reaches the top.
+      const half = CUBE / 2;
+      const supportY = (angle: number) => half * Math.abs(Math.sin(rad(angle)));
+      const halfWidth = (angle: number) => half * (Math.abs(Math.cos(rad(angle))) + Math.abs(Math.sin(rad(angle))));
+      const prevBottom = prevY + supportY(prevAngle);
+      const bottom = w.cubeY + supportY(w.cubeAngle);
+      const left = w.cubeX + half - halfWidth(w.cubeAngle);
+      const right = w.cubeX + half + halfWidth(w.cubeAngle);
       // The next two towers are both in reach: landing on the far one skips the middle one.
       for (let i = 1; i < w.towers.length; i++) {
         const t = w.towers[i];
         if (right <= t.x || left >= t.x + t.w) continue;
-        if (w.vy > 0 && prev <= t.top + 0.5 && w.cubeY >= t.top) {
-          w.cubeY = t.top; // landed on top
-          w.offset = Math.max(-t.w / 2, Math.min(t.w / 2, w.cubeX + CUBE / 2 - pivotX(t))); // stays where it landed
-          w.vx = 0; w.vy = 0; w.cubeAngle = 0;
+        if (w.vy > 0 && prevBottom <= t.top + 0.5 && bottom >= t.top) {
+          w.cubeY = t.top - supportY(w.cubeAngle); // preserve the corner/edge landing angle
+          w.offset = Math.max(-t.w / 2, Math.min(t.w / 2, w.cubeX + half - pivotX(t)));
+          w.vx *= 0.22; // keep a little horizontal momentum after impact
+          w.vy = 0;
+          w.cubeSpin *= 0.55; // impact slows the spin without instantly snapping upright
           w.score += i; // a tower skipped counts too
           w.landed = i;
           w.camTarget = t.x + t.w - START_RIGHT;
           w.phase = 'scroll';
           return;
         }
-        if (w.cubeY > t.top + 6) { w.vx = 0; w.phase = 'drop'; return; } // hit the side
+        if (w.cubeY > t.top + CUBE) { w.vx = 0; w.phase = 'drop'; return; } // hit the side
       }
       if (w.cubeY > H + CUBE) { w.phase = 'over'; w.over = true; }
       break;
     }
     case 'scroll':
+      w.cubeAngle += w.cubeSpin * dt;
+      w.cubeSpin *= Math.exp(-3.5 * dt);
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
       if (w.cam >= w.camTarget) {
         for (let k = 0; k < w.landed; k++) {
@@ -157,6 +171,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.angle = 0;
         w.vel = START_VEL;
         w.slide = 0;
+        w.cubeSpin = 0;
         w.phase = 'wait';
         seat(w);
       }
@@ -165,6 +180,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
+      w.cubeAngle += w.cubeSpin * dt;
+      w.cubeSpin *= Math.exp(-0.35 * dt);
       if (w.cubeY > H + CUBE) { w.phase = 'over'; w.over = true; }
       break;
   }
