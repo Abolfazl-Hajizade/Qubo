@@ -278,7 +278,7 @@ function drawCube(x: number, bottom: number, tilt: number) {
   ctx.rotate(rad(tilt));
   ctx.fillStyle = p.cube;
   ctx.beginPath();
-  ctx.roundRect(-CUBE / 2, -CUBE / 2, CUBE, CUBE, 5);
+  ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
   ctx.fillStyle = p.paper;
   for (const ex of [CUBE / 2 - 16, CUBE / 2 - 7]) {
