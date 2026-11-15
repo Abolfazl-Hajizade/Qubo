@@ -273,16 +273,16 @@ function drawTower(w: number, len: number) {
 function drawCube(x: number, bottom: number, tilt: number) {
   const p = palette;
   ctx.save();
-  ctx.translate(x + CUBE / 2, bottom); // tilts about the middle of its base, so it sits on the tower's tip
+  ctx.translate(x + CUBE / 2, bottom - CUBE / 2); // rotate around the cube's centre
   ctx.rotate(rad(tilt));
   ctx.fillStyle = p.cube;
   ctx.beginPath();
-  ctx.roundRect(-CUBE / 2, -CUBE, CUBE, CUBE, 5);
+  ctx.roundRect(-CUBE / 2, -CUBE / 2, CUBE, CUBE, 5);
   ctx.fill();
   ctx.fillStyle = p.paper;
   for (const ex of [CUBE / 2 - 16, CUBE / 2 - 7]) {
     ctx.beginPath();
-    ctx.arc(ex, -CUBE + 11, 3.2, 0, Math.PI * 2);
+    ctx.arc(ex, -CUBE / 2 + 11, 3.2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
