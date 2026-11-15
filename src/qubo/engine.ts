@@ -69,7 +69,9 @@ function seat(w: World) {
   const tipY = H - towerLen(t) * Math.cos(a) + w.offset * Math.sin(a);
   // The cube is positioned by its centre: move half its width along the tower-top normal.
   w.cubeX = tipX + (CUBE / 2) * Math.sin(a) - CUBE / 2;
-  w.cubeY = tipY - (CUBE / 2) * Math.cos(a) + CUBE / 2;
+  const half = CUBE / 2;
+  const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
+  w.cubeY = tipY - half * Math.cos(a) + support;
   w.cubeAngle = w.angle;
 }
 
@@ -169,7 +171,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.angle += w.vel * dt;
       const landedTower = w.towers[w.landed];
       const half = CUBE / 2;
-      const flatAngle = w.angle + Math.round((w.cubeAngle - w.angle) / 90) * 90;
+      const flatAngle = w.angle;
       const angleError = flatAngle - w.cubeAngle;
       const angularAcceleration = angleError * 34 - w.cubeSpin * 11;
       w.cubeSpin += angularAcceleration * dt;
