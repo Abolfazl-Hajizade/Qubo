@@ -110,7 +110,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     f.vel += TOPPLE * Math.sin(rad(f.angle)) * dt;
     f.angle = Math.max(-90, Math.min(90, f.angle + f.vel * dt));
   }
-  w.fallen = w.fallen.filter((f) => f.pivot > w.cam - 300);
+  // Keep toppled towers until they are safely outside the camera view. Their bases
+  // can extend well beyond the pivot while falling, so include their full length.
+  w.fallen = w.fallen.filter((f) => f.pivot + f.len > w.cam - 80);
   switch (w.phase) {
     case 'wait':
       const tower = w.towers[0];
@@ -143,7 +145,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const next = w.towers[1];
       const cameraLimit = Math.max(w.cam, next.x + next.w - START_RIGHT);
       const cameraAim = Math.min(cameraLimit, Math.max(0, w.cubeX - 150));
-      w.cam = Math.min(cameraAim, w.cam + SCROLL * 0.85 * dt);
+      // Ease the camera toward the cube instead of moving at a fixed, mechanical speed.
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-3.8 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
@@ -178,7 +181,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     }
     case 'scroll': {
-      w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
+      // Carry the landing transition forward with the same damped camera motion.
+      w.cam += (w.camTarget - w.cam) * (1 - Math.exp(-4.5 * dt));
+      if (Math.abs(w.camTarget - w.cam) < 0.35) w.cam = w.camTarget;
       // The landed tower begins leaning immediately, while the cube rolls relative to its top.
       const landedTower = w.towers[w.landed];
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
@@ -228,7 +233,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
         }
-        w.fallen = []; // the toppled tower has scrolled away
+        // Keep earlier toppled towers in the scene; the camera filter removes them only
+        // after they have actually moved out of view.
         // Keep the exact lean and angular velocity used to render the landing tower.
         // The same tower is now index 0, so resetting these values would make it snap upright.
         w.cubeSpin = w.vel;
