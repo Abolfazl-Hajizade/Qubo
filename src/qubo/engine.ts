@@ -161,6 +161,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     case 'scroll':
       w.cubeAngle += w.cubeSpin * dt;
       w.cubeSpin *= Math.exp(-3.5 * dt);
+      // Keep the rotated cube supported by the landing tower while its spin settles.
+      w.cubeY = w.towers[w.landed].top - (CUBE / 2) * Math.abs(Math.sin(rad(w.cubeAngle)));
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
       if (w.cam >= w.camTarget) {
         for (let k = 0; k < w.landed; k++) {
