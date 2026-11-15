@@ -10,7 +10,6 @@ export const START_RIGHT = 96; // where the standing tower's right edge sits on 
 
 const THROW = 600; // launch speed along the tower's axis
 const GRAVITY = 1800;
-const SCROLL = 420;
 const MIN_TOP = 225;
 const MAX_TOP = 295;
 const TOPPLE = 1100; // degrees/s² pulling a leaning tower over once it has been left
