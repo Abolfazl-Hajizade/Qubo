@@ -237,7 +237,7 @@ function draw() {
     if (i === 0 && world.phase !== 'wait') return; // once the cube has left, that tower is drawn toppling below
     ctx.save();
     ctx.translate(pivotX(t), H);
-    if (i === 0 || (world.phase === 'scroll' && i === world.landed)) ctx.rotate((world.angle * Math.PI) / 180);
+    if (i === 0) ctx.rotate((world.angle * Math.PI) / 180);
     drawTower(t.w, towerLen(t));
     ctx.restore();
   });
