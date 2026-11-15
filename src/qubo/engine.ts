@@ -181,8 +181,14 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
 
       // Gravity can move the cube either way along the sloping top. Friction opposes motion.
       const slope = Math.sin(a);
-      const frictionDirection = Math.abs(w.slide) > 1 ? Math.sign(w.slide) : Math.sign(slope);
-      w.slide += SLIDE * (slope - FRICTION * Math.cos(a) * frictionDirection) * dt;
+      const frictionLimit = FRICTION * Math.cos(a);
+      const drive = Math.abs(slope) > frictionLimit
+        ? Math.sign(slope) * (Math.abs(slope) - frictionLimit)
+        : 0;
+      if (drive) w.slide += SLIDE * drive * dt;
+      else if (Math.abs(w.slide) > 0.1) {
+        w.slide -= Math.sign(w.slide) * Math.min(Math.abs(w.slide), SLIDE * frictionLimit * dt);
+      } else w.slide = 0;
       w.offset += w.slide * dt;
 
       // Keep the cube supported by the actual rotated top, not by a horizontal screen line.
