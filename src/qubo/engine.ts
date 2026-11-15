@@ -16,7 +16,6 @@ const MAX_TOP = 295;
 const TOPPLE = 1100; // degrees/s² pulling a leaning tower over once it has been left
 const SLIDE = 420; // px/s² the cube slides along a tilted top, before friction
 const FRICTION = 0.34; // it only starts to slide once the lean is steeper than this (as tan)
-const START_VEL = 6; // degrees/s a fresh tower starts tipping at
 const ACC = 6.5; // slower base acceleration; each tower adds its own variation
 const ACC_LEAN = 0.9; // gentler acceleration as the tower leans
 const FALL_AT = 82; // degrees: past this the cube slides off with the tower
@@ -163,7 +162,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.camTarget = t.x + t.w - START_RIGHT;
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
-          w.vel = landedTower.tipStart;
+          w.vel = w.towers[w.landed].tipStart;
           w.slide = 0;
           w.phase = 'scroll';
           return;
@@ -176,9 +175,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     case 'scroll': {
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
       // The landed tower begins leaning immediately, while the cube rolls relative to its top.
+      const landedTower = w.towers[w.landed];
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
-      const landedTower = w.towers[w.landed];
       const half = CUBE / 2;
       const a = rad(w.angle);
       const relative = w.cubeAngle - w.angle;
