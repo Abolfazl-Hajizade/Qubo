@@ -167,7 +167,12 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
-          w.camTarget = Math.max(w.cam, t.x + t.w - START_RIGHT);
+          // Frame the landing tower and make the following (second-ahead) tower
+          // peek in from the right before the next jump becomes available.
+          const preview = w.towers[w.landed + 1];
+          const landingCam = t.x + t.w - START_RIGHT;
+          const previewCam = preview ? preview.x + preview.w - (W - 24) : landingCam;
+          w.camTarget = Math.max(w.cam, landingCam, previewCam);
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
