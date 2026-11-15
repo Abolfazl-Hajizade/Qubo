@@ -91,7 +91,7 @@ export function launch(w: World) {
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
   w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
   // Give the cube a visible, steady spin as it leaves the tower.
-  w.cubeSpin = 240 + Math.min(120, w.vel * 0.5);
+  w.cubeSpin = 720 + Math.min(360, w.vel * 1.2);
   w.phase = 'air';
 }
 
