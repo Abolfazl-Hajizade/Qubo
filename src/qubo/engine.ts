@@ -35,7 +35,8 @@ export interface World {
   offset: number; // how far the cube sits from the middle of its tower's top, along the top; it stays where it landed
   slide: number; // px/s the cube is sliding along the tower's top
   landed: number; // which tower ahead the cube came down on: 1 is the next, 2 the one beyond
-  cubeAngle: number; // degrees the cube is tilted: with the tower, easing upright in the air
+  cubeAngle: number; // degrees the cube is tilted
+  cubeSpin: number; // degrees/s: rotation speed while airborne
   cubeX: number; // left edge
   cubeY: number; // bottom edge
   vx: number;
@@ -74,7 +75,7 @@ export function createWorld(rng: () => number = Math.random): World {
   const b = nextTower(a, rng, 0);
   const w: World = {
     phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: START_VEL,
-    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false,
   };
   seat(w);
   return w;
@@ -89,6 +90,8 @@ export function launch(w: World) {
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
   w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
+  // Give the cube a visible, steady spin as it leaves the tower.
+  w.cubeSpin = 240 + Math.min(120, w.vel * 0.5);
   w.phase = 'air';
 }
 
@@ -121,7 +124,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     case 'air': {
       const prev = w.cubeY;
-      w.cubeAngle *= Math.exp(-6 * dt);
+      w.cubeAngle += w.cubeSpin * dt;
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
@@ -157,12 +160,14 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.angle = 0;
         w.vel = START_VEL;
         w.slide = 0;
+        w.cubeSpin = 0;
         w.phase = 'wait';
         seat(w);
       }
       break;
     case 'drop':
       w.vy += GRAVITY * dt;
+      w.cubeAngle += w.cubeSpin * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
       if (w.cubeY > H + CUBE) { w.phase = 'over'; w.over = true; }
