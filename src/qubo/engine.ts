@@ -139,6 +139,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
+      // Follow the jump with a smooth forward camera drift, while keeping the next tower visible.
+      const next = w.towers[1];
+      const cameraLimit = Math.max(w.cam, next.x + next.w - START_RIGHT);
+      const cameraAim = Math.min(cameraLimit, Math.max(0, w.cubeX - 150));
+      w.cam = Math.min(cameraAim, w.cam + SCROLL * 0.85 * dt);
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
@@ -159,7 +164,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
-          w.camTarget = t.x + t.w - START_RIGHT;
+          w.camTarget = Math.max(w.cam, t.x + t.w - START_RIGHT);
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
