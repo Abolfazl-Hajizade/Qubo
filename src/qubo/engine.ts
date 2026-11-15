@@ -155,6 +155,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.score += i; // a tower skipped counts too
           w.landed = i;
           w.camTarget = t.x + t.w - START_RIGHT;
+          // The newly landed tower starts its own tipping cycle from upright.
+          w.angle = 0;
+          w.vel = START_VEL;
           w.phase = 'scroll';
           return;
         }
