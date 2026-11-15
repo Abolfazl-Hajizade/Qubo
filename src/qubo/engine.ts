@@ -65,8 +65,11 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
 function seat(w: World) {
   const t = w.towers[0];
   const a = rad(w.angle);
-  w.cubeX = pivotX(t) + towerLen(t) * Math.sin(a) + w.offset * Math.cos(a) - CUBE / 2;
-  w.cubeY = H - towerLen(t) * Math.cos(a) + w.offset * Math.sin(a);
+  const tipX = pivotX(t) + towerLen(t) * Math.sin(a) + w.offset * Math.cos(a);
+  const tipY = H - towerLen(t) * Math.cos(a) + w.offset * Math.sin(a);
+  // The cube is positioned by its centre: move half its width along the tower-top normal.
+  w.cubeX = tipX + (CUBE / 2) * Math.sin(a) - CUBE / 2;
+  w.cubeY = tipY - (CUBE / 2) * Math.cos(a) + CUBE / 2;
   w.cubeAngle = w.angle;
 }
 
