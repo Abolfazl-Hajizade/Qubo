@@ -161,7 +161,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         if (w.vy > 0 && prevBottom <= t.top + 0.5 && currentBottom >= t.top && centerX >= t.x - support && centerX <= t.x + t.w + support) {
           // Keep the cube's landing angle. Its lowest rotated corner/edge rests on the platform.
           w.cubeY += t.top - currentBottom;
-          w.offset = Math.max(-t.w / 2, Math.min(t.w / 2, centerX - pivotX(t)));
+          // Land nearer the platform centre so the cube has room to settle before sliding.
+          w.offset = Math.max(-t.w * 0.2, Math.min(t.w * 0.2, centerX - pivotX(t)));
           // Keep the impact rotation: the cube should roll off its corner instead of snapping flat.
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
@@ -227,7 +228,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.phase = 'drop';
         return;
       }
-      if (w.cam >= w.camTarget && Math.abs(angleError) < 3 && Math.abs(w.cubeSpin - w.vel) < 18 && Math.abs(w.slide) < 24) {
+      if (w.cam === w.camTarget && Math.abs(angleError) < 7 && Math.abs(w.cubeSpin - w.vel) < 40 && Math.abs(w.slide) < 30) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
