@@ -217,10 +217,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
         }
         w.fallen = []; // the toppled tower has scrolled away
-        w.angle = 0;
-        w.vel = START_VEL;
-        w.slide = 0;
-        w.cubeSpin = 0;
+        // Keep the exact lean and angular velocity used to render the landing tower.
+        // The same tower is now index 0, so resetting these values would make it snap upright.
+        w.cubeSpin = w.vel;
         w.phase = 'wait';
         seat(w);
       }
