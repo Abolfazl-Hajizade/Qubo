@@ -5,7 +5,7 @@
 
 export const W = 360;
 export const H = 420;
-export const CUBE = 28;
+export const CUBE = 42;
 export const START_RIGHT = 96; // where the standing tower's right edge sits on screen
 
 const THROW = 600; // launch speed along the tower's axis
@@ -56,7 +56,7 @@ export const towerLen = (t: Tower) => H - t.top;
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const spread = Math.min(1, score / 25); // gaps widen and towers narrow as you go
   const gap = between(rng, 40, 90 + 70 * spread);
-  const w = between(rng, 38 - 10 * spread, 52 - 14 * spread);
+  const w = CUBE;
   const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -45, 45)));
   return { x: from.x + from.w + gap, w, top };
 }
@@ -91,7 +91,7 @@ export function launch(w: World) {
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
   w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
   // Give the cube a visible, steady spin as it leaves the tower.
-  w.cubeSpin = 720 + Math.min(360, w.vel * 1.2);
+  w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
   w.phase = 'air';
 }
 
@@ -125,26 +125,34 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     case 'air': {
       const prev = w.cubeY;
       w.cubeAngle += w.cubeSpin * dt;
+      w.cubeSpin *= Math.exp(-0.32 * dt); // air resistance makes the rotation ease naturally
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      const left = w.cubeX + 3;
-      const right = w.cubeX + CUBE - 3;
+      const half = CUBE / 2;
+      const a = rad(w.cubeAngle);
+      const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
+      const prevBottom = prev - half + support;
+      const currentBottom = w.cubeY - half + support;
+      const centerX = w.cubeX + half;
+      const left = centerX - support;
+      const right = centerX + support;
       // The next two towers are both in reach: landing on the far one skips the middle one.
       for (let i = 1; i < w.towers.length; i++) {
         const t = w.towers[i];
         if (right <= t.x || left >= t.x + t.w) continue;
-        if (w.vy > 0 && prev <= t.top + 0.5 && w.cubeY >= t.top) {
-          w.cubeY = t.top; // landed on top
-          w.offset = Math.max(-t.w / 2, Math.min(t.w / 2, w.cubeX + CUBE / 2 - pivotX(t))); // stays where it landed
-          w.vx = 0; w.vy = 0; w.cubeAngle = 0;
+        if (w.vy > 0 && prevBottom <= t.top + 0.5 && currentBottom >= t.top && centerX >= t.x - support && centerX <= t.x + t.w + support) {
+          // Keep the cube's landing angle. Its lowest rotated corner/edge rests on the platform.
+          w.cubeY += t.top - currentBottom;
+          w.offset = Math.max(-t.w / 2, Math.min(t.w / 2, centerX - pivotX(t)));
+          w.vx = 0; w.vy = 0; w.cubeSpin = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
           w.camTarget = t.x + t.w - START_RIGHT;
           w.phase = 'scroll';
           return;
         }
-        if (w.cubeY > t.top + 6) { w.vx = 0; w.phase = 'drop'; return; } // hit the side
+        if (currentBottom > t.top + 6) { w.vx = 0; w.phase = 'drop'; return; } // hit the side
       }
       if (w.cubeY > H + CUBE) { w.phase = 'over'; w.over = true; }
       break;
