@@ -148,7 +148,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           // Keep the cube's landing angle. Its lowest rotated corner/edge rests on the platform.
           w.cubeY += t.top - currentBottom;
           w.offset = Math.max(-t.w / 2, Math.min(t.w / 2, centerX - pivotX(t)));
-          w.vx = 0; w.vy = 0; w.cubeSpin = 0;
+          // Keep the impact rotation: the cube should roll off its corner instead of snapping flat.
+          w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
           w.camTarget = t.x + t.w - START_RIGHT;
@@ -160,8 +161,21 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       if (w.cubeY > H + CUBE) { w.phase = 'over'; w.over = true; }
       break;
     }
-    case 'scroll':
+    case 'scroll': {
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
+      // While the camera moves, let the cube settle onto a face with a damped
+      // rotational spring. A square is face-aligned at multiples of 90°.
+      const flatAngle = Math.round(w.cubeAngle / 90) * 90;
+      const angleError = flatAngle - w.cubeAngle;
+      const angularAcceleration = angleError * 34 - w.cubeSpin * 11;
+      w.cubeSpin += angularAcceleration * dt;
+      w.cubeAngle += w.cubeSpin * dt;
+      // Keep the lowest rotated corner/edge in contact with the landing surface.
+      const landedTower = w.towers[w.landed];
+      const half = CUBE / 2;
+      const a = rad(w.cubeAngle);
+      const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
+      w.cubeY = landedTower.top + half - support;
       if (w.cam >= w.camTarget) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
@@ -176,6 +190,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         seat(w);
       }
       break;
+    }
     case 'drop':
       w.vy += GRAVITY * dt;
       w.cubeAngle += w.cubeSpin * dt;
