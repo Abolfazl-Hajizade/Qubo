@@ -17,11 +17,11 @@ const TOPPLE = 1100; // degrees/s² pulling a leaning tower over once it has bee
 const SLIDE = 420; // px/s² the cube slides along a tilted top, before friction
 const FRICTION = 0.34; // it only starts to slide once the lean is steeper than this (as tan)
 const START_VEL = 6; // degrees/s a fresh tower starts tipping at
-const ACC = 15; // degrees/s² of tipping at the start, and
-const ACC_LEAN = 2.2; // how much more for each degree it already leans
+const ACC = 6.5; // slower base acceleration; each tower adds its own variation
+const ACC_LEAN = 0.9; // gentler acceleration as the tower leans
 const FALL_AT = 82; // degrees: past this the cube slides off with the tower
 
-export interface Tower { x: number; w: number; top: number }
+export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number }
 /** A tower the cube has left: it keeps tipping and topples over, lying on the ground. */
 export interface Fallen { pivot: number; w: number; len: number; angle: number; vel: number }
 export type Phase = 'wait' | 'air' | 'scroll' | 'drop' | 'over';
@@ -58,7 +58,14 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const gap = between(rng, 40, 90 + 70 * spread);
   const w = CUBE;
   const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -45, 45)));
-  return { x: from.x + from.w + gap, w, top };
+  return {
+    x: from.x + from.w + gap, w, top,
+    // Give every tower a distinct tipping tempo instead of making them move in lockstep.
+    tipStart: between(rng, 2.5, 5),
+    tipAccel: between(rng, 0.72, 1.28),
+    leanAccel: between(rng, 0.65, 1.35),
+    rhythm: between(rng, 0.82, 1.18),
+  };
 }
 
 /** Puts the cube on the tip of the current tower, leaning by `angle` degrees. */
@@ -74,10 +81,10 @@ function seat(w: World) {
 }
 
 export function createWorld(rng: () => number = Math.random): World {
-  const a: Tower = { x: START_RIGHT - 44, w: 44, top: 270 };
+  const a: Tower = { x: START_RIGHT - 44, w: 44, top: 270, tipStart: 3.5, tipAccel: 0.9, leanAccel: 0.85, rhythm: 0.94 };
   const b = nextTower(a, rng, 0);
   const w: World = {
-    phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: START_VEL,
+    phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: a.tipStart,
     fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false,
   };
   seat(w);
@@ -107,7 +114,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
   w.fallen = w.fallen.filter((f) => f.pivot > w.cam - 300);
   switch (w.phase) {
     case 'wait':
-      w.vel += (ACC + ACC_LEAN * w.angle) * (1 + Math.min(0.6, w.score * 0.03)) * dt;
+      const tower = w.towers[0];
+      w.vel += (ACC * tower.tipAccel + ACC_LEAN * tower.leanAccel * w.angle) * tower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
       {
         // The cube slides down the tilted top, toward the next tower, once the lean beats friction.
@@ -155,7 +163,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.camTarget = t.x + t.w - START_RIGHT;
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
-          w.vel = START_VEL;
+          w.vel = landedTower.tipStart;
           w.slide = 0;
           w.phase = 'scroll';
           return;
@@ -168,7 +176,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     case 'scroll': {
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
       // The landed tower begins leaning immediately, while the cube rolls relative to its top.
-      w.vel += (ACC + ACC_LEAN * w.angle) * (1 + Math.min(0.6, w.score * 0.03)) * dt;
+      w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
       const landedTower = w.towers[w.landed];
       const half = CUBE / 2;
