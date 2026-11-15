@@ -153,6 +153,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.score += i; // a tower skipped counts too
           w.landed = i;
           w.camTarget = t.x + t.w - START_RIGHT;
+          // The newly landed tower starts tipping immediately; the cube settles independently.
+          w.angle = 0;
+          w.vel = START_VEL;
+          w.slide = 0;
           w.phase = 'scroll';
           return;
         }
@@ -163,20 +167,43 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     }
     case 'scroll': {
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
-      // While the camera moves, let the cube settle onto a face with a damped
-      // rotational spring. A square is face-aligned at multiples of 90°.
-      const flatAngle = Math.round(w.cubeAngle / 90) * 90;
-      const angleError = flatAngle - w.cubeAngle;
-      const angularAcceleration = angleError * 34 - w.cubeSpin * 11;
-      w.cubeSpin += angularAcceleration * dt;
-      w.cubeAngle += w.cubeSpin * dt;
-      // Keep the lowest rotated corner/edge in contact with the landing surface.
+      // The landed tower begins leaning immediately, while the cube rolls relative to its top.
+      w.vel += (ACC + ACC_LEAN * w.angle) * (1 + Math.min(0.6, w.score * 0.03)) * dt;
+      w.angle += w.vel * dt;
       const landedTower = w.towers[w.landed];
       const half = CUBE / 2;
-      const a = rad(w.cubeAngle);
-      const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
-      w.cubeY = landedTower.top + half - support;
-      if (w.cam >= w.camTarget && Math.abs(angleError) < 1.2 && Math.abs(w.cubeSpin) < 8) {
+      const a = rad(w.angle);
+      const relative = w.cubeAngle - w.angle;
+      const flatRelative = Math.round(relative / 90) * 90;
+      const angleError = w.angle + flatRelative - w.cubeAngle;
+      w.cubeSpin += (angleError * 34 - w.cubeSpin * 11) * dt;
+      w.cubeAngle += w.cubeSpin * dt;
+
+      // Gravity can move the cube either way along the sloping top. Friction opposes motion.
+      const slope = Math.sin(a);
+      const frictionDirection = Math.abs(w.slide) > 1 ? Math.sign(w.slide) : Math.sign(slope);
+      w.slide += SLIDE * (slope - FRICTION * Math.cos(a) * frictionDirection) * dt;
+      w.offset += w.slide * dt;
+
+      // Keep the cube supported by the actual rotated top, not by a horizontal screen line.
+      const ca = rad(w.cubeAngle);
+      const support = half * (Math.abs(Math.sin(ca - a)) + Math.abs(Math.cos(ca - a)));
+      const tipX = pivotX(landedTower) + towerLen(landedTower) * Math.sin(a);
+      const tipY = H - towerLen(landedTower) * Math.cos(a);
+      const centerX = tipX + w.offset * Math.cos(a) + support * Math.sin(a);
+      const centerY = tipY + w.offset * Math.sin(a) - support * Math.cos(a);
+      w.cubeX = centerX - half;
+      w.cubeY = centerY + half;
+
+      // Either end can run out from under the cube, including the rear edge.
+      const alongSupport = half * (Math.abs(Math.cos(ca - a)) + Math.abs(Math.sin(ca - a)));
+      if (w.offset > landedTower.w / 2 + alongSupport || w.offset < -landedTower.w / 2 - alongSupport || w.angle >= FALL_AT) {
+        w.vx = w.slide * Math.cos(a) + towerLen(landedTower) * rad(w.vel) * Math.cos(a);
+        w.vy = w.slide * Math.sin(a) + towerLen(landedTower) * rad(w.vel) * Math.sin(a);
+        w.phase = 'drop';
+        return;
+      }
+      if (w.cam >= w.camTarget && Math.abs(angleError) < 1.2 && Math.abs(w.cubeSpin) < 8 && Math.abs(w.slide) < 12) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
