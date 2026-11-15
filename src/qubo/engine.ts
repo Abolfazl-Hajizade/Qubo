@@ -53,8 +53,8 @@ export const pivotX = (t: Tower) => t.x + t.w / 2;
 export const towerLen = (t: Tower) => H - t.top;
 
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
-  const spread = Math.min(1, score / 25); // gaps widen and towers narrow as you go
-  const gap = between(rng, 40, 90 + 70 * spread);
+  const spread = Math.min(1, score / 15); // gaps grow faster as the run progresses
+  const gap = between(rng, 70, 125 + 110 * spread);
   const w = CUBE;
   const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -45, 45)));
   return {
