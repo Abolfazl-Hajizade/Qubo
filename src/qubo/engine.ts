@@ -70,7 +70,7 @@ function seat(w: World) {
   // The cube is positioned by its centre: move half its width along the tower-top normal.
   w.cubeX = tipX + (CUBE / 2) * Math.sin(a) - CUBE / 2;
   w.cubeY = tipY - (CUBE / 2) * Math.cos(a) + CUBE / 2;
-  w.cubeAngle = w.angle;
+  w.cubeAngle = Math.round(w.cubeAngle / 90) * 90 + w.angle;
 }
 
 export function createWorld(rng: () => number = Math.random): World {
@@ -176,7 +176,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const relative = w.cubeAngle - w.angle;
       const flatRelative = Math.round(relative / 90) * 90;
       const angleError = w.angle + flatRelative - w.cubeAngle;
-      w.cubeSpin += (angleError * 34 - w.cubeSpin * 11) * dt;
+      // Damping is relative to the tower's angular velocity, not world space.
+      w.cubeSpin += (angleError * 34 - (w.cubeSpin - w.vel) * 11) * dt;
       w.cubeAngle += w.cubeSpin * dt;
 
       // Gravity can move the cube either way along the sloping top. Friction opposes motion.
@@ -210,7 +211,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.phase = 'drop';
         return;
       }
-      if (w.cam >= w.camTarget && Math.abs(angleError) < 1.2 && Math.abs(w.cubeSpin) < 8 && Math.abs(w.slide) < 12) {
+      if (w.cam >= w.camTarget && Math.abs(angleError) < 3 && Math.abs(w.cubeSpin - w.vel) < 18 && Math.abs(w.slide) < 24) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
