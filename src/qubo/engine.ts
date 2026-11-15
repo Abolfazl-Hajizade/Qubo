@@ -176,7 +176,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
       w.cubeY = landedTower.top + half - support;
-      if (w.cam >= w.camTarget) {
+      if (w.cam >= w.camTarget && Math.abs(angleError) < 1.2 && Math.abs(w.cubeSpin) < 8) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
