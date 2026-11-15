@@ -163,27 +163,33 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
     }
     case 'scroll': {
       w.cam = Math.min(w.camTarget, w.cam + SCROLL * dt);
-      // While the camera moves, let the cube settle onto a face with a damped
-      // rotational spring. A square is face-aligned at multiples of 90°.
-      const flatAngle = Math.round(w.cubeAngle / 90) * 90;
+      // Start the newly landed tower tipping immediately, while the cube is
+      // still settling. The cube's target orientation follows the tower's top.
+      w.vel += (ACC + ACC_LEAN * w.angle) * (1 + Math.min(0.6, w.score * 0.03)) * dt;
+      w.angle += w.vel * dt;
+      const landedTower = w.towers[w.landed];
+      const half = CUBE / 2;
+      const flatAngle = w.angle + Math.round((w.cubeAngle - w.angle) / 90) * 90;
       const angleError = flatAngle - w.cubeAngle;
       const angularAcceleration = angleError * 34 - w.cubeSpin * 11;
       w.cubeSpin += angularAcceleration * dt;
       w.cubeAngle += w.cubeSpin * dt;
-      // Keep the lowest rotated corner/edge in contact with the landing surface.
-      const landedTower = w.towers[w.landed];
-      const half = CUBE / 2;
-      const a = rad(w.cubeAngle);
-      const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
-      w.cubeY = landedTower.top + half - support;
+      // Keep the cube seated on the rotating tower top as it tips.
+      const a = rad(w.angle);
+      const tipX = pivotX(landedTower) + towerLen(landedTower) * Math.sin(a) + w.offset * Math.cos(a);
+      const tipY = H - towerLen(landedTower) * Math.cos(a) + w.offset * Math.sin(a);
+      w.cubeX = tipX + half * Math.sin(a) - half;
+      const cubeRad = rad(w.cubeAngle);
+      const support = half * (Math.abs(Math.sin(cubeRad)) + Math.abs(Math.cos(cubeRad)));
+      w.cubeY = tipY - half * Math.cos(a) + half - half + support;
       if (w.cam >= w.camTarget && Math.abs(angleError) < 1.2 && Math.abs(w.cubeSpin) < 8) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
         }
         w.fallen = []; // the toppled tower has scrolled away
-        w.angle = 0;
-        w.vel = START_VEL;
+        // Preserve the lean accumulated during the settling animation.
+        w.vel = Math.max(START_VEL, w.vel);
         w.slide = 0;
         w.cubeSpin = 0;
         w.phase = 'wait';
