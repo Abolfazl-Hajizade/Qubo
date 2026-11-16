@@ -188,7 +188,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       for (let i = 1; i < w.towers.length; i++) {
         const t = w.towers[i];
         if (current.maxX <= t.x || current.minX >= t.x + t.w) continue;
-        const crossedTop = w.vy > 0 && before.minY <= t.top + 0.5 && current.minY >= t.top;
+        // The platform contacts the cube's lowest rotated edge/corner (maxY),
+        // not its upper edge. Using minY made the cube pass through the platform
+        // before the landing was registered, causing a one-frame disappearance.
+        const crossedTop = w.vy > 0 && before.maxY <= t.top + 0.5 && current.maxY >= t.top;
         if (crossedTop) {
           // Contact is determined by the rotated square itself. Any part of its
           // lower edge/corner may touch the platform; the centre need not be above it.
@@ -201,7 +204,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           }
           // Correct only vertical penetration at first contact. Never change the
           // cube's angle or pull its centre toward the platform centre.
-          w.cubeY += t.top - current.minY;
+          w.cubeY += t.top - current.maxY;
           w.offset = centerX - pivotX(t);
           w.cubeSpin *= 0.9;
           w.vx *= 0.35;
