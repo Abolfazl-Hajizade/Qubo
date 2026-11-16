@@ -244,11 +244,15 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     }
     case 'scroll': {
-      // No camera movement after landing: the handoff is completed during the jump.
-      // The landed tower begins leaning immediately, while the cube rolls relative to its top.
+      // Start carrying the landed tower backward as soon as contact is made.
+      // Following its tip makes the base travel out through the rear of the scene,
+      // while the cube stays supported and remains jumpable during the movement.
       const landedTower = w.towers[w.landed];
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
+      const cameraAim = Math.max(0, pivotX(landedTower) + towerLen(landedTower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
+      w.camTarget = w.cam;
       const half = CUBE / 2;
       const a = rad(w.angle);
       const relative = w.cubeAngle - w.angle;
@@ -291,7 +295,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.phase = 'drop';
         return;
       }
-      if (w.cam === w.camTarget && Math.abs(angleError) < 7 && Math.abs(w.cubeSpin - w.vel) < 40 && Math.abs(w.slide) < 30) {
+      if (Math.abs(angleError) < 7 && Math.abs(w.cubeSpin - w.vel) < 40 && Math.abs(w.slide) < 30) {
         for (let k = 0; k < w.landed; k++) {
           w.towers.shift();
           w.towers.push(nextTower(w.towers[w.towers.length - 1], rng, w.score));
