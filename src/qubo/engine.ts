@@ -15,7 +15,7 @@ const MAX_TOP = 295;
 const TOPPLE = 1100; // degrees/s² pulling a leaning tower over once it has been left
 const SLIDE = GRAVITY * 1.15; // slightly stronger gravity-driven sliding along the tower
 const FRICTION = 0.16; // lower kinetic/static friction for quicker, more natural sliding
-const ACC = 6.5; // slower base acceleration; each tower adds its own variation
+const ACC = 8; // quicker tower acceleration leaves a tighter timing window
 const ACC_LEAN = 0.9; // gentler acceleration as the tower leans
 const FALL_AT = 82; // degrees: past this the cube slides off with the tower
 
@@ -55,13 +55,13 @@ export const towerLen = (t: Tower) => H - t.top;
 
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const spread = Math.min(1, score / 15); // gaps grow faster as the run progresses
-  const gap = between(rng, 70, 125 + 110 * spread);
+  const gap = between(rng, 95, 150 + 140 * spread);
   const w = CUBE;
   const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -45, 45)));
   return {
     x: from.x + from.w + gap, w, top,
     // Give every tower a distinct tipping tempo instead of making them move in lockstep.
-    tipStart: between(rng, 2.5, 5),
+    tipStart: between(rng, 3.2, 6),
     tipAccel: between(rng, 0.72, 1.28),
     leanAccel: between(rng, 0.65, 1.35),
     rhythm: between(rng, 0.82, 1.18),
@@ -116,7 +116,7 @@ export function launch(w: World) {
   // it did on a normal takeoff. The newly landed tower has already started
   // tipping during scroll; do not wait for the cube to settle before allowing
   // the next jump.
-  if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
+  if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
 
   if (rescue) {
     // Only rear-edge landings use a stationary recovery arc. A rescue from
