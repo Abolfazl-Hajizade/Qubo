@@ -130,7 +130,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // slides into its place. The camera motion is synchronized with the visual withdrawal.
       const withdrawal = Math.min(1, Math.max(0, w.angle / 72));
       const next = w.towers[1];
-      const replacementAim = pivotX(tower) - START_RIGHT + 150 * withdrawal;
+      const replacementAim = pivotX(tower) - START_RIGHT + 250 * withdrawal;
       const previewAim = next ? pivotX(next) - 220 : w.cubeX - 150;
       const cameraAim = Math.max(w.cam, replacementAim, previewAim, w.cubeX - 150);
       w.cam += (cameraAim - w.cam) * (1 - Math.exp(-4.2 * dt));
