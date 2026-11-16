@@ -97,8 +97,8 @@ export function launch(w: World) {
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // The source tower has already visually withdrawn during the lean; do not keep it
-  // in the fallen list when the cube launches.
+  // The tower the cube leaves behind keeps tipping and is carried out of view by the camera.
+  w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
   // Give the cube a visible, steady spin as it leaves the tower.
   w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
   w.phase = 'air';
@@ -168,8 +168,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
-          // Stop the camera when the cube lands; it moves again only on the next jump.
-          w.camTarget = w.cam;
+          // Move the landed tower into the previous tower's screen position.
+          // The camera completes this shift during the settling phase, carrying the old tower away.
+          const previous = w.towers[0];
+          w.camTarget = Math.max(w.cam, pivotX(t) - pivotX(previous));
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
@@ -183,7 +185,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     }
     case 'scroll': {
-      // No automatic camera scroll after landing.
+      // Finish the jump-driven handoff: the landed tower takes the old tower's place.
+      w.cam += (w.camTarget - w.cam) * (1 - Math.exp(-5.5 * dt));
+      if (Math.abs(w.camTarget - w.cam) < 0.15) w.cam = w.camTarget;
       // The landed tower begins leaning immediately, while the cube rolls relative to its top.
       const landedTower = w.towers[w.landed];
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
