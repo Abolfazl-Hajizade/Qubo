@@ -431,7 +431,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         // The local downward normal in world coordinates is (-sin(a), cos(a)).
         const surfaceGap = -len - (current.y + support);
         if (surfaceGap > 0) {
-          const pull = Math.min(GRAVITY * 2.5, surfaceGap * 24);
+          const pull = Math.min(GRAVITY * 0.45, surfaceGap * 6);
           w.vx -= sn * pull * dt;
           w.vy += cs * pull * dt;
         }
