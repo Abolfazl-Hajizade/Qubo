@@ -94,13 +94,13 @@ export function createWorld(rng: () => number = Math.random): World {
 export function launch(w: World) {
   // A landed cube can jump again immediately, even while it is still rolling
   // and the tower is already beginning to lean.
-  const rescue = w.phase === 'drop' && w.rescueAvailable;
-  if (w.phase !== 'wait' && w.phase !== 'scroll' && !rescue) return;
   const fromScroll = w.phase === 'scroll';
-  const activeIndex = (fromScroll || rescue) ? w.landed : 0;
+  const rescue = fromScroll || (w.phase === 'drop' && w.rescueAvailable);
+  if (w.phase !== 'wait' && !rescue) return;
+  const activeIndex = rescue ? w.landed : 0;
   const t = w.towers[activeIndex];
   const a = rad(w.angle);
-  const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
+  const tip = (towerLen(t) + (rescue ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
 
@@ -111,9 +111,11 @@ export function launch(w: World) {
   if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
 
   if (rescue) {
-    // Recovery takeoff: keep the same tower in place and let its normal
-    // scroll/tip motion continue. No camera handoff or tower generation.
+    // A jump made while the cube is still settling, or just after it slips off,
+    // is a recovery arc back to this same moving tower. Never retire the tower,
+    // advance the camera to another platform, or generate a replacement here.
     w.rescueAvailable = false;
+    w.cubeSpin += 180;
     w.phase = 'rescue';
     return;
   }
@@ -326,6 +328,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // Keep the landing tower's established motion/camera follow running
       // while the cube makes a short recovery arc back onto that same tower.
       const t = w.towers[w.landed];
+      const previousTowerAngle = w.angle;
       w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
       const cameraAim = Math.max(0, pivotX(t) + towerLen(t) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
@@ -342,16 +345,17 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.cubeSpin *= Math.exp(-0.32 * dt);
 
       const a = rad(w.angle), cs = Math.cos(a), sn = Math.sin(a);
-      const local = (cx: number, cy: number) => {
+      const local = (cx: number, cy: number, angle: number) => {
+        const oldA = rad(angle), oldCos = Math.cos(oldA), oldSin = Math.sin(oldA);
         const dx = cx - pivotX(t), dy = cy - H;
-        return { x: dx * cs + dy * sn, y: -dx * sn + dy * cs };
+        return { x: dx * oldCos + dy * oldSin, y: -dx * oldSin + dy * oldCos };
       };
       const half = CUBE / 2;
       const currentCenterX = w.cubeX + half;
       const currentCenterY = w.cubeY - half;
-      const before = local(previousX, previousY);
-      const current = local(currentCenterX, currentCenterY);
-      const beforeSupport = half * (Math.abs(Math.sin(rad(previousAngle - w.angle))) + Math.abs(Math.cos(rad(previousAngle - w.angle))));
+      const before = local(previousX, previousY, previousTowerAngle);
+      const current = local(currentCenterX, currentCenterY, w.angle);
+      const beforeSupport = half * (Math.abs(Math.sin(rad(previousAngle - previousTowerAngle))) + Math.abs(Math.cos(rad(previousAngle - previousTowerAngle))));
       const support = half * (Math.abs(Math.sin(rad(w.cubeAngle - w.angle))) + Math.abs(Math.cos(rad(w.cubeAngle - w.angle))));
       const len = towerLen(t);
       const crossed = current.y + support >= -len && before.y + beforeSupport <= -len + 1 && (w.vx * -sn + w.vy * cs) > 0;
@@ -365,6 +369,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.cubeY = worldY + half;
         w.offset = current.x;
         w.slide = 0;
+        w.rescueAvailable = false;
         w.phase = 'scroll';
         return;
       }
