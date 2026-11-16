@@ -154,11 +154,11 @@ async function openLeaderboard() {
 
   const initData = telegramWebApp?.initData;
   if (!initData) {
-    status.textContent = 'برای دیدن رکوردهای جهانی، بازی را از داخل ربات تلگرام باز کن.';
+    status.textContent = 'Open the game from the Telegram bot to view the global leaderboard.';
     return;
   }
 
-  status.textContent = 'در حال دریافت رکوردها...';
+  status.textContent = 'Loading leaderboard...';
   try {
     const response = await fetch('/api/leaderboard', {
       headers: { 'x-telegram-init-data': initData },
@@ -168,12 +168,12 @@ async function openLeaderboard() {
       entries?: LeaderboardEntry[];
       me?: { rank: number; best_score: number } | null;
     };
-    if (!response.ok) throw new Error(data.error || 'دریافت رکوردها ناموفق بود');
+    if (!response.ok) throw new Error(data.error || 'Could not load leaderboard');
     const entries = data.entries ?? [];
     if (!entries.length) {
-      status.textContent = 'هنوز رکوردی ثبت نشده؛ اولین نفر باش!';
+      status.textContent = 'No scores yet. Be the first!';
     } else {
-      status.textContent = '۵۰ رکورد برتر بازیکنان';
+      status.textContent = 'Top 50 players';
       for (const entry of entries) {
         const item = document.createElement('li');
         item.textContent = `#${entry.rank}  ${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
@@ -182,10 +182,10 @@ async function openLeaderboard() {
       }
     }
     me.textContent = data.me
-      ? `رتبه تو: #${data.me.rank}  |  رکورد: ${numberFormat.format(data.me.best_score)}`
-      : 'هنوز رکوردی برای تو ثبت نشده است.';
+      ? `Your rank: #${data.me.rank}  |  Best: ${numberFormat.format(data.me.best_score)}`
+      : 'You have not submitted a score yet.';
   } catch (error) {
-    status.textContent = error instanceof Error ? error.message : 'خطا در دریافت رکوردها';
+    status.textContent = error instanceof Error ? error.message : 'Error loading leaderboard';
   }
 }
 
