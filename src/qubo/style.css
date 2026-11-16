@@ -3,6 +3,11 @@
 /* Qubo prints in cocoa, the arcade ink. */
 :root { --c: var(--coral); }
 
+/* Keep the home screen neutral grey; the playfield keeps its storm backdrop. */
+body:has(#home:not([hidden])) {
+  background: #dfe3e8;
+}
+
 /* Match the storm sky around the playfield while the game is active. */
 body:has(#game:not([hidden])) {
   background-color: #27333d;
@@ -80,3 +85,9 @@ body:has(#game:not([hidden])) {
 .leaderboard-list li { padding: 7px 4px; border-bottom: 1px solid var(--rule-2); font-variant-numeric: tabular-nums; }
 .leaderboard-list li.is-me { color: var(--c); font-weight: 800; }
 .leaderboard-me { font-weight: 700; }
+
+
+/* Qubo-specific cleanup: remove the shared help control and keep the end card grey. */
+#game .topbar:has(> .help-btn) { grid-template-columns: 44px 1fr auto; }
+#game .topbar > .help-btn { display: none !important; }
+#end-dialog { background: #dfe3e8; }
