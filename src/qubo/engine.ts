@@ -324,8 +324,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const currentSupport = half * (Math.abs(Math.sin(currentCubeAngle - a)) + Math.abs(Math.cos(currentCubeAngle - a)));
       const tipX = pivotX(landedTower) + towerLen(landedTower) * Math.sin(a);
       const tipY = H - towerLen(landedTower) * Math.cos(a);
-      const centerX = tipX + w.offset * Math.cos(a) + support * Math.sin(a);
-      const centerY = tipY + w.offset * Math.sin(a) - support * Math.cos(a);
+      const centerX = tipX + w.offset * Math.cos(a) + currentSupport * Math.sin(a);
+      const centerY = tipY + w.offset * Math.sin(a) - currentSupport * Math.cos(a);
       w.cubeX = centerX - half;
       w.cubeY = centerY + half;
 
