@@ -116,7 +116,7 @@ export function launch(w: World) {
   // it did on a normal takeoff. The newly landed tower has already started
   // tipping during scroll; do not wait for the cube to settle before allowing
   // the next jump.
-  if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
+  if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
 
   if (rescue) {
     // Only rear-edge landings use a stationary recovery arc. A rescue from
