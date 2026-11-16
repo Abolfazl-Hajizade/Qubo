@@ -62,8 +62,13 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   // a higher destination shortens the safe gap; a lower one allows a little more.
   const heightDelta = from.top - top;
   const difficulty = Math.min(1, score / 30);
-  const minGap = 78 + 4 * difficulty;
-  const maxGap = Math.max(112, Math.min(148, 140 + heightDelta * 0.38 + 8 * difficulty));
+  // Most gaps are wider, so usually only the immediate landing tower is in view.
+  // Occasionally use a tighter gap pattern to reveal the second tower as a tempting skip.
+  const showSecondTower = rng() < 0.28;
+  const minGap = showSecondTower ? 78 + 4 * difficulty : 102 + 4 * difficulty;
+  const maxGap = showSecondTower
+    ? Math.max(minGap + 8, Math.min(120, 112 + heightDelta * 0.25 + 8 * difficulty))
+    : Math.max(minGap + 8, Math.min(148, 140 + heightDelta * 0.38 + 8 * difficulty));
   const gap = between(rng, minGap, maxGap);
 
   return {
