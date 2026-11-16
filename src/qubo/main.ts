@@ -213,32 +213,8 @@ function draw(now = 0) {
   const p = palette;
   const s = canvas.width / W;
   ctx.setTransform(s, 0, 0, s, 0, 0);
-  // Monochrome, softly clouded sky inspired by the original GAMEE Qubo artwork.
-  const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, '#777777');
-  sky.addColorStop(0.58, '#999999');
-  sky.addColorStop(1, '#686868');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, H);
-
-  // Slow, layered cloud banks drift continuously across the sky.
-  const seconds = now / 1000;
-  for (let layer = 0; layer < 3; layer++) {
-    const spacing = 190 + layer * 42;
-    const speed = 7 + layer * 5;
-    const drift = (seconds * speed) % spacing;
-    for (let i = -2; i < 7; i++) {
-      const x = i * spacing - drift + layer * 31;
-      const y = 58 + ((i * 37 + layer * 53) % 155);
-      const radius = 92 + layer * 20;
-      const cloud = ctx.createRadialGradient(x, y, 5, x, y, radius);
-      cloud.addColorStop(0, layer === 0 ? 'rgba(245,245,245,0.38)' : 'rgba(225,225,225,0.24)');
-      cloud.addColorStop(0.48, 'rgba(215,215,215,0.16)');
-      cloud.addColorStop(1, 'rgba(205,205,205,0)');
-      ctx.fillStyle = cloud;
-      ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-  }
+  // Leave the canvas transparent so the page background remains visible.
+  ctx.clearRect(0, 0, W, H);
 
   ctx.save();
   ctx.translate(-world.cam, 0);
