@@ -109,6 +109,9 @@ export function launch(w: World) {
   const quickRearCornerHop = fromScroll &&
     w.landingAge <= 0.35 &&
     w.offset <= -w.towers[w.landed].w * 0.2;
+  const quickFrontCornerHop = fromScroll &&
+    w.landingAge <= 0.35 &&
+    w.offset >= w.towers[w.landed].w * 0.2;
   const inPlace = (w.phase === 'drop' && w.rescueAvailable) || quickRearCornerHop;
   const rescue = inPlace;
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
@@ -120,6 +123,9 @@ export function launch(w: World) {
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
   // A balance-saving hop is vertical and returns to this same platform.
   if (inPlace) { w.vx = 0; w.vy = -THROW; }
+  // A quick jump from the front corner is explicitly a forward hop, even if
+  // residual sliding/tower motion would otherwise weaken or reverse its launch.
+  if (quickFrontCornerHop) w.vx = Math.max(w.vx, THROW * 0.55);
 
   // A stationary balance hop keeps the current platform in place; a forward
   // jump retires the tower being left as usual.
