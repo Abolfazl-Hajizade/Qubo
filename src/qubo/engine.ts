@@ -153,9 +153,17 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // starting tower's screen position (near the left corner). This carries
       // the previous tower out of view before the cube lands.
       const flightCenterX = w.cubeX + CUBE / 2;
-      const targetIndex = w.towers.length > 2 && flightCenterX > w.towers[1].x + w.towers[1].w ? 2 : 1;
+      // Switch to the farther platform only after the cube passes the midpoint
+      // between platforms; using the near platform's edge switches too early
+      // and can send the camera past a valid landing on that near platform.
+      const targetIndex = w.towers.length > 2 && flightCenterX > (pivotX(w.towers[1]) + pivotX(w.towers[2])) / 2 ? 2 : 1;
       const landingTower = w.towers[targetIndex];
-      const cameraAim = landingTower ? Math.max(0, pivotX(landingTower) - (START_RIGHT - 22)) : Math.max(0, w.cubeX - 110);
+      const targetCam = Math.max(0, pivotX(landingTower) - (START_RIGHT - 22));
+      // Keep the cube inside the playfield even while the camera hands off
+      // between candidate landing platforms or the jump is going to miss.
+      const minCam = Math.max(0, flightCenterX - W + 80);
+      const maxCam = Math.max(0, flightCenterX - 80);
+      const cameraAim = Math.max(minCam, Math.min(targetCam, maxCam));
       w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
