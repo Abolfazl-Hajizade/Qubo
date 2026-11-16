@@ -33,6 +33,7 @@ export interface World {
   offset: number; // how far the cube sits from the middle of its tower's top, along the top; it stays where it landed
   slide: number; // px/s the cube is sliding along the tower's top
   landed: number; // which tower ahead the cube came down on: 1 is the next, 2 the one beyond
+  landingAge: number; // seconds elapsed since the latest landing
   cubeAngle: number; // degrees the cube is tilted
   cubeSpin: number; // degrees/s: rotation speed while airborne
   cubeX: number; // left edge
@@ -92,7 +93,7 @@ export function createWorld(rng: () => number = Math.random): World {
   const b = nextTower(a, rng, 0);
   const w: World = {
     phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: a.tipStart,
-    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false, rescueInPlace: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, landingAge: 0, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false, rescueInPlace: false,
   };
   seat(w);
   return w;
@@ -105,7 +106,10 @@ export function launch(w: World) {
   // platform, even if it is still rotating or sliding.
   // The in-place rescue is reserved for losing balance off the REAR edge;
   // that condition sets rescueAvailable when offset crosses the rear limit.
-  const inPlace = w.phase === 'drop' && w.rescueAvailable;
+  const quickRearCornerHop = fromScroll &&
+    w.landingAge <= 0.35 &&
+    w.offset <= -w.towers[w.landed].w * 0.2;
+  const inPlace = (w.phase === 'drop' && w.rescueAvailable) || quickRearCornerHop;
   const rescue = inPlace;
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
   const activeIndex = (fromScroll || rescue) ? w.landed : 0;
@@ -275,6 +279,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vy = 0;
           w.score += i;
           w.landed = i;
+          w.landingAge = 0;
           w.camTarget = w.cam;
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
@@ -295,6 +300,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // Following its tip makes the base travel out through the rear of the scene,
       // while the cube stays supported and remains jumpable during the movement.
       const landedTower = w.towers[w.landed];
+      w.landingAge += dt;
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
       const cameraAim = Math.max(0, pivotX(landedTower) + towerLen(landedTower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
