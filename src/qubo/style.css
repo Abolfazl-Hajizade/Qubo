@@ -3,13 +3,8 @@
 /* Qubo prints in cocoa, the arcade ink. */
 :root { --c: var(--coral); }
 
-/* Keep the home screen neutral grey; the playfield keeps its storm backdrop. */
-body:has(#home:not([hidden])) {
-  background: #dfe3e8;
-}
-
-/* Match the storm sky around the playfield while the game is active. */
-body:has(#game:not([hidden])) {
+/* Use the same storm backdrop on the home screen and around the active playfield. */
+body:has(#game:not([hidden])), body:has(#home:not([hidden])) {
   background-color: #27333d;
   background-image:
     repeating-linear-gradient(108deg, transparent 0 18px, rgba(190, 211, 224, 0.12) 19px 20px, transparent 21px 40px),
