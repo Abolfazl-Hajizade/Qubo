@@ -91,17 +91,37 @@ export function createWorld(rng: () => number = Math.random): World {
 
 /** Throws the cube off the top of the tower, along the lean, plus the speed the tip is swinging at. */
 export function launch(w: World) {
-  if (w.phase !== 'wait') return;
-  const t = w.towers[0];
+  // A landed cube can jump again immediately, even while it is still rolling
+  // and the tower is already beginning to lean.
+  if (w.phase !== 'wait' && w.phase !== 'scroll') return;
+  const fromScroll = w.phase === 'scroll';
+  const activeIndex = fromScroll ? w.landed : 0;
+  const t = w.towers[activeIndex];
   const a = rad(w.angle);
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // Keep the departed tower in its launch pose. The camera carries it out of
-  // the rear of the scene during the jump; it must not vanish or topple sideways.
+
+  // The tower being left keeps its current pose and exits the scene just as
+  // it did on a normal takeoff. The newly landed tower has already started
+  // tipping during scroll; do not wait for the cube to settle before allowing
+  // the next jump.
   w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
-  // Give the cube a visible, steady spin as it leaves the tower.
-  w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
+
+  if (fromScroll) {
+    // Promote the tower we just left to the front of the flight sequence so
+    // airborne collision checks continue to use the usual [current,next,next+1] layout.
+    for (let k = 0; k < activeIndex; k++) {
+      w.towers.shift();
+      w.towers.push(nextTower(w.towers[w.towers.length - 1], Math.random, w.score));
+    }
+    w.landed = 1;
+  }
+
+  // Preserve existing rotation while taking off from a rolling landing;
+  // on a settled tower, start the familiar launch spin.
+  if (!fromScroll) w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
+  else w.cubeSpin += 180;
   w.phase = 'air';
 }
 
