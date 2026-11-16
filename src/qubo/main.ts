@@ -122,7 +122,6 @@ function loop(now: number) {
   raf = requestAnimationFrame(loop);
 }
 
-
 interface LeaderboardEntry {
   rank: number;
   display_name: string;
@@ -145,7 +144,7 @@ async function submitScore(score: number) {
 }
 
 async function openLeaderboard() {
-  const dialog = $('leaderboard-dialog') as HTMLDialogElement;
+  const dialog = $<HTMLDialogElement>('leaderboard-dialog');
   const status = $('leaderboard-status');
   const list = $('leaderboard-list');
   const me = $('leaderboard-me');
@@ -214,7 +213,8 @@ function draw() {
   const p = palette;
   const s = canvas.width / W;
   ctx.setTransform(s, 0, 0, s, 0, 0);
-  ctx.fillStyle = p.sheet;
+  // The playfield blends into the page; the only ground marker is the fine baseline.
+  ctx.fillStyle = p.paper;
   ctx.fillRect(0, 0, W, H);
 
   // Far clouds drift with the camera, slower than the towers.
@@ -258,6 +258,14 @@ function draw() {
 
   drawCube(world.cubeX, world.cubeY, world.cubeAngle);
   ctx.restore();
+
+  // A single understated ground line remains beneath the towers.
+  ctx.strokeStyle = p.tint;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, H - 1);
+  ctx.lineTo(W, H - 1);
+  ctx.stroke();
 }
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
