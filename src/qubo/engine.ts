@@ -259,8 +259,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.camTarget = w.cam;
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
-          const spinDrift = -Math.sign(w.cubeSpin) * Math.min(55, Math.abs(w.cubeSpin) * CUBE / 360);
-          w.slide = w.vx * 0.45 + spinDrift;
+          const spinDrift = -Math.sign(w.cubeSpin) * Math.min(18, Math.abs(w.cubeSpin) * CUBE / 900);
+          // Keep some landing momentum, but avoid an immediate fast skid or spin.
+          w.slide = w.vx * 0.24 + spinDrift;
+          w.cubeSpin *= 0.42;
           w.phase = 'scroll';
           return;
         }
@@ -286,8 +288,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const angleError = relative - flatRelative;
       // Gravity supplies the restoring torque around the cube's current support
       // corner/edge. It rotates continuously; no target angle is assigned.
-      const gravityTorque = -(GRAVITY / (CUBE * 0.72)) * Math.sin(rad(angleError)) * (180 / Math.PI);
-      w.cubeSpin += (gravityTorque - (w.cubeSpin - w.vel) * 2.8) * dt;
+      const gravityTorque = -(GRAVITY / (CUBE * 0.72)) * Math.sin(rad(angleError)) * (180 / Math.PI) * 0.28;
+      // Softer gravity response and stronger damping prevent endless in-place spinning.
+      w.cubeSpin += (gravityTorque - (w.cubeSpin - w.vel) * 4.2) * dt;
       w.cubeAngle += w.cubeSpin * dt;
 
       // Gravity can move the cube either way along the sloping top. Friction opposes motion.
@@ -296,7 +299,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const drive = Math.abs(slope) > frictionLimit
         ? Math.sign(slope) * (Math.abs(slope) - frictionLimit)
         : 0;
-      if (drive) w.slide += SLIDE * drive * dt;
+      if (drive) w.slide += SLIDE * drive * 0.35 * dt;
       else if (Math.abs(w.slide) > 0.1) {
         w.slide -= Math.sign(w.slide) * Math.min(Math.abs(w.slide), SLIDE * frictionLimit * dt);
       } else w.slide = 0;
