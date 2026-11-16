@@ -296,18 +296,32 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // Gravity can move the cube either way along the sloping top. Friction opposes motion.
       const slope = Math.sin(a);
       const frictionLimit = FRICTION * Math.cos(a);
-      const drive = Math.abs(slope) > frictionLimit
+      const slopeDrive = Math.abs(slope) > frictionLimit
         ? Math.sign(slope) * (Math.abs(slope) - frictionLimit)
         : 0;
-      if (drive) w.slide += SLIDE * drive * 0.35 * dt;
+
+      // Estimate the cube's footprint along the platform. If its centre of
+      // mass passes beyond either edge, gravity creates a gentle pull toward
+      // that edge instead of leaving the cube balanced on a single corner.
+      const ca = rad(w.cubeAngle);
+      const support = half * (Math.abs(Math.sin(ca - a)) + Math.abs(Math.cos(ca - a)));
+      const rearOverhang = Math.max(0, -w.offset + support - landedTower.w / 2);
+      const frontOverhang = Math.max(0, w.offset + support - landedTower.w / 2);
+      const edgeDrive = rearOverhang > 0
+        ? -Math.min(0.7, rearOverhang / CUBE)
+        : frontOverhang > 0
+          ? Math.min(0.7, frontOverhang / CUBE)
+          : 0;
+      const drive = slopeDrive + edgeDrive;
+      if (drive) w.slide += SLIDE * drive * 0.22 * dt;
       else if (Math.abs(w.slide) > 0.1) {
-        w.slide -= Math.sign(w.slide) * Math.min(Math.abs(w.slide), SLIDE * frictionLimit * dt);
+        w.slide -= Math.sign(w.slide) * Math.min(Math.abs(w.slide), SLIDE * frictionLimit * 0.45 * dt);
       } else w.slide = 0;
       w.offset += w.slide * dt;
 
       // Keep the cube supported by the actual rotated top, not by a horizontal screen line.
-      const ca = rad(w.cubeAngle);
-      const support = half * (Math.abs(Math.sin(ca - a)) + Math.abs(Math.cos(ca - a)));
+      const currentCubeAngle = rad(w.cubeAngle);
+      const currentSupport = half * (Math.abs(Math.sin(currentCubeAngle - a)) + Math.abs(Math.cos(currentCubeAngle - a)));
       const tipX = pivotX(landedTower) + towerLen(landedTower) * Math.sin(a);
       const tipY = H - towerLen(landedTower) * Math.cos(a);
       const centerX = tipX + w.offset * Math.cos(a) + support * Math.sin(a);
