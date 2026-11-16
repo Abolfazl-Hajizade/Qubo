@@ -125,11 +125,15 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset += w.slide * dt;
       }
       seat(w);
-      // During the lean, bring the next tower into the play area early.
-      // Keep it around screen x=220 so it is visible well before the jump.
+      // As the tower withdraws upward from its base, move the whole scene forward.
+      // This pulls the old tower toward and beyond the left edge while the next tower
+      // slides into its place. The camera motion is synchronized with the visual withdrawal.
+      const withdrawal = Math.min(1, Math.max(0, w.angle / 72));
       const next = w.towers[1];
-      const cameraAim = next ? pivotX(next) - 220 : w.cubeX - 150;
-      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-3.8 * dt));
+      const replacementAim = pivotX(tower) - START_RIGHT + 150 * withdrawal;
+      const previewAim = next ? pivotX(next) - 220 : w.cubeX - 150;
+      const cameraAim = Math.max(w.cam, replacementAim, previewAim, w.cubeX - 150);
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-4.2 * dt));
       if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
         // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
         const t = w.towers[0];
