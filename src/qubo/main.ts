@@ -314,7 +314,7 @@ function drawWeatherBackground() {
   ctx.lineWidth = 0.9;
   for (let i = 0; i < 82; i++) {
     const x = (i * 39.7 + (i % 7) * 11) % W;
-    const y = ((i * 53.9 + time * (145 + (i % 5) * 17)) % (H + 30)) - 15;
+    const y = ((i * 53.9 + time * (65 + (i % 5) * 8)) % (H + 30)) - 15;
     const length = 9 + (i % 4) * 2;
     ctx.beginPath();
     ctx.moveTo(x, y);
