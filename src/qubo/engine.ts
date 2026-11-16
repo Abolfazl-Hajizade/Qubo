@@ -317,7 +317,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       if (w.offset > landedTower.w / 2 + alongSupport || w.offset < -landedTower.w / 2 - alongSupport || w.angle >= FALL_AT) {
         // Give the player one last recovery jump while preserving this exact
         // landing tower. It keeps tipping and moving out of view as usual.
-        w.rescueAvailable = true;
+        // Only a loss of support past the rear edge grants an in-place rescue.
+        w.rescueAvailable = w.offset < -landedTower.w / 2 - alongSupport;
         w.vx = w.slide * Math.cos(a) + towerLen(landedTower) * rad(w.vel) * Math.cos(a);
         w.vy = w.slide * Math.sin(a) + towerLen(landedTower) * rad(w.vel) * Math.sin(a);
         w.phase = 'drop';
