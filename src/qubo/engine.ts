@@ -124,6 +124,13 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset += w.slide * dt;
       }
       seat(w);
+      // Let the world advance during the tower's lean, not only after landing.
+      // Reveal more of the next platform as the tower tips, while keeping the cube in frame.
+      const next = w.towers[1];
+      const revealNext = Math.max(0, next.x + next.w - (W - 24));
+      const revealProgress = Math.min(1, Math.max(0, w.angle / 48));
+      const cameraAim = Math.max(w.cubeX - 150, revealNext * revealProgress);
+      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-2.8 * dt));
       if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
         // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
         const t = w.towers[0];
@@ -142,10 +149,12 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.cubeY += w.vy * dt;
       // Follow the jump with a smooth forward camera drift, while keeping the next tower visible.
       const next = w.towers[1];
-      const cameraLimit = Math.max(w.cam, next.x + next.w - START_RIGHT);
-      const cameraAim = Math.min(cameraLimit, Math.max(0, w.cubeX - 150));
-      // Ease the camera toward the cube instead of moving at a fixed, mechanical speed.
-      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-3.8 * dt));
+      const preview = w.towers[2];
+      const revealNext = Math.max(0, next.x + next.w - (W - 24));
+      const revealPreview = preview ? Math.max(0, preview.x + preview.w - (W - 24)) : revealNext;
+      const cameraAim = Math.max(w.cubeX - 150, revealNext, revealPreview * 0.72);
+      // Keep the jump framed while progressively bringing distant platforms into view.
+      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-3.8 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
