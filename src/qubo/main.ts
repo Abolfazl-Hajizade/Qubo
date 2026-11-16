@@ -343,7 +343,7 @@ function drawTower(w: number, len: number) {
     ctx.moveTo(-w / 2, e); ctx.lineTo(w / 2, e);
     flip = !flip;
   }
-  ctx.lineWidth = 5.5;
+  ctx.lineWidth = 7;
   ctx.stroke();
 }
 
