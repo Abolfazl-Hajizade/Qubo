@@ -44,6 +44,7 @@ export interface World {
   score: number;
   over: boolean;
   rescueAvailable: boolean; // one recovery jump after sliding/falling off a fresh landing
+  rescueInPlace: boolean; // an in-place hop must not move the tower or camera
 }
 
 const between = (rng: () => number, lo: number, hi: number) => lo + rng() * (hi - lo);
@@ -84,7 +85,7 @@ export function createWorld(rng: () => number = Math.random): World {
   const b = nextTower(a, rng, 0);
   const w: World = {
     phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: a.tipStart,
-    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false, rescueInPlace: false,
   };
   seat(w);
   return w;
@@ -103,6 +104,9 @@ export function launch(w: World) {
   const tip = (towerLen(t) + (rescue ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
+  // A tap during the landing roll is an in-place hop: keep the same platform
+  // and scene completely still, and send the cube straight up and back down.
+  if (fromScroll) { w.vx = 0; w.vy = -THROW; }
 
   // The tower being left keeps its current pose and exits the scene just as
   // it did on a normal takeoff. The newly landed tower has already started
@@ -115,6 +119,7 @@ export function launch(w: World) {
     // is a recovery arc back to this same moving tower. Never retire the tower,
     // advance the camera to another platform, or generate a replacement here.
     w.rescueAvailable = false;
+    w.rescueInPlace = fromScroll;
     w.cubeSpin += 180;
     w.phase = 'rescue';
     return;
@@ -329,11 +334,13 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // while the cube makes a short recovery arc back onto that same tower.
       const t = w.towers[w.landed];
       const previousTowerAngle = w.angle;
-      w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
-      w.angle += w.vel * dt;
-      const cameraAim = Math.max(0, pivotX(t) + towerLen(t) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
-      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
-      w.camTarget = w.cam;
+      if (!w.rescueInPlace) {
+        w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
+        w.angle += w.vel * dt;
+        const cameraAim = Math.max(0, pivotX(t) + towerLen(t) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
+        w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
+        w.camTarget = w.cam;
+      }
 
       const previousX = w.cubeX + CUBE / 2;
       const previousY = w.cubeY - CUBE / 2;
@@ -370,11 +377,13 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset = current.x;
         w.slide = 0;
         w.rescueAvailable = false;
+        w.rescueInPlace = false;
         w.phase = 'scroll';
         return;
       }
       if (w.cubeY > H + CUBE || current.x > t.w / 2 + 180 || current.x < -t.w / 2 - 180) {
         w.fallen.push({ pivot: pivotX(t), w: t.w, len, angle: w.angle, vel: w.vel });
+        w.rescueInPlace = false;
         w.phase = 'drop';
       }
       break;
