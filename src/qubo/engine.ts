@@ -167,7 +167,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         // Gravity acts along the slope; friction always opposes the current slide.
         const a = rad(w.angle);
         const slopeForce = Math.sin(a);
-        const friction = FRICTION * Math.cos(a);
+        // Lower friction in the initial tipping phase makes the cube start
+        // sliding with a smaller lean, while keeping motion physically damped.
+        const friction = FRICTION * 0.55 * Math.cos(a);
         if (Math.abs(w.slide) > 0.1) {
           const direction = Math.sign(w.slide);
           const acceleration = SLIDE * (slopeForce - direction * friction);
