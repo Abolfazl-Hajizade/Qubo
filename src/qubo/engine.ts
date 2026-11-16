@@ -124,11 +124,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset += w.slide * dt;
       }
       seat(w);
-      // The camera follows the cube's forward movement during the lean.
-      // No platform-visibility cap: once the cube advances, the old tower drifts
-      // naturally toward the back of the scene instead of freezing the camera.
-      const cameraAim = Math.max(w.cam, w.cubeX - 150);
-      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-3.2 * dt));
+      // During the lean, bring the next tower into the play area early.
+      // Keep it around screen x=220 so it is visible well before the jump.
+      const next = w.towers[1];
+      const cameraAim = next ? pivotX(next) - 220 : w.cubeX - 150;
+      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-3.8 * dt));
       if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
         // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
         const t = w.towers[0];
@@ -145,10 +145,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      // Track the jumping cube without clamping the camera to the next platforms.
-      // This makes the tower just left behind travel backward and leave the screen.
-      const cameraAim = Math.max(w.cam, w.cubeX - 150);
-      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-6.0 * dt));
+      // Move the landing tower into the old tower's screen position.
+      // The tower we launched from is consequently pushed completely off the left.
+      const target = w.towers.find((t) => t.x + t.w > w.cubeX + CUBE / 2);
+      const cameraAim = target ? pivotX(target) - START_RIGHT : w.cubeX - START_RIGHT;
+      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-9.0 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
@@ -170,12 +171,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
-          // Frame the landing tower and make the following (second-ahead) tower
-          // peek in from the right before the next jump becomes available.
-          const preview = w.towers[w.landed + 1];
-          const landingCam = t.x + t.w - START_RIGHT;
-          const previewCam = preview ? preview.x + preview.w - (W - 24) : landingCam;
-          w.camTarget = Math.max(w.cam, landingCam, previewCam);
+          // Keep the new landing tower exactly where the previous tower stood.
+          // The next tower will enter from the right as the camera advances again.
+          w.camTarget = Math.max(w.cam, pivotX(t) - START_RIGHT);
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
