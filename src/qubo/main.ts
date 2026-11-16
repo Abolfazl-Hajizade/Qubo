@@ -228,12 +228,12 @@ function draw() {
   // The tower the cube stands on tips over from the middle of its base; the next one stands still.
   world.towers.forEach((t, i) => {
     // Keep the current tower and its next destination visible; reveal one extra tower in flight.
-    if (i >= 2 && world.phase !== 'air' && !((world.phase === 'scroll' || world.phase === 'rescue') && i <= world.landed + 1)) return;
+    if (i >= 2 && world.phase !== 'air' && world.phase !== 'drop' && !((world.phase === 'scroll' || world.phase === 'rescue') && i <= world.landed + 1)) return;
     if (i === 0 && world.phase !== 'wait') return; // the previous tower continues out of frame in world.fallen
     ctx.save();
     ctx.translate(pivotX(t), H);
     if (i === 0 && world.phase === 'wait') ctx.rotate(rad(world.angle));
-    else if ((world.phase === 'scroll' || world.phase === 'rescue' || (world.phase === 'drop' && world.rescueAvailable)) && i === world.landed) ctx.rotate(rad(world.angle));
+    else if ((world.phase === 'scroll' || world.phase === 'rescue' || (world.phase === 'drop' && (world.rescueAvailable || world.rescueInPlace))) && i === world.landed) ctx.rotate(rad(world.angle));
     const len = towerLen(t);
     // Keep the tower whole: the advancing camera pulls it diagonally out
     // through the rear edge instead of erasing it vertically from its base.
