@@ -86,3 +86,14 @@ body:has(#game:not([hidden])), body:has(#home:not([hidden])) {
 #game .topbar:has(> .help-btn) { grid-template-columns: 44px 1fr auto; }
 #game .topbar > .help-btn { display: none !important; }
 #end-dialog { background: #dfe3e8; }
+
+
+/* Keep the home leaderboard button readable against the storm background. */
+#home #leaderboard-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 14px;
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
