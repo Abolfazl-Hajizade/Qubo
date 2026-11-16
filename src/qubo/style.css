@@ -1,7 +1,7 @@
 @import '../base.css';
 
 /* Qubo prints in cocoa, the arcade ink. */
-:root { --c: var(--cocoa); }
+:root { --c: var(--coral); }
 
 /* Match the storm sky around the playfield while the game is active. */
 body:has(#game:not([hidden])) {
