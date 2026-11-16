@@ -118,7 +118,7 @@ function loop(now: number) {
     setScore();
     if (world.over && !was) finish();
   }
-  draw(now);
+  draw();
   raf = requestAnimationFrame(loop);
 }
 
@@ -208,7 +208,7 @@ function resize() {
   draw();
 }
 
-function draw(now = 0) {
+function draw() {
   if (!canvas.width) return;
   const p = palette;
   const s = canvas.width / W;
