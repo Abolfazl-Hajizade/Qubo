@@ -56,44 +56,22 @@ export const towerLen = (t: Tower) => H - t.top;
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const w = CUBE;
   const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -45, 45)));
-  // Give every tower a distinct tipping tempo instead of making them move in lockstep.
-  const tipStart = between(rng, 3.2, 6);
-  const tipAccel = between(rng, 0.72, 1.28);
-  const leanAccel = between(rng, 0.65, 1.35);
-  const rhythm = between(rng, 0.82, 1.18);
 
-  // Estimate the farthest edge-to-edge jump over a useful range of takeoff
-  // angles. Include the tower's angular acceleration and tip speed, plus the
-  // height of the destination platform, so long gaps remain physically fair.
-  const len = towerLen(from);
-  const scoreFactor = 1 + Math.min(0.35, score * 0.018);
-  let maxReach = 0;
-  for (let angle = 12; angle <= 68; angle += 2) {
-    const a = angle * Math.PI / 180;
-    const angularAccel = (ACC * tipAccel + ACC_LEAN * leanAccel * angle) * rhythm * scoreFactor;
-    const angularVelocity = Math.sqrt(tipStart * tipStart + 2 * angularAccel * a);
-    const tipSpeed = len * angularVelocity * Math.PI / 180;
-    const vx = THROW * Math.sin(a) + tipSpeed * Math.cos(a);
-    const vy = -THROW * Math.cos(a) + tipSpeed * Math.sin(a);
-    const launchY = H - len * Math.cos(a);
-    const dy = top - launchY;
-    const time = (-vy + Math.sqrt(vy * vy + 2 * GRAVITY * dy)) / GRAVITY;
-    const reachableGap = vx * time + len * Math.sin(a) - w / 2;
-    maxReach = Math.max(maxReach, reachableGap);
-  }
-
-  // Use three overlapping distance bands for a varied rhythm. The upper
-  // band contracts automatically when height and bending make a jump shorter.
-  const ceiling = Math.max(94, Math.min(168, maxReach * 0.82));
-  const band = rng();
-  let gap: number;
-  if (band < 0.32) gap = between(rng, 72, Math.min(100, ceiling));
-  else if (band < 0.78) gap = between(rng, Math.min(92, ceiling), Math.min(132, ceiling));
-  else gap = between(rng, Math.min(118, ceiling), ceiling);
+  // Keep spacing genuinely varied, while accounting for the height change:
+  // a higher destination shortens the safe gap; a lower one allows a little more.
+  const heightDelta = from.top - top;
+  const difficulty = Math.min(1, score / 30);
+  const minGap = 78 + 4 * difficulty;
+  const maxGap = Math.max(112, Math.min(148, 140 + heightDelta * 0.38 + 8 * difficulty));
+  const gap = between(rng, minGap, maxGap);
 
   return {
     x: from.x + from.w + gap, w, top,
-    tipStart, tipAccel, leanAccel, rhythm,
+    // Give every tower a distinct tipping tempo instead of making them move in lockstep.
+    tipStart: between(rng, 3.2, 6),
+    tipAccel: between(rng, 0.72, 1.28),
+    leanAccel: between(rng, 0.65, 1.35),
+    rhythm: between(rng, 0.82, 1.18),
   };
 }
 
