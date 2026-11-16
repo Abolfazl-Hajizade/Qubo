@@ -125,15 +125,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset += w.slide * dt;
       }
       seat(w);
-      // As the tower withdraws upward from its base, move the whole scene forward.
-      // This pulls the old tower toward and beyond the left edge while the next tower
-      // slides into its place. The camera motion is synchronized with the visual withdrawal.
-      const withdrawal = Math.min(1, Math.max(0, w.angle / 72));
-      const next = w.towers[1];
-      const replacementAim = pivotX(tower) - START_RIGHT + 250 * withdrawal;
-      const previewAim = next ? pivotX(next) - 220 : w.cubeX - 150;
-      const cameraAim = Math.max(w.cam, replacementAim, previewAim, w.cubeX - 150);
-      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-4.2 * dt));
+      // Keep the scene still while the cube is preparing to jump.
+      // Camera movement is driven only by the cube's actual flight.
       if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
         // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
         const t = w.towers[0];
@@ -150,13 +143,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      // Move the landing tower into the old tower's screen position.
-      // The tower we launched from is consequently pushed completely off the left.
-      const target = w.towers.find((t) => t.x + t.w > w.cubeX + CUBE / 2);
-      // Bring the landing tower almost flush with the rear (left) edge of the playfield.
-      // The smooth camera follow carries the previous tower out of frame along the way.
-      const cameraAim = target ? target.x - 8 : w.cubeX - 8;
-      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-9.0 * dt));
+      // Follow the cube itself, keeping it safely inside the playfield.
+      // Platforms move only as a consequence of the cube's jump.
+      const cameraAim = Math.max(0, w.cubeX - 145);
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-5.5 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
@@ -178,10 +168,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
-          // Keep the new landing tower exactly where the previous tower stood.
-          // The next tower will enter from the right as the camera advances again.
-          // Finish with the landing tower just inside the rear edge, not centred in the scene.
-          w.camTarget = Math.max(w.cam, t.x - 8);
+          // Stop the camera when the cube lands; it moves again only on the next jump.
+          w.camTarget = w.cam;
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
@@ -195,9 +183,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     }
     case 'scroll': {
-      // Carry the landing transition forward with the same damped camera motion.
-      w.cam += (w.camTarget - w.cam) * (1 - Math.exp(-4.5 * dt));
-      if (Math.abs(w.camTarget - w.cam) < 0.35) w.cam = w.camTarget;
+      // No automatic camera scroll after landing.
       // The landed tower begins leaning immediately, while the cube rolls relative to its top.
       const landedTower = w.towers[w.landed];
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
