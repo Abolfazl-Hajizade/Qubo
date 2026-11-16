@@ -20,8 +20,9 @@
 
 .board-frame {
   position: relative;
-  width: 100vw;
+  width: min(100vw, calc((100dvh - 220px) * 360 / 420));
   min-width: 240px;
+  max-height: calc(100dvh - 220px);
   aspect-ratio: 360 / 420;
   background: transparent;
   overflow: hidden;
@@ -44,7 +45,7 @@
 }
 @media (pointer: coarse) {
   .hold-btn { display: block; }
-  .board-frame { width: 100vw; }
+  .board-frame { width: min(100vw, calc((100dvh - 220px) * 360 / 420)); }
 }
 
 .stage-status {
