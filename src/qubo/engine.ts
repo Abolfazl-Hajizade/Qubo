@@ -124,26 +124,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset += w.slide * dt;
       }
       seat(w);
-      // Let the world advance during the tower's lean, not only after landing.
-      // Reveal more of the next platform as the tower tips, while keeping the cube in frame.
-      const next = w.towers[1];
-      const preview = w.towers[2];
-      const gap = preview ? preview.x - (next.x + next.w) : 0;
-      // Keep the landing tower fully visible and reserve at least half the
-      // preview tower at the right edge, adapting to the randomized gap.
-      const previewLeftLimit = W - (preview?.w ?? 0) / 2 - next.w - gap;
-      const targetScreenX = Math.max(24, Math.min(120, previewLeftLimit));
-      const framedCamera = Math.max(0, next.x - targetScreenX);
-      const revealProgress = Math.min(1, Math.max(0, w.angle / 38));
-      // Let the camera keep travelling as the tower bends and the cube slides,
-      // even after both upcoming towers have entered the frame.
-      const cameraCeiling = Math.max(0, Math.min(
-        next.x - 24,
-        preview ? preview.x + preview.w / 2 - W : next.x - 24,
-      ));
-      const leanFollow = Math.max(framedCamera * revealProgress, w.cubeX - 150);
-      const cameraAim = Math.min(cameraCeiling, leanFollow);
-      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-2.8 * dt));
+      // The camera follows the cube's forward movement during the lean.
+      // No platform-visibility cap: once the cube advances, the old tower drifts
+      // naturally toward the back of the scene instead of freezing the camera.
+      const cameraAim = Math.max(w.cam, w.cubeX - 150);
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-3.2 * dt));
       if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
         // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
         const t = w.towers[0];
@@ -160,22 +145,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      // Follow the jump with a smooth forward camera drift, while keeping the next tower visible.
-      const next = w.towers[1];
-      const preview = w.towers[2];
-      const gap = preview ? preview.x - (next.x + next.w) : 0;
-      // Frame the full landing tower plus at least half of the following tower.
-      const previewLeftLimit = W - (preview?.w ?? 0) / 2 - next.w - gap;
-      const targetScreenX = Math.max(24, Math.min(120, previewLeftLimit));
-      const framedCamera = Math.max(0, next.x - targetScreenX);
-      // Keep both the complete landing tower and at least half of its preview
-      // visible, while continuing to track the cube throughout the flight.
-      const cameraCeiling = Math.max(0, Math.min(
-        next.x - 24,
-        preview ? preview.x + preview.w / 2 - W : next.x - 24,
-      ));
-      const cameraAim = Math.min(cameraCeiling, Math.max(framedCamera, w.cubeX - 150));
-      w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-3.8 * dt));
+      // Track the jumping cube without clamping the camera to the next platforms.
+      // This makes the tower just left behind travel backward and leave the screen.
+      const cameraAim = Math.max(w.cam, w.cubeX - 150);
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-6.0 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
