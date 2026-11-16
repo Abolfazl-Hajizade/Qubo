@@ -234,9 +234,9 @@ function draw() {
   ctx.fillStyle = p.sheet;
   // The tower the cube stands on tips over from the middle of its base; the next one stands still.
   world.towers.forEach((t, i) => {
-    // Show one destination tower normally; reveal the following tower only in mid-jump.
+    // Keep the current tower and its next destination visible; reveal one extra tower in flight.
     if (i >= 2 && world.phase !== 'air') return;
-    if (i === 0 && world.phase !== 'wait') return; // once the cube has left, that tower is drawn toppling below
+    if (i === 0 && world.phase !== 'wait') return; // the previous tower continues out of frame in world.fallen
     ctx.save();
     ctx.translate(pivotX(t), H);
     if (i === 0 && world.phase === 'wait') ctx.rotate(rad(world.angle));
