@@ -96,18 +96,11 @@ export function launch(w: World) {
   // A landed cube can jump again immediately, even while it is still rolling
   // and the tower is already beginning to lean.
   const fromScroll = w.phase === 'scroll';
-  const landedTower = fromScroll ? w.towers[w.landed] : undefined;
-  const half = CUBE / 2;
-  const relativeAngle = rad(w.cubeAngle - w.angle);
-  const alongSupport = half * (Math.abs(Math.cos(relativeAngle)) + Math.abs(Math.sin(relativeAngle)));
-  // The rear is the negative end of the tower top. Only a cube whose centre
-  // has slipped behind the tower centre, or whose support reaches the rear edge,
-  // gets an in-place recovery hop. A normal landing keeps the forward jump.
-  const rearLanding = !!landedTower && (
-    w.offset < 0 || w.offset - alongSupport <= -landedTower.w / 2 + 4
-  );
-  const inPlace = fromScroll && rearLanding;
-  const rescue = inPlace || (w.phase === 'drop' && w.rescueAvailable);
+  // An in-place recovery is only for a cube that has completely lost
+  // contact with the platform and is already falling. Any actual surface
+  // landing, including a rear-corner landing, keeps the normal forward jump.
+  const inPlace = w.phase === 'drop' && w.rescueAvailable;
+  const rescue = inPlace;
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
   const activeIndex = (fromScroll || rescue) ? w.landed : 0;
   const t = w.towers[activeIndex];
