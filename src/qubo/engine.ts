@@ -143,10 +143,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      // Follow the cube itself, keeping it safely inside the playfield.
-      // Platforms move only as a consequence of the cube's jump.
-      const cameraAim = Math.max(0, w.cubeX - 145);
-      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-5.5 * dt));
+      // Scroll continuously with the cube's horizontal flight, not after it lands.
+      // Keep the cube around x=110 while the old tower exits and the landing tower
+      // moves into its place during the jump itself.
+      const cameraAim = Math.max(0, w.cubeX - 110);
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
@@ -168,10 +169,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.vx = 0; w.vy = 0;
           w.score += i; // a tower skipped counts too
           w.landed = i;
-          // Move the landed tower into the previous tower's screen position.
-          // The camera completes this shift during the settling phase, carrying the old tower away.
-          const previous = w.towers[0];
-          w.camTarget = Math.max(w.cam, pivotX(t) - pivotX(previous));
+          // The camera has already carried the old tower away during the jump.
+          // Freeze the scene at the landing position; never perform a second handoff after landing.
+          w.camTarget = w.cam;
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
@@ -185,9 +185,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     }
     case 'scroll': {
-      // Finish the jump-driven handoff: the landed tower takes the old tower's place.
-      w.cam += (w.camTarget - w.cam) * (1 - Math.exp(-5.5 * dt));
-      if (Math.abs(w.camTarget - w.cam) < 0.15) w.cam = w.camTarget;
+      // No camera movement after landing: the handoff is completed during the jump.
       // The landed tower begins leaning immediately, while the cube rolls relative to its top.
       const landedTower = w.towers[w.landed];
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
