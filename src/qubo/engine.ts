@@ -20,8 +20,8 @@ const ACC_LEAN = 0.9; // gentler acceleration as the tower leans
 const FALL_AT = 82; // degrees: past this the cube slides off with the tower
 
 export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number }
-/** A tower the cube has left: it keeps tipping and topples over, lying on the ground. */
-export interface Fallen { pivot: number; w: number; len: number; angle: number; vel: number }
+/** A tower left behind: either it is carried out of view during a jump, or it topples after a fall. */
+export interface Fallen { pivot: number; w: number; len: number; angle: number; vel: number; fixed?: boolean }
 export type Phase = 'wait' | 'air' | 'scroll' | 'drop' | 'over';
 
 export interface World {
@@ -97,8 +97,9 @@ export function launch(w: World) {
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // The tower left behind is removed immediately: it must leave during the jump,
-  // not remain visible as a horizontal fallen beam on the ground.
+  // Keep the departed tower in its launch pose. The camera carries it out of
+  // the rear of the scene during the jump; it must not vanish or topple sideways.
+  w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
   // Give the cube a visible, steady spin as it leaves the tower.
   w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
   w.phase = 'air';
@@ -106,7 +107,7 @@ export function launch(w: World) {
 
 export function step(w: World, dt: number, rng: () => number = Math.random) {
   for (const f of w.fallen) {
-    if (Math.abs(f.angle) >= 90) continue;
+    if (f.fixed || Math.abs(f.angle) >= 90) continue;
     f.vel += TOPPLE * Math.sin(rad(f.angle)) * dt;
     f.angle = Math.max(-90, Math.min(90, f.angle + f.vel * dt));
   }
