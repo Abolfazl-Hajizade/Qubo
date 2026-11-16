@@ -178,19 +178,28 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       for (let i = 1; i < w.towers.length; i++) {
         const t = w.towers[i];
         if (right <= t.x || left >= t.x + t.w) continue;
-        if (w.vy > 0 && prevBottom <= t.top + 0.5 && currentBottom >= t.top && centerX >= t.x - support && centerX <= t.x + t.w + support) {
-          // Keep the cube's landing angle. Its lowest rotated corner/edge rests on the platform.
+        const crossedTop = w.vy > 0 && prevBottom <= t.top + 0.5 && currentBottom >= t.top;
+        if (crossedTop) {
+          // A real top landing requires the cube's centre to be over the platform.
+          // Bounding-box/corner overlap alone is not enough: an edge-only touch
+          // must continue into a fall instead of being pulled onto the tower.
+          if (centerX < t.x || centerX > t.x + t.w) {
+            w.vx = 0;
+            w.phase = 'drop';
+            return;
+          }
+          // Resolve only the tiny penetration at the contact point; preserve the
+          // incoming rotation so the cube can rock naturally after impact.
           w.cubeY += t.top - currentBottom;
-          // Land nearer the platform centre so the cube has room to settle before sliding.
-          w.offset = Math.max(-t.w * 0.2, Math.min(t.w * 0.2, centerX - pivotX(t)));
-          // Keep the impact rotation: the cube should roll off its corner instead of snapping flat.
-          w.vx = 0; w.vy = 0;
-          w.score += i; // a tower skipped counts too
+          w.offset = centerX - pivotX(t);
+          // A little of the impact's angular momentum remains for the damped
+          // settling spring to absorb instead of forcing the cube upright.
+          w.cubeSpin *= 0.72;
+          w.vx = 0;
+          w.vy = 0;
+          w.score += i;
           w.landed = i;
-          // The camera has already carried the old tower away during the jump.
-          // Freeze the scene at the landing position; never perform a second handoff after landing.
           w.camTarget = w.cam;
-          // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
           w.slide = 0;
