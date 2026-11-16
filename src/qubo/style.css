@@ -21,7 +21,7 @@
 .board-frame {
   position: relative;
   width: min(100vw, calc((100dvh - 220px) * 360 / 420));
-  min-width: 240px;
+  min-width: 0;
   max-height: calc(100dvh - 220px);
   aspect-ratio: 360 / 420;
   background: transparent;
