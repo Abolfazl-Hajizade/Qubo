@@ -8,7 +8,7 @@
 .score span { font-family: var(--pen-font); font-size: 0.9rem; font-weight: 600; color: var(--ink-2); }
 
 .board-wrap {
-  touch-action: none; /* holding must not zoom or scroll the page */
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   margin: auto 0;
@@ -23,9 +23,7 @@
   width: min(100%, 460px, calc((100dvh - 150px) * 360 / 420));
   min-width: 240px;
   aspect-ratio: 360 / 420;
-  border-radius: var(--r-board);
-  background: var(--sheet);
-  box-shadow: 0 0 0 2px var(--rule-2);
+  background: transparent;
   overflow: hidden;
   cursor: pointer;
 }
@@ -63,7 +61,6 @@
 }
 .stage-status:empty { display: none; }
 .stage-status small { display: block; margin-top: 6px; font-size: 1.3rem; font-weight: 600; color: var(--ink-2); }
-
 
 .leaderboard-dialog { width: min(92vw, 420px); max-height: 82dvh; overflow: auto; }
 .leaderboard-list { margin: 12px 0; padding: 0 28px 0 0; text-align: right; }
