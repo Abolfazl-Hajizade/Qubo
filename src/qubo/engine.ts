@@ -97,7 +97,8 @@ export function launch(w: World) {
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
+  // The source tower has already visually withdrawn during the lean; do not keep it
+  // in the fallen list when the cube launches.
   // Give the cube a visible, steady spin as it leaves the tower.
   w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
   w.phase = 'air';
