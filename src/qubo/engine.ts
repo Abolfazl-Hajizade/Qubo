@@ -97,8 +97,8 @@ export function launch(w: World) {
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // The tower the cube leaves behind keeps tipping and is carried out of view by the camera.
-  w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
+  // The tower left behind is removed immediately: it must leave during the jump,
+  // not remain visible as a horizontal fallen beam on the ground.
   // Give the cube a visible, steady spin as it leaves the tower.
   w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
   w.phase = 'air';
@@ -125,8 +125,15 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.offset += w.slide * dt;
       }
       seat(w);
-      // Keep the scene still while the cube is preparing to jump.
-      // Camera movement is driven only by the cube's actual flight.
+      // As the landed tower bends, move the camera with its tip. Its base is
+      // pulled out through the rear-left corner while the next tower shifts by
+      // exactly the same amount, preserving the gap between the towers.
+      {
+        const tipScreenX = pivotX(tower) + towerLen(tower) * Math.sin(rad(w.angle)) - w.cam;
+        const cameraAim = pivotX(tower) + towerLen(tower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22);
+        w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
+        w.camTarget = w.cam;
+      }
       if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
         // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
         const t = w.towers[0];
