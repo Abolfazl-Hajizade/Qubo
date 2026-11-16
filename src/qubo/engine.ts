@@ -56,33 +56,29 @@ export const towerLen = (t: Tower) => H - t.top;
 
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const w = CUBE;
-  const difficulty = Math.min(1, score / 35);
-  // Height changes become a little more pronounced as the score grows,
-  // while the world limits keep every platform within the playable range.
-  const heightSwing = 45 + 7 * difficulty;
+  // After 70 points, rotate the focus of the challenge every three points:
+  // height variation, tower speed, then jump distance.
+  const challengeMode = score < 70 ? -1 : Math.floor((score - 70) / 3) % 3;
+  const heightSwing = 45 + (challengeMode === 0 ? 17 : 0);
   const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -heightSwing, heightSwing)));
 
-  // Keep spacing genuinely varied, while accounting for the height change:
-  // a higher destination shortens the safe gap; a lower one allows a little more.
+  // Keep spacing varied and account for the height change.
   const heightDelta = from.top - top;
-  const gapDifficulty = Math.min(1, score / 30);
-  // Most gaps are wider, so usually only the immediate landing tower is in view.
-  // Occasionally use a tighter gap pattern to reveal the second tower as a tempting skip.
   const showSecondTower = rng() < 0.28;
-  const minGap = showSecondTower ? 78 + 4 * gapDifficulty : 102 + 4 * gapDifficulty;
+  const gapBoost = challengeMode === 2 ? 14 : 0;
+  const minGap = (showSecondTower ? 78 : 102) + gapBoost;
   const maxGap = showSecondTower
-    ? Math.max(minGap + 8, Math.min(120, 112 + heightDelta * 0.25 + 8 * gapDifficulty))
-    : Math.max(minGap + 8, Math.min(148, 140 + heightDelta * 0.38 + 8 * gapDifficulty));
+    ? Math.max(minGap + 8, Math.min(134, 112 + heightDelta * 0.25 + gapBoost))
+    : Math.max(minGap + 8, Math.min(162, 140 + heightDelta * 0.38 + gapBoost));
   const gap = between(rng, minGap, maxGap);
 
+  const speedBoost = challengeMode === 1;
   return {
     x: from.x + from.w + gap, w, top,
-    // Widen the range of tower tempos gradually: some offer a calmer window,
-    // while others demand quicker timing without becoming wildly unpredictable.
-    tipStart: between(rng, 3.2 - 0.4 * difficulty, 6 + 0.45 * difficulty),
-    tipAccel: between(rng, 0.72 - 0.07 * difficulty, 1.28 + 0.12 * difficulty),
-    leanAccel: between(rng, 0.65 - 0.05 * difficulty, 1.35 + 0.1 * difficulty),
-    rhythm: between(rng, 0.82 - 0.04 * difficulty, 1.18 + 0.04 * difficulty),
+    tipStart: between(rng, speedBoost ? 4.2 : 3.2, speedBoost ? 7.1 : 6),
+    tipAccel: between(rng, speedBoost ? 0.9 : 0.72, speedBoost ? 1.42 : 1.28),
+    leanAccel: between(rng, speedBoost ? 0.85 : 0.65, speedBoost ? 1.48 : 1.35),
+    rhythm: between(rng, speedBoost ? 0.9 : 0.82, speedBoost ? 1.24 : 1.18),
   };
 }
 
@@ -184,7 +180,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
   switch (w.phase) {
     case 'wait':
       const tower = w.towers[0];
-      w.vel += (ACC * tower.tipAccel + ACC_LEAN * tower.leanAccel * w.angle) * tower.rhythm * (1 + Math.min(0.45, w.score * 0.012)) * dt;
+      w.vel += (ACC * tower.tipAccel + ACC_LEAN * tower.leanAccel * w.angle) * tower.rhythm * dt;
       w.angle += w.vel * dt;
       {
         // Gravity acts along the slope; friction always opposes the current slide.
@@ -320,7 +316,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // while the cube stays supported and remains jumpable during the movement.
       const landedTower = w.towers[w.landed];
       w.landingAge += dt;
-      w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * (1 + Math.min(0.45, w.score * 0.012)) * dt;
+      w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * dt;
       w.angle += w.vel * dt;
       const cameraAim = Math.max(0, pivotX(landedTower) + towerLen(landedTower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
       w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
@@ -408,7 +404,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const t = w.towers[w.landed];
       const previousTowerAngle = w.angle;
       if (!w.rescueInPlace) {
-        w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * (1 + Math.min(0.45, w.score * 0.012)) * dt;
+        w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * dt;
         w.angle += w.vel * dt;
         const cameraAim = Math.max(0, pivotX(t) + towerLen(t) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
         w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
