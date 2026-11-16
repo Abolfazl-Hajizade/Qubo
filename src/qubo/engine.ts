@@ -149,7 +149,7 @@ export function launch(w: World) {
 
   // Preserve existing rotation while taking off from a rolling landing;
   // on a settled tower, start the familiar launch spin.
-  if (!fromScroll) w.cubeSpin = 420 + Math.min(180, w.vel * 0.8);
+  if (!fromScroll) w.cubeSpin = 900 + Math.min(360, w.vel * 1.2);
   else w.cubeSpin += 180;
   w.phase = 'air';
 }
@@ -196,7 +196,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const prev = w.cubeY;
       const prevAngle = w.cubeAngle;
       w.cubeAngle += w.cubeSpin * dt;
-      w.cubeSpin *= Math.exp(-0.32 * dt); // air resistance makes the rotation ease naturally
+      w.cubeSpin *= Math.exp(-0.18 * dt); // gentler air resistance keeps the faster spin going longer
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
