@@ -221,7 +221,9 @@ function draw() {
   ctx.translate(-world.cam, 0);
   ctx.lineWidth = 5;
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = p.ink;
+  ctx.strokeStyle = '#080d12';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+  ctx.shadowBlur = 3;
   ctx.fillStyle = p.sheet;
   // The tower the cube stands on tips over from the middle of its base; the next one stands still.
   world.towers.forEach((t, i) => {
@@ -340,7 +342,7 @@ function drawTower(w: number, len: number) {
     ctx.moveTo(-w / 2, e); ctx.lineTo(w / 2, e);
     flip = !flip;
   }
-  ctx.lineWidth = 4.5;
+  ctx.lineWidth = 5.5;
   ctx.stroke();
 }
 
@@ -350,10 +352,13 @@ function drawCube(x: number, bottom: number, tilt: number) {
   ctx.save();
   ctx.translate(x + CUBE / 2, bottom - CUBE / 2); // rotate around the cube's centre
   ctx.rotate(rad(tilt));
-  ctx.fillStyle = p.ink;
+  ctx.fillStyle = '#05090e';
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
+  ctx.strokeStyle = 'rgba(190, 205, 216, 0.72)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
   ctx.fillStyle = p.paper;
   for (const ex of [CUBE / 2 - 19, CUBE / 2 - 7]) {
     ctx.beginPath();
