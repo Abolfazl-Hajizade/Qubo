@@ -164,9 +164,23 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vel += (ACC * tower.tipAccel + ACC_LEAN * tower.leanAccel * w.angle) * tower.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
       w.angle += w.vel * dt;
       {
-        // The cube slides down the tilted top, toward the next tower, once the lean beats friction.
+        // Gravity acts along the slope; friction always opposes the current slide.
         const a = rad(w.angle);
-        w.slide += SLIDE * Math.max(0, Math.sin(a) - FRICTION * Math.cos(a)) * dt;
+        const slopeForce = Math.sin(a);
+        const friction = FRICTION * Math.cos(a);
+        if (Math.abs(w.slide) > 0.1) {
+          const direction = Math.sign(w.slide);
+          const acceleration = SLIDE * (slopeForce - direction * friction);
+          const nextSlide = w.slide + acceleration * dt;
+          // Kinetic friction must stop the cube at zero, not reverse its direction.
+          w.slide = Math.sign(nextSlide) !== direction && slopeForce * direction <= friction
+            ? 0
+            : nextSlide;
+        } else if (Math.abs(slopeForce) > friction) {
+          w.slide += SLIDE * (slopeForce - Math.sign(slopeForce) * friction) * dt;
+        } else {
+          w.slide = 0;
+        }
         w.offset += w.slide * dt;
       }
       seat(w);
@@ -178,12 +192,15 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
         w.camTarget = w.cam;
       }
-      if (w.angle >= FALL_AT || w.offset > w.towers[0].w / 2 + CUBE * 0.3) {
-        // Too late: the cube slides off the edge, or the tower goes over, and takes the cube with it.
+      if (w.angle >= FALL_AT ||
+          w.offset > w.towers[0].w / 2 + CUBE * 0.3 ||
+          w.offset < -w.towers[0].w / 2 - CUBE * 0.3) {
+        // Falling from either edge follows the tower's motion and the cube's slide.
         const t = w.towers[0];
+        const a = rad(w.angle);
         w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: w.vel });
-        w.vx = towerLen(t) * rad(w.vel) * Math.cos(rad(w.angle)) + w.slide;
-        w.vy = 0;
+        w.vx = (towerLen(t) * rad(w.vel) + w.slide) * Math.cos(a);
+        w.vy = (towerLen(t) * rad(w.vel) + w.slide) * Math.sin(a);
         w.phase = 'drop';
       }
       break;
@@ -259,9 +276,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.camTarget = w.cam;
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
-          const spinDrift = -Math.sign(w.cubeSpin) * Math.min(18, Math.abs(w.cubeSpin) * CUBE / 900);
-          // Keep some landing momentum, but avoid an immediate fast skid or spin.
-          w.slide = w.vx * 0.24 + spinDrift;
+          // Preserve horizontal landing momentum without converting cube spin
+          // into an artificial force that can push it backward.
+          w.slide = w.vx * 0.24;
           w.cubeSpin *= 0.42;
           w.phase = 'scroll';
           return;
