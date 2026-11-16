@@ -259,46 +259,74 @@ function draw() {
   ctx.stroke();
 }
 
-/** Soft overcast sky with slowly drifting clouds and fine, animated drizzle. */
+/** Ominous storm sky: layered charcoal clouds, slanting rain and distant lightning. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
   const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, '#9baab5');
-  sky.addColorStop(0.58, '#c0cbd0');
-  sky.addColorStop(1, '#d8dfe0');
+  sky.addColorStop(0, '#101923');
+  sky.addColorStop(0.48, '#27333d');
+  sky.addColorStop(1, '#46515a');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
 
+  // Heavy storm-cloud layers drift slowly across the sky.
   ctx.save();
-  ctx.globalAlpha = 0.52;
-  for (let i = 0; i < 7; i++) {
-    const x = ((i * 83 + time * (5 + (i % 3) * 2)) % (W + 150)) - 75;
-    const y = 35 + (i % 4) * 43;
-    const width = 62 + (i % 3) * 18;
-    const cloud = ctx.createRadialGradient(x, y, 5, x, y, width);
-    cloud.addColorStop(0, 'rgba(248, 251, 252, 0.92)');
-    cloud.addColorStop(0.65, 'rgba(224, 233, 237, 0.7)');
-    cloud.addColorStop(1, 'rgba(205, 217, 223, 0)');
+  for (let i = 0; i < 9; i++) {
+    const x = ((i * 71 + time * (3 + (i % 3) * 1.4)) % (W + 180)) - 90;
+    const y = 20 + (i % 4) * 43;
+    const width = 72 + (i % 3) * 22;
+    const cloud = ctx.createRadialGradient(x, y, 4, x, y, width);
+    cloud.addColorStop(0, i % 2 ? 'rgba(10, 17, 25, 0.96)' : 'rgba(24, 34, 43, 0.96)');
+    cloud.addColorStop(0.62, 'rgba(31, 43, 53, 0.82)');
+    cloud.addColorStop(1, 'rgba(35, 48, 58, 0)');
     ctx.fillStyle = cloud;
     ctx.beginPath();
-    ctx.ellipse(x, y, width, 28 + (i % 2) * 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, width, 30 + (i % 2) * 12, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
 
+  // A brief, irregular lightning glow lights the clouds from far away.
+  const cycle = time % 11.5;
+  const flash = cycle < 0.11 ? 0.24 : cycle > 0.24 && cycle < 0.31 ? 0.13 : 0;
+  if (flash > 0) {
+    ctx.fillStyle = `rgba(196, 218, 232, ${flash})`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(225, 238, 248, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(180, 215, 245, 0.95)';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.moveTo(238, 18);
+    ctx.lineTo(218, 54);
+    ctx.lineTo(231, 54);
+    ctx.lineTo(205, 96);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Dense, fine rain; the movement stays subtle enough not to hide the towers.
   ctx.save();
-  ctx.strokeStyle = 'rgba(238, 245, 248, 0.48)';
-  ctx.lineWidth = 0.8;
-  for (let i = 0; i < 58; i++) {
-    const x = (i * 47.3 + (i % 5) * 13) % W;
-    const y = ((i * 71.7 + time * (105 + (i % 4) * 13)) % (H + 24)) - 12;
-    const length = 7 + (i % 3) * 2;
+  ctx.strokeStyle = 'rgba(190, 211, 224, 0.38)';
+  ctx.lineWidth = 0.9;
+  for (let i = 0; i < 82; i++) {
+    const x = (i * 39.7 + (i % 7) * 11) % W;
+    const y = ((i * 53.9 + time * (145 + (i % 5) * 17)) % (H + 30)) - 15;
+    const length = 9 + (i % 4) * 2;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x - 3, y + length);
+    ctx.lineTo(x - 4, y + length);
     ctx.stroke();
   }
   ctx.restore();
+
+  // Darken the lower edge for a colder, more threatening atmosphere.
+  const vignette = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  vignette.addColorStop(0, 'rgba(8, 14, 20, 0)');
+  vignette.addColorStop(1, 'rgba(8, 14, 20, 0.28)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, W, H);
 }
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
