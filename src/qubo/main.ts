@@ -213,17 +213,24 @@ function draw() {
   const p = palette;
   const s = canvas.width / W;
   ctx.setTransform(s, 0, 0, s, 0, 0);
-  // The playfield blends into the page; the only ground marker is the fine baseline.
-  ctx.fillStyle = p.paper;
+  // Monochrome, softly clouded sky inspired by the original GAMEE Qubo artwork.
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#777777');
+  sky.addColorStop(0.58, '#999999');
+  sky.addColorStop(1, '#686868');
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
 
-  // Far clouds drift with the camera, slower than the towers.
-  ctx.fillStyle = p.tint;
-  for (let i = -1; i < 5; i++) {
-    const x = i * 120 - ((world.cam * 0.3) % 120);
-    ctx.beginPath();
-    ctx.ellipse(x + 60, 120 + (i & 1) * 40, 46, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
+  // Layered radial haze gives the sky a soft, cloudy texture without image assets.
+  for (let i = -1; i < 6; i++) {
+    const x = i * 100 - ((world.cam * 0.16) % 100);
+    const y = 75 + (i % 3) * 48;
+    const cloud = ctx.createRadialGradient(x + 48, y, 4, x + 48, y, 82);
+    cloud.addColorStop(0, 'rgba(235,235,235,0.30)');
+    cloud.addColorStop(0.55, 'rgba(205,205,205,0.13)');
+    cloud.addColorStop(1, 'rgba(205,205,205,0)');
+    ctx.fillStyle = cloud;
+    ctx.fillRect(x - 34, y - 82, 164, 164);
   }
 
   ctx.save();
@@ -270,7 +277,6 @@ function draw() {
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
 function drawTower(w: number, len: number) {
-  ctx.fillRect(-w / 2, -len, w, len + 40);
   ctx.beginPath();
   ctx.rect(-w / 2, -len, w, len + 40);
   let flip = false;
@@ -289,7 +295,7 @@ function drawCube(x: number, bottom: number, tilt: number) {
   ctx.save();
   ctx.translate(x + CUBE / 2, bottom - CUBE / 2); // rotate around the cube's centre
   ctx.rotate(rad(tilt));
-  ctx.fillStyle = p.cube;
+  ctx.fillStyle = p.ink;
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
