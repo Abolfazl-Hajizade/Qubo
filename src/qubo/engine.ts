@@ -121,8 +121,8 @@ export function launch(w: World) {
   const tip = (towerLen(t) + ((fromScroll || rescue) ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // A balance-saving hop is vertical and returns to this same platform.
-  if (inPlace) { w.vx = 0; w.vy = -THROW; }
+  // A short recovery hop rises just enough to clear the cube, with a small forward drift.
+  if (inPlace) { w.vx = THROW * 0.14; w.vy = -THROW * 0.6; }
   // A quick jump from the front corner is explicitly a forward hop, even if
   // residual sliding/tower motion would otherwise weaken or reverse its launch.
   if (quickFrontCornerHop) w.vx = Math.max(w.vx, THROW * 0.55);
@@ -406,9 +406,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const previousX = w.cubeX + CUBE / 2;
       const previousY = w.cubeY - CUBE / 2;
       const previousAngle = w.cubeAngle;
-      // Give an in-place recovery enough hang time to return to the same platform.
-      // Normal rescue jumps keep standard gravity; only the vertical recovery hop is softened.
-      w.vy += GRAVITY * (w.rescueInPlace ? 0.42 : 1) * dt;
+      // Use normal gravity so the shorter recovery hop comes back down promptly.
+      w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
       w.cubeAngle += w.cubeSpin * dt;
