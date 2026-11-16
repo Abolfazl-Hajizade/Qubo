@@ -3,6 +3,18 @@
 /* Qubo prints in cocoa, the arcade ink. */
 :root { --c: var(--cocoa); }
 
+/* Match the storm sky around the playfield while the game is active. */
+body:has(#game:not([hidden])) {
+  background-color: #27333d;
+  background-image:
+    repeating-linear-gradient(108deg, transparent 0 18px, rgba(190, 211, 224, 0.12) 19px 20px, transparent 21px 40px),
+    radial-gradient(ellipse at 18% 12%, rgba(10, 17, 25, 0.92) 0, rgba(24, 34, 43, 0.58) 23%, transparent 48%),
+    radial-gradient(ellipse at 82% 30%, rgba(10, 17, 25, 0.78) 0, rgba(31, 43, 53, 0.52) 25%, transparent 52%),
+    linear-gradient(180deg, #101923 0%, #27333d 48%, #46515a 100%);
+  background-attachment: fixed;
+}
+
+
 .score { text-align: right; line-height: 1.05; min-width: 64px; }
 .score b { display: block; font-family: var(--pen-font); font-size: 2.1rem; font-weight: 700; line-height: 0.9; color: var(--c); }
 .score span { font-family: var(--pen-font); font-size: 0.9rem; font-weight: 600; color: var(--ink-2); }
