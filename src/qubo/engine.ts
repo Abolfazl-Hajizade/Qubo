@@ -406,7 +406,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const previousX = w.cubeX + CUBE / 2;
       const previousY = w.cubeY - CUBE / 2;
       const previousAngle = w.cubeAngle;
-      w.vy += GRAVITY * dt;
+      // Give an in-place recovery enough hang time to return to the same platform.
+      // Normal rescue jumps keep standard gravity; only the vertical recovery hop is softened.
+      w.vy += GRAVITY * (w.rescueInPlace ? 0.42 : 1) * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
       w.cubeAngle += w.cubeSpin * dt;
@@ -426,16 +428,6 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const beforeSupport = half * (Math.abs(Math.sin(rad(previousAngle - previousTowerAngle))) + Math.abs(Math.cos(rad(previousAngle - previousTowerAngle))));
       const support = half * (Math.abs(Math.sin(rad(w.cubeAngle - w.angle))) + Math.abs(Math.cos(rad(w.cubeAngle - w.angle))));
       const len = towerLen(t);
-      if (w.rescueInPlace) {
-        // Add a strong, distance-sensitive pull toward the tower's top surface.
-        // The local downward normal in world coordinates is (-sin(a), cos(a)).
-        const surfaceGap = -len - (current.y + support);
-        if (surfaceGap > 0) {
-          const pull = Math.min(GRAVITY * 0.45, surfaceGap * 6);
-          w.vx -= sn * pull * dt;
-          w.vy += cs * pull * dt;
-        }
-      }
       const crossed = current.y + support >= -len && before.y + beforeSupport <= -len + 1 && (w.vx * -sn + w.vy * cs) > 0;
       const alongSupport = half * (Math.abs(Math.cos(rad(w.cubeAngle - w.angle))) + Math.abs(Math.sin(rad(w.cubeAngle - w.angle))));
       if (crossed && current.x + alongSupport >= -t.w / 2 && current.x - alongSupport <= t.w / 2) {
