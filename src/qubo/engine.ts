@@ -305,8 +305,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // that edge instead of leaving the cube balanced on a single corner.
       const ca = rad(w.cubeAngle);
       const support = half * (Math.abs(Math.sin(ca - a)) + Math.abs(Math.cos(ca - a)));
-      const rearOverhang = Math.max(0, -w.offset + support - landedTower.w / 2);
-      const frontOverhang = Math.max(0, w.offset + support - landedTower.w / 2);
+      // Only pull toward an edge after the cube's centre of mass passes it.
+      // Using the rotated footprint here made a centred, merely tilted cube
+      // appear to overhang both edges and caused an unexplained backward pull.
+      const rearOverhang = Math.max(0, -w.offset - landedTower.w / 2);
+      const frontOverhang = Math.max(0, w.offset - landedTower.w / 2);
       const edgeDrive = rearOverhang > 0
         ? -Math.min(0.7, rearOverhang / CUBE)
         : frontOverhang > 0
