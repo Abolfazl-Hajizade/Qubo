@@ -145,6 +145,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       break;
     case 'air': {
       const prev = w.cubeY;
+      const prevAngle = w.cubeAngle;
       w.cubeAngle += w.cubeSpin * dt;
       w.cubeSpin *= Math.exp(-0.32 * dt); // air resistance makes the rotation ease naturally
       w.vy += GRAVITY * dt;
@@ -167,46 +168,54 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const cameraAim = Math.max(minCam, Math.min(targetCam, maxCam));
       w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
       const half = CUBE / 2;
-      const a = rad(w.cubeAngle);
-      const support = half * (Math.abs(Math.sin(a)) + Math.abs(Math.cos(a)));
-      const prevBottom = prev - half + support;
-      const currentBottom = w.cubeY - half + support;
+      const bounds = (x: number, bottom: number, angle: number) => {
+        const a = rad(angle), cs = Math.cos(a), sn = Math.sin(a);
+        const points = [[-half, -half], [half, -half], [half, half], [-half, half]].map(([px, py]) => ({
+          x: x + half + px * cs - py * sn,
+          y: bottom - half + px * sn + py * cs,
+        }));
+        return {
+          minY: Math.min(...points.map(p => p.y)),
+          maxY: Math.max(...points.map(p => p.y)),
+          minX: Math.min(...points.map(p => p.x)),
+          maxX: Math.max(...points.map(p => p.x)),
+        };
+      };
+      const before = bounds(w.cubeX - w.vx * dt, prev, prevAngle);
+      const current = bounds(w.cubeX, w.cubeY, w.cubeAngle);
       const centerX = w.cubeX + half;
-      const left = centerX - support;
-      const right = centerX + support;
       // The next two towers are both in reach: landing on the far one skips the middle one.
       for (let i = 1; i < w.towers.length; i++) {
         const t = w.towers[i];
-        if (right <= t.x || left >= t.x + t.w) continue;
-        const crossedTop = w.vy > 0 && prevBottom <= t.top + 0.5 && currentBottom >= t.top;
+        if (current.maxX <= t.x || current.minX >= t.x + t.w) continue;
+        const crossedTop = w.vy > 0 && before.minY <= t.top + 0.5 && current.minY >= t.top;
         if (crossedTop) {
-          // A real top landing requires the cube's centre to be over the platform.
-          // Bounding-box/corner overlap alone is not enough: an edge-only touch
-          // must continue into a fall instead of being pulled onto the tower.
-          if (centerX < t.x || centerX > t.x + t.w) {
+          // Contact is determined by the rotated square itself. Any part of its
+          // lower edge/corner may touch the platform; the centre need not be above it.
+          const contactLeft = Math.max(current.minX, t.x);
+          const contactRight = Math.min(current.maxX, t.x + t.w);
+          if (contactLeft >= contactRight) {
             w.vx = 0;
             w.phase = 'drop';
             return;
           }
-          // Resolve only the tiny penetration at the contact point; preserve the
-          // incoming rotation so the cube can rock naturally after impact.
-          w.cubeY += t.top - currentBottom;
+          // Correct only vertical penetration at first contact. Never change the
+          // cube's angle or pull its centre toward the platform centre.
+          w.cubeY += t.top - current.minY;
           w.offset = centerX - pivotX(t);
-          // A little of the impact's angular momentum remains for the damped
-          // settling spring to absorb instead of forcing the cube upright.
-          w.cubeSpin *= 0.72;
-          w.vx = 0;
+          w.cubeSpin *= 0.9;
+          w.vx *= 0.35;
           w.vy = 0;
           w.score += i;
           w.landed = i;
           w.camTarget = w.cam;
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
-          w.slide = 0;
+          w.slide = w.vx;
           w.phase = 'scroll';
           return;
         }
-        if (currentBottom > t.top + 6) { w.vx = 0; w.phase = 'drop'; return; } // hit the side
+        if (current.minY > t.top + 6 && current.maxX > t.x && current.minX < t.x + t.w) { w.vx = 0; w.phase = 'drop'; return; }
       }
       if (w.cubeY > H + CUBE) { w.phase = 'over'; w.over = true; }
       break;
@@ -221,9 +230,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const a = rad(w.angle);
       const relative = w.cubeAngle - w.angle;
       const flatRelative = Math.round(relative / 90) * 90;
-      const angleError = w.angle + flatRelative - w.cubeAngle;
-      // Damping is relative to the tower's angular velocity, not world space.
-      w.cubeSpin += (angleError * 34 - (w.cubeSpin - w.vel) * 11) * dt;
+      const angleError = relative - flatRelative;
+      // Gravity supplies the restoring torque around the cube's current support
+      // corner/edge. It rotates continuously; no target angle is assigned.
+      const gravityTorque = -(GRAVITY / (CUBE * 0.72)) * Math.sin(rad(angleError)) * (180 / Math.PI);
+      w.cubeSpin += (gravityTorque - (w.cubeSpin - w.vel) * 2.8) * dt;
       w.cubeAngle += w.cubeSpin * dt;
 
       // Gravity can move the cube either way along the sloping top. Friction opposes motion.
