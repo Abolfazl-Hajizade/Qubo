@@ -129,7 +129,6 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // pulled out through the rear-left corner while the next tower shifts by
       // exactly the same amount, preserving the gap between the towers.
       {
-        const tipScreenX = pivotX(tower) + towerLen(tower) * Math.sin(rad(w.angle)) - w.cam;
         const cameraAim = pivotX(tower) + towerLen(tower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22);
         w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
         w.camTarget = w.cam;
