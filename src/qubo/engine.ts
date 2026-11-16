@@ -453,8 +453,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         return;
       }
       if (w.cubeY > H + CUBE || current.x > t.w / 2 + 180 || current.x < -t.w / 2 - 180) {
-        w.fallen.push({ pivot: pivotX(t), w: t.w, len, angle: w.angle, vel: w.vel });
-        w.rescueInPlace = false;
+        // On a failed in-place recovery, keep the same tower in the scene;
+        // the cube continues falling past the visible platforms until game over.
+        if (!w.rescueInPlace) {
+          w.fallen.push({ pivot: pivotX(t), w: t.w, len, angle: w.angle, vel: w.vel });
+        }
         w.phase = 'drop';
       }
       break;
