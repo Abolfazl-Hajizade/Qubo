@@ -215,6 +215,7 @@ function draw() {
   ctx.setTransform(s, 0, 0, s, 0, 0);
   // Leave the canvas transparent so the page background remains visible.
   ctx.clearRect(0, 0, W, H);
+  drawWeatherBackground();
 
   ctx.save();
   ctx.translate(-world.cam, 0);
@@ -256,6 +257,48 @@ function draw() {
   ctx.moveTo(0, H - 1);
   ctx.lineTo(W, H - 1);
   ctx.stroke();
+}
+
+/** Soft overcast sky with slowly drifting clouds and fine, animated drizzle. */
+function drawWeatherBackground() {
+  const time = performance.now() / 1000;
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#9baab5');
+  sky.addColorStop(0.58, '#c0cbd0');
+  sky.addColorStop(1, '#d8dfe0');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.globalAlpha = 0.52;
+  for (let i = 0; i < 7; i++) {
+    const x = ((i * 83 + time * (5 + (i % 3) * 2)) % (W + 150)) - 75;
+    const y = 35 + (i % 4) * 43;
+    const width = 62 + (i % 3) * 18;
+    const cloud = ctx.createRadialGradient(x, y, 5, x, y, width);
+    cloud.addColorStop(0, 'rgba(248, 251, 252, 0.92)');
+    cloud.addColorStop(0.65, 'rgba(224, 233, 237, 0.7)');
+    cloud.addColorStop(1, 'rgba(205, 217, 223, 0)');
+    ctx.fillStyle = cloud;
+    ctx.beginPath();
+    ctx.ellipse(x, y, width, 28 + (i % 2) * 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(238, 245, 248, 0.48)';
+  ctx.lineWidth = 0.8;
+  for (let i = 0; i < 58; i++) {
+    const x = (i * 47.3 + (i % 5) * 13) % W;
+    const y = ((i * 71.7 + time * (105 + (i % 4) * 13)) % (H + 24)) - 12;
+    const length = 7 + (i % 3) * 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - 3, y + length);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
