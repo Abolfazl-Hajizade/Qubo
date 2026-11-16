@@ -96,17 +96,28 @@ export function launch(w: World) {
   // A landed cube can jump again immediately, even while it is still rolling
   // and the tower is already beginning to lean.
   const fromScroll = w.phase === 'scroll';
-  const rescue = fromScroll || (w.phase === 'drop' && w.rescueAvailable);
-  if (w.phase !== 'wait' && !rescue) return;
-  const activeIndex = rescue ? w.landed : 0;
+  const landedTower = fromScroll ? w.towers[w.landed] : undefined;
+  const half = CUBE / 2;
+  const relativeAngle = rad(w.cubeAngle - w.angle);
+  const alongSupport = half * (Math.abs(Math.cos(relativeAngle)) + Math.abs(Math.sin(relativeAngle)));
+  // The rear is the negative end of the tower top. Only a cube whose centre
+  // has slipped behind the tower centre, or whose support reaches the rear edge,
+  // gets an in-place recovery hop. A normal landing keeps the forward jump.
+  const rearLanding = !!landedTower && (
+    w.offset < 0 || w.offset - alongSupport <= -landedTower.w / 2 + 4
+  );
+  const inPlace = fromScroll && rearLanding;
+  const rescue = inPlace || (w.phase === 'drop' && w.rescueAvailable);
+  if (w.phase !== 'wait' && !rescue && !fromScroll) return;
+  const activeIndex = (fromScroll || rescue) ? w.landed : 0;
   const t = w.towers[activeIndex];
   const a = rad(w.angle);
-  const tip = (towerLen(t) + (rescue ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
+  const tip = (towerLen(t) + ((fromScroll || rescue) ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // A tap during the landing roll is an in-place hop: keep the same platform
-  // and scene completely still, and send the cube straight up and back down.
-  if (fromScroll) { w.vx = 0; w.vy = -THROW; }
+  // Rear-edge recovery is the only in-place jump. Ordinary forward takeoffs
+  // retain their launch vector and the established camera/platform handoff.
+  if (inPlace) { w.vx = 0; w.vy = -THROW; }
 
   // The tower being left keeps its current pose and exits the scene just as
   // it did on a normal takeoff. The newly landed tower has already started
@@ -115,24 +126,25 @@ export function launch(w: World) {
   if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
 
   if (rescue) {
-    // A jump made while the cube is still settling, or just after it slips off,
-    // is a recovery arc back to this same moving tower. Never retire the tower,
-    // advance the camera to another platform, or generate a replacement here.
+    // Only rear-edge landings use a stationary recovery arc. A rescue from
+    // drop keeps the established moving-tower recovery behavior.
     w.rescueAvailable = false;
-    w.rescueInPlace = fromScroll;
+    w.rescueInPlace = inPlace;
     w.cubeSpin += 180;
     w.phase = 'rescue';
     return;
   }
 
   if (fromScroll) {
-    // Promote the tower we just left to the front of the flight sequence so
-    // airborne collision checks continue to use the usual [current,next,next+1] layout.
+    // Normal forward jump: retire the platform just left and promote the
+    // destination platform so the usual [current,next,next+1] flight layout
+    // and camera handoff continue unchanged.
     for (let k = 0; k < activeIndex; k++) {
       w.towers.shift();
       w.towers.push(nextTower(w.towers[w.towers.length - 1], Math.random, w.score));
     }
     w.landed = 1;
+    w.rescueInPlace = false;
   }
 
   // Preserve existing rotation while taking off from a rolling landing;
