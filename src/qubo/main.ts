@@ -240,7 +240,7 @@ function draw() {
     ctx.save();
     ctx.translate(pivotX(t), H);
     if (i === 0 && world.phase === 'wait') ctx.rotate(rad(world.angle));
-    else if (world.phase === 'scroll' && i === world.landed) ctx.rotate(rad(world.angle));
+    else if ((world.phase === 'scroll' || world.phase === 'rescue' || (world.phase === 'drop' && world.rescueAvailable)) && i === world.landed) ctx.rotate(rad(world.angle));
     const len = towerLen(t);
     // Keep the tower whole: the advancing camera pulls it diagonally out
     // through the rear edge instead of erasing it vertically from its base.
