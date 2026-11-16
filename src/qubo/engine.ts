@@ -100,19 +100,20 @@ export function createWorld(rng: () => number = Math.random): World {
 
 /** Throws the cube off the top of the tower, along the lean, plus the speed the tip is swinging at. */
 export function launch(w: World) {
-  // A landed cube can jump again immediately, even while it is still rolling
-  // and the tower is already beginning to lean.
   const fromScroll = w.phase === 'scroll';
-  // When the cube is visibly losing balance on a landing, a tap makes
-  // a short stationary hop so it can come back down on the same platform.
-  // Otherwise, a tap during scroll remains the normal forward jump.
+  // Forward launch is reserved for a cube that has actually settled:
+  // its body is aligned with the platform, rotation matches the tower,
+  // and it has stopped sliding. Do not use its position on the platform
+  // as a proxy for motion; rear-edge balance loss is handled separately.
   const relative = w.cubeAngle - w.angle;
   const angleError = relative - Math.round(relative / 90) * 90;
-  const unstable = w.phase === 'scroll' && (
-    Math.abs(angleError) > 22 ||
-    Math.abs(w.slide) > 110 ||
-    Math.abs(w.offset) > w.towers[w.landed].w * 0.32
-  );
+  const settled = fromScroll &&
+    Math.abs(angleError) < 7 &&
+    Math.abs(w.cubeSpin - w.vel) < 40 &&
+    Math.abs(w.slide) < 30;
+  // Any tap is accepted: while unsettled, hop vertically and recover on
+  // this same platform; once settled, the same tap launches forward.
+  const unstable = fromScroll && !settled;
   const inPlace = (w.phase === 'drop' && w.rescueAvailable) || unstable;
   const rescue = inPlace;
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
