@@ -103,10 +103,17 @@ export function launch(w: World) {
   // A landed cube can jump again immediately, even while it is still rolling
   // and the tower is already beginning to lean.
   const fromScroll = w.phase === 'scroll';
-  // An in-place recovery is only for a cube that has completely lost
-  // contact with the platform and is already falling. Any actual surface
-  // landing, including a rear-corner landing, keeps the normal forward jump.
-  const inPlace = w.phase === 'drop' && w.rescueAvailable;
+  // When the cube is visibly losing balance on a landing, a tap makes
+  // a short stationary hop so it can come back down on the same platform.
+  // Otherwise, a tap during scroll remains the normal forward jump.
+  const relative = w.cubeAngle - w.angle;
+  const angleError = relative - Math.round(relative / 90) * 90;
+  const unstable = w.phase === 'scroll' && (
+    Math.abs(angleError) > 22 ||
+    Math.abs(w.slide) > 110 ||
+    Math.abs(w.offset) > w.towers[w.landed].w * 0.32
+  );
+  const inPlace = (w.phase === 'drop' && w.rescueAvailable) || unstable;
   const rescue = inPlace;
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
   const activeIndex = (fromScroll || rescue) ? w.landed : 0;
@@ -115,19 +122,15 @@ export function launch(w: World) {
   const tip = (towerLen(t) + ((fromScroll || rescue) ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
   w.vy = -THROW * Math.cos(a) + (tip + w.slide) * Math.sin(a);
-  // Rear-edge recovery is the only in-place jump. Ordinary forward takeoffs
-  // retain their launch vector and the established camera/platform handoff.
+  // A balance-saving hop is vertical and returns to this same platform.
   if (inPlace) { w.vx = 0; w.vy = -THROW; }
 
-  // The tower being left keeps its current pose and exits the scene just as
-  // it did on a normal takeoff. The newly landed tower has already started
-  // tipping during scroll; do not wait for the cube to settle before allowing
-  // the next jump.
-  if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
+  // A stationary balance hop keeps the current platform in place; a forward
+  // jump retires the tower being left as usual.
+  if (!inPlace) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
 
   if (rescue) {
-    // Only rear-edge landings use a stationary recovery arc. A rescue from
-    // drop keeps the established moving-tower recovery behavior.
+    // Keep the same platform under the cube during a balance-saving hop.
     w.rescueAvailable = false;
     w.rescueInPlace = inPlace;
     w.cubeSpin += 180;
@@ -255,15 +258,17 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           // cube's angle or pull its centre toward the platform centre.
           w.cubeY += t.top - current.maxY;
           w.offset = centerX - pivotX(t);
-          w.cubeSpin *= 0.9;
-          w.vx *= 0.35;
+          // Keep the cube's landing rotation and some horizontal momentum.
+          // Its tilted attitude and residual spin now influence how it settles.
+          w.vx *= 0.5;
           w.vy = 0;
           w.score += i;
           w.landed = i;
           w.camTarget = w.cam;
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
-          w.slide = w.vx;
+          const spinDrift = -Math.sign(w.cubeSpin) * Math.min(55, Math.abs(w.cubeSpin) * CUBE / 360);
+          w.slide = w.vx * 0.45 + spinDrift;
           w.phase = 'scroll';
           return;
         }
