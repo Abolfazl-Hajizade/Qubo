@@ -249,7 +249,8 @@ function draw() {
     ctx.restore();
   }
 
-  drawCube(world.cubeX, world.cubeY, world.cubeAngle);
+  const isSupported = world.phase === 'wait' || world.phase === 'scroll' || world.phase === 'rescue';
+  drawCube(world.cubeX, world.cubeY, world.cubeAngle, isSupported ? world.angle : 0);
   ctx.restore();
 
   // A single understated ground line remains beneath the towers.
@@ -347,10 +348,14 @@ function drawTower(w: number, len: number) {
 }
 
 /** The cube, with a pair of eyes looking ahead. */
-function drawCube(x: number, bottom: number, tilt: number) {
+function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0) {
   const p = palette;
+  const surfaceGap = 2.5; // keep the cube's lower edge visually distinct from the tower top
   ctx.save();
-  ctx.translate(x + CUBE / 2, bottom - CUBE / 2); // rotate around the cube's centre
+  ctx.translate(
+    x + CUBE / 2 + surfaceGap * Math.sin(rad(supportAngle)),
+    bottom - CUBE / 2 - surfaceGap * Math.cos(rad(supportAngle)),
+  );
   ctx.rotate(rad(tilt));
   ctx.fillStyle = '#05090e';
   ctx.beginPath();
@@ -359,10 +364,17 @@ function drawCube(x: number, bottom: number, tilt: number) {
   ctx.strokeStyle = 'rgba(190, 205, 216, 0.72)';
   ctx.lineWidth = 1.4;
   ctx.stroke();
+  // White eyes with small dark pupils looking slightly forward.
   ctx.fillStyle = p.paper;
-  for (const ex of [CUBE / 2 - 19, CUBE / 2 - 7]) {
+  for (const ex of [CUBE / 2 - 20, CUBE / 2 - 8]) {
     ctx.beginPath();
     ctx.arc(ex, -CUBE / 2 + 12, 5.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#05090e';
+  for (const ex of [CUBE / 2 - 18.2, CUBE / 2 - 6.2]) {
+    ctx.beginPath();
+    ctx.arc(ex, -CUBE / 2 + 12.5, 2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
