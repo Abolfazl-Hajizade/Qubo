@@ -143,10 +143,13 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      // Scroll continuously with the cube's horizontal flight, not after it lands.
-      // Keep the cube around x=110 while the old tower exits and the landing tower
-      // moves into its place during the jump itself.
-      const cameraAim = Math.max(0, w.cubeX - 110);
+      // During the jump, bring the tower the cube is approaching toward the
+      // starting tower's screen position (near the left corner). This carries
+      // the previous tower out of view before the cube lands.
+      const flightCenterX = w.cubeX + CUBE / 2;
+      const targetIndex = w.towers.length > 2 && flightCenterX > w.towers[1].x + w.towers[1].w ? 2 : 1;
+      const landingTower = w.towers[targetIndex];
+      const cameraAim = landingTower ? Math.max(0, pivotX(landingTower) - (START_RIGHT - 22)) : Math.max(0, w.cubeX - 110);
       w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
