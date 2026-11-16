@@ -304,7 +304,6 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // mass passes beyond either edge, gravity creates a gentle pull toward
       // that edge instead of leaving the cube balanced on a single corner.
       const ca = rad(w.cubeAngle);
-      const support = half * (Math.abs(Math.sin(ca - a)) + Math.abs(Math.cos(ca - a)));
       // Only pull toward an edge after the cube's centre of mass passes it.
       // Using the rotated footprint here made a centred, merely tilted cube
       // appear to overhang both edges and caused an unexplained backward pull.
