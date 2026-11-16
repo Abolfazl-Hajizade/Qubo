@@ -135,7 +135,8 @@ export function launch(w: World) {
     // Keep the same platform under the cube during a balance-saving hop.
     w.rescueAvailable = false;
     w.rescueInPlace = inPlace;
-    w.cubeSpin += 180;
+    // Make a balance-saving hop feel like a deliberate, powerful recovery.
+    w.cubeSpin += 720;
     w.phase = 'rescue';
     return;
   }
@@ -425,6 +426,16 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const beforeSupport = half * (Math.abs(Math.sin(rad(previousAngle - previousTowerAngle))) + Math.abs(Math.cos(rad(previousAngle - previousTowerAngle))));
       const support = half * (Math.abs(Math.sin(rad(w.cubeAngle - w.angle))) + Math.abs(Math.cos(rad(w.cubeAngle - w.angle))));
       const len = towerLen(t);
+      if (w.rescueInPlace) {
+        // Add a strong, distance-sensitive pull toward the tower's top surface.
+        // The local downward normal in world coordinates is (-sin(a), cos(a)).
+        const surfaceGap = -len - (current.y + support);
+        if (surfaceGap > 0) {
+          const pull = Math.min(GRAVITY * 2.5, surfaceGap * 24);
+          w.vx -= sn * pull * dt;
+          w.vy += cs * pull * dt;
+        }
+      }
       const crossed = current.y + support >= -len && before.y + beforeSupport <= -len + 1 && (w.vx * -sn + w.vy * cs) > 0;
       const alongSupport = half * (Math.abs(Math.cos(rad(w.cubeAngle - w.angle))) + Math.abs(Math.sin(rad(w.cubeAngle - w.angle))));
       if (crossed && current.x + alongSupport >= -t.w / 2 && current.x - alongSupport <= t.w / 2) {
