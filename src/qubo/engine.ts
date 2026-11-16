@@ -153,7 +153,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // Move the landing tower into the old tower's screen position.
       // The tower we launched from is consequently pushed completely off the left.
       const target = w.towers.find((t) => t.x + t.w > w.cubeX + CUBE / 2);
-      const cameraAim = target ? pivotX(target) - START_RIGHT : w.cubeX - START_RIGHT;
+      // Bring the landing tower almost flush with the rear (left) edge of the playfield.
+      // The smooth camera follow carries the previous tower out of frame along the way.
+      const cameraAim = target ? target.x - 8 : w.cubeX - 8;
       w.cam += (Math.max(w.cam, cameraAim) - w.cam) * (1 - Math.exp(-9.0 * dt));
       const half = CUBE / 2;
       const a = rad(w.cubeAngle);
@@ -178,7 +180,8 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.landed = i;
           // Keep the new landing tower exactly where the previous tower stood.
           // The next tower will enter from the right as the camera advances again.
-          w.camTarget = Math.max(w.cam, pivotX(t) - START_RIGHT);
+          // Finish with the landing tower just inside the rear edge, not centred in the scene.
+          w.camTarget = Math.max(w.cam, t.x - 8);
           // The newly landed tower starts tipping immediately; the cube settles independently.
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
