@@ -240,12 +240,9 @@ function draw() {
     if (i === 0 && world.phase === 'wait') ctx.rotate(rad(world.angle));
     else if (world.phase === 'scroll' && i === world.landed) ctx.rotate(rad(world.angle));
     const len = towerLen(t);
-    // Withdraw the standing tower progressively from its base toward its top.
-    // By the time the cube is launched, the source tower is almost completely gone.
-    const withdrawal = i === 0 && world.phase === 'wait'
-      ? len * Math.min(1, Math.max(0, world.angle) / 72)
-      : 0;
-    drawTower(t.w, len, withdrawal);
+    // Keep the tower whole: the advancing camera pulls it diagonally out
+    // through the rear edge instead of erasing it vertically from its base.
+    drawTower(t.w, len);
     ctx.restore();
   });
 
@@ -262,18 +259,13 @@ function draw() {
 }
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
-function drawTower(w: number, len: number, withdrawn = 0) {
-  const bottom = -Math.min(len, Math.max(0, withdrawn));
-  const visibleHeight = Math.max(0, len + bottom);
-  if (visibleHeight <= 0) return;
-  // Clip away the lower section first, so the tower seems to retreat upward.
-  const extraBase = withdrawn <= 0 ? 40 : 0;
-  ctx.fillRect(-w / 2, -len, w, visibleHeight + extraBase);
+function drawTower(w: number, len: number) {
+  ctx.fillRect(-w / 2, -len, w, len + 40);
   ctx.beginPath();
-  ctx.rect(-w / 2, -len, w, visibleHeight + extraBase);
+  ctx.rect(-w / 2, -len, w, len + 40);
   let flip = false;
-  for (let y = -len; y < bottom; y += w * 0.8) {
-    const e = Math.min(y + w * 0.8, bottom);
+  for (let y = -len; y < 0; y += w * 0.8) {
+    const e = Math.min(y + w * 0.8, 0);
     ctx.moveTo(flip ? w / 2 : -w / 2, y); ctx.lineTo(flip ? -w / 2 : w / 2, e);
     ctx.moveTo(-w / 2, e); ctx.lineTo(w / 2, e);
     flip = !flip;
