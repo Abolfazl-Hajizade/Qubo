@@ -308,9 +308,9 @@ function drawCube(x: number, bottom: number, tilt: number) {
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
   ctx.fillStyle = p.paper;
-  for (const ex of [CUBE / 2 - 16, CUBE / 2 - 7]) {
+  for (const ex of [CUBE / 2 - 19, CUBE / 2 - 7]) {
     ctx.beginPath();
-    ctx.arc(ex, -CUBE / 2 + 11, 3.2, 0, Math.PI * 2);
+    ctx.arc(ex, -CUBE / 2 + 12, 5.2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
