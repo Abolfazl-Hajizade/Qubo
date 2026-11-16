@@ -91,8 +91,10 @@ function seat(w: World) {
 export function createWorld(rng: () => number = Math.random): World {
   const a: Tower = { x: START_RIGHT - 44, w: 44, top: 270, tipStart: 3.5, tipAccel: 0.9, leanAccel: 0.85, rhythm: 0.94 };
   const b = nextTower(a, rng, 0);
+  const towers = [a, b];
+  while (towers.length < 6) towers.push(nextTower(towers[towers.length - 1], rng, 0));
   const w: World = {
-    phase: 'wait', towers: [a, b, nextTower(b, rng, 0), nextTower(nextTower(b, rng, 0), rng, 0), nextTower(nextTower(nextTower(b, rng, 0), rng, 0), rng, 0), nextTower(nextTower(nextTower(nextTower(b, rng, 0), rng, 0), rng, 0), rng, 0)], angle: 0, vel: a.tipStart,
+    phase: 'wait', towers, angle: 0, vel: a.tipStart,
     fallen: [], offset: 0, slide: 0, landed: 1, landingAge: 0, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false, rescueInPlace: false,
   };
   seat(w);
