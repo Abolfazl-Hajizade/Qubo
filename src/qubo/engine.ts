@@ -22,7 +22,7 @@ const FALL_AT = 82; // degrees: past this the cube slides off with the tower
 export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number }
 /** A tower left behind: either it is carried out of view during a jump, or it topples after a fall. */
 export interface Fallen { pivot: number; w: number; len: number; angle: number; vel: number; fixed?: boolean }
-export type Phase = 'wait' | 'air' | 'scroll' | 'drop' | 'over';
+export type Phase = 'wait' | 'air' | 'scroll' | 'rescue' | 'drop' | 'over';
 
 export interface World {
   phase: Phase;
@@ -43,6 +43,7 @@ export interface World {
   camTarget: number;
   score: number;
   over: boolean;
+  rescueAvailable: boolean; // one recovery jump after sliding/falling off a fresh landing
 }
 
 const between = (rng: () => number, lo: number, hi: number) => lo + rng() * (hi - lo);
@@ -83,7 +84,7 @@ export function createWorld(rng: () => number = Math.random): World {
   const b = nextTower(a, rng, 0);
   const w: World = {
     phase: 'wait', towers: [a, b, nextTower(b, rng, 0)], angle: 0, vel: a.tipStart,
-    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false,
   };
   seat(w);
   return w;
@@ -93,9 +94,10 @@ export function createWorld(rng: () => number = Math.random): World {
 export function launch(w: World) {
   // A landed cube can jump again immediately, even while it is still rolling
   // and the tower is already beginning to lean.
-  if (w.phase !== 'wait' && w.phase !== 'scroll') return;
+  const rescue = w.phase === 'drop' && w.rescueAvailable;
+  if (w.phase !== 'wait' && w.phase !== 'scroll' && !rescue) return;
   const fromScroll = w.phase === 'scroll';
-  const activeIndex = fromScroll ? w.landed : 0;
+  const activeIndex = (fromScroll || rescue) ? w.landed : 0;
   const t = w.towers[activeIndex];
   const a = rad(w.angle);
   const tip = towerLen(t) * rad(w.vel); // tip speed, across the tower
@@ -106,7 +108,15 @@ export function launch(w: World) {
   // it did on a normal takeoff. The newly landed tower has already started
   // tipping during scroll; do not wait for the cube to settle before allowing
   // the next jump.
-  w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
+  if (!rescue) w.fallen.push({ pivot: pivotX(t), w: t.w, len: towerLen(t), angle: w.angle, vel: 0, fixed: true });
+
+  if (rescue) {
+    // Recovery takeoff: keep the same tower in place and let its normal
+    // scroll/tip motion continue. No camera handoff or tower generation.
+    w.rescueAvailable = false;
+    w.phase = 'rescue';
+    return;
+  }
 
   if (fromScroll) {
     // Promote the tower we just left to the front of the flight sequence so
@@ -289,7 +299,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // Either end can run out from under the cube, including the rear edge.
       const alongSupport = half * (Math.abs(Math.cos(ca - a)) + Math.abs(Math.sin(ca - a)));
       if (w.offset > landedTower.w / 2 + alongSupport || w.offset < -landedTower.w / 2 - alongSupport || w.angle >= FALL_AT) {
-        w.fallen.push({ pivot: pivotX(landedTower), w: landedTower.w, len: towerLen(landedTower), angle: w.angle, vel: w.vel });
+        // Give the player one last recovery jump while preserving this exact
+        // landing tower. It keeps tipping and moving out of view as usual.
+        w.rescueAvailable = true;
         w.vx = w.slide * Math.cos(a) + towerLen(landedTower) * rad(w.vel) * Math.cos(a);
         w.vy = w.slide * Math.sin(a) + towerLen(landedTower) * rad(w.vel) * Math.sin(a);
         w.phase = 'drop';
@@ -307,6 +319,58 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.cubeSpin = w.vel;
         w.phase = 'wait';
         seat(w);
+      }
+      break;
+    }
+    case 'rescue': {
+      // Keep the landing tower's established motion/camera follow running
+      // while the cube makes a short recovery arc back onto that same tower.
+      const t = w.towers[w.landed];
+      w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * (1 + Math.min(0.35, w.score * 0.018)) * dt;
+      w.angle += w.vel * dt;
+      const cameraAim = Math.max(0, pivotX(t) + towerLen(t) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
+      w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
+      w.camTarget = w.cam;
+
+      const previousX = w.cubeX + CUBE / 2;
+      const previousY = w.cubeY - CUBE / 2;
+      const previousAngle = w.cubeAngle;
+      w.vy += GRAVITY * dt;
+      w.cubeX += w.vx * dt;
+      w.cubeY += w.vy * dt;
+      w.cubeAngle += w.cubeSpin * dt;
+      w.cubeSpin *= Math.exp(-0.32 * dt);
+
+      const a = rad(w.angle), cs = Math.cos(a), sn = Math.sin(a);
+      const local = (cx: number, cy: number) => {
+        const dx = cx - pivotX(t), dy = cy - H;
+        return { x: dx * cs + dy * sn, y: -dx * sn + dy * cs };
+      };
+      const half = CUBE / 2;
+      const currentCenterX = w.cubeX + half;
+      const currentCenterY = w.cubeY - half;
+      const before = local(previousX, previousY);
+      const current = local(currentCenterX, currentCenterY);
+      const beforeSupport = half * (Math.abs(Math.sin(rad(previousAngle - w.angle))) + Math.abs(Math.cos(rad(previousAngle - w.angle))));
+      const support = half * (Math.abs(Math.sin(rad(w.cubeAngle - w.angle))) + Math.abs(Math.cos(rad(w.cubeAngle - w.angle))));
+      const len = towerLen(t);
+      const crossed = current.y + support >= -len && before.y + beforeSupport <= -len + 1 && (w.vx * -sn + w.vy * cs) > 0;
+      const alongSupport = half * (Math.abs(Math.cos(rad(w.cubeAngle - w.angle))) + Math.abs(Math.sin(rad(w.cubeAngle - w.angle))));
+      if (crossed && current.x + alongSupport >= -t.w / 2 && current.x - alongSupport <= t.w / 2) {
+        // Place the cube on the same sloped top using its actual rotated support.
+        const localY = -len - support;
+        const worldX = pivotX(t) + current.x * cs - localY * sn;
+        const worldY = H + current.x * sn + localY * cs;
+        w.cubeX = worldX - half;
+        w.cubeY = worldY + half;
+        w.offset = current.x;
+        w.slide = 0;
+        w.phase = 'scroll';
+        return;
+      }
+      if (w.cubeY > H + CUBE || current.x > t.w / 2 + 180 || current.x < -t.w / 2 - 180) {
+        w.fallen.push({ pivot: pivotX(t), w: t.w, len, angle: w.angle, vel: w.vel });
+        w.phase = 'drop';
       }
       break;
     }
