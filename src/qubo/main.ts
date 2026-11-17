@@ -17,7 +17,6 @@ const numberFormat = new Intl.NumberFormat();
 // as required by mobile browser autoplay policies.
 let audioContext: AudioContext | null = null;
 let movementSoundAt = 0;
-let lastAudioPhase: World['phase'] = 'wait';
 
 function unlockAudio() {
   if (!audioContext) {
