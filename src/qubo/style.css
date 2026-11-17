@@ -22,7 +22,7 @@ body:has(#game:not([hidden])), body:has(#home:not([hidden])) {
 }
 #game .topbar .meta span,
 #game .topbar .score span { color: rgba(235, 242, 247, 0.78); }
-#game .topbar .score b { color: #ff9a9a; }
+#game .topbar .score b { color: var(--coral); }
 #game .topbar .icon-btn {
   background: rgba(12, 22, 31, 0.28);
   color: #f3f6f8;
