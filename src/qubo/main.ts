@@ -18,6 +18,9 @@ let raf = 0;
 let last = 0;
 let paused = false;
 let started = false;
+// Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
+let landingAgeVisual = Infinity;
+let takeoffAgeVisual = Infinity;
 let best = loadJSON<number>(BEST_KEY, 0);
 
 const canvas = $<HTMLCanvasElement>('stage');
@@ -67,6 +70,8 @@ function start() {
   world = createWorld();
   paused = false;
   started = false;
+  landingAgeVisual = Infinity;
+  takeoffAgeVisual = Infinity;
   screens.show('game');
   $('best').textContent = String(best);
   setScore();
@@ -81,6 +86,10 @@ function down() {
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
   if (!started) { started = true; setStatus(''); last = performance.now(); return; } // the first tap only starts the tower tipping
   launch(world);
+  if (world.phase === 'air' || world.phase === 'rescue') {
+    takeoffAgeVisual = 0;
+    landingAgeVisual = Infinity;
+  }
 }
 
 function pause() {
@@ -114,7 +123,11 @@ function loop(now: number) {
   last = now;
   if (started && !paused) {
     const was = world.over;
+    const previousPhase = world.phase;
     step(world, dt);
+    if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
+    if (landingAgeVisual < 2) landingAgeVisual += dt;
+    if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
     setScore();
     if (world.over && !was) finish();
   }
@@ -250,7 +263,18 @@ function draw() {
   }
 
   const isSupported = world.phase === 'wait' || world.phase === 'scroll' || world.phase === 'rescue';
-  drawCube(world.cubeX, world.cubeY, world.cubeAngle, isSupported ? world.angle : 0);
+  // Airborne stretch follows vertical speed. Landing gets a brief, damped squash and rebound.
+  // These transforms are render-only: positions, hitboxes, timing and difficulty are unchanged.
+  const impact = landingAgeVisual < 0.48
+    ? Math.exp(-15 * landingAgeVisual) * Math.sin(25 * landingAgeVisual)
+    : 0;
+  const takeoff = takeoffAgeVisual < 0.16 ? Math.sin(Math.PI * takeoffAgeVisual / 0.16) : 0;
+  const rising = (world.phase === 'air' || world.phase === 'rescue')
+    ? Math.max(-1, Math.min(1, -world.vy / 950))
+    : 0;
+  const scaleX = 1 + impact * 0.17 - takeoff * 0.07 - rising * 0.035;
+  const scaleY = 1 - impact * 0.2 + takeoff * 0.12 + rising * 0.09;
+  drawCube(world.cubeX, world.cubeY, world.cubeAngle, isSupported ? world.angle : 0, scaleX, scaleY);
   ctx.restore();
 
   // A single understated ground line remains beneath the towers.
@@ -348,7 +372,7 @@ function drawTower(w: number, len: number) {
 }
 
 /** The cube, with a pair of eyes looking ahead. */
-function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0) {
+function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, scaleX = 1, scaleY = 1) {
   const p = palette;
   const surfaceGap = 2.5; // keep the cube's lower edge visually distinct from the tower top
   ctx.save();
@@ -357,6 +381,8 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0) {
     bottom - CUBE / 2 - surfaceGap * Math.cos(rad(supportAngle)),
   );
   ctx.rotate(rad(tilt));
+  // Scale around the cube centre; keep all physics coordinates independent from this effect.
+  ctx.scale(scaleX, scaleY);
   ctx.fillStyle = '#05090e';
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
