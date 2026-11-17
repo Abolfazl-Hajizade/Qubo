@@ -13,83 +13,6 @@ const history = createHistory<{ endedAt: number; score: number; best: boolean }>
 const MAX_DT = 1 / 30;
 const numberFormat = new Intl.NumberFormat();
 
-// Lightweight procedural sound effects. Audio starts only after a user gesture,
-// as required by mobile browser autoplay policies.
-let audioContext: AudioContext | null = null;
-let movementSoundAt = 0;
-
-function unlockAudio() {
-  if (!audioContext) {
-    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (AudioContextClass) audioContext = new AudioContextClass();
-  }
-  if (audioContext?.state === 'suspended') void audioContext.resume();
-}
-
-function softTone(frequency: number, duration: number, volume: number, type: OscillatorType = 'sine', endFrequency = frequency) {
-  const ac = audioContext;
-  if (!ac || ac.state !== 'running') return;
-  const now = ac.currentTime;
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(frequency, now);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(25, endFrequency), now + duration);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + Math.min(0.025, duration * 0.18));
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  osc.connect(gain).connect(ac.destination);
-  osc.start(now);
-  osc.stop(now + duration + 0.02);
-}
-
-function playWoodImpactSound() {
-  const ac = audioContext;
-  if (!ac || ac.state !== 'running') return;
-  const now = ac.currentTime;
-
-  // A compact wooden knock: a soft broadband contact followed by two warm,
-  // quickly-damped resonances. Kept short and quiet so it feels physical.
-  const length = Math.floor(ac.sampleRate * 0.075);
-  const buffer = ac.createBuffer(1, length, ac.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < length; i++) {
-    const fade = Math.pow(1 - i / length, 2.4);
-    data[i] = (Math.random() * 2 - 1) * fade;
-  }
-  const source = ac.createBufferSource();
-  const filter = ac.createBiquadFilter();
-  const noiseGain = ac.createGain();
-  source.buffer = buffer;
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(1250, now);
-  filter.frequency.exponentialRampToValueAtTime(420, now + 0.07);
-  noiseGain.gain.setValueAtTime(0.0001, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.045, now + 0.004);
-  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.078);
-  source.connect(filter).connect(noiseGain).connect(ac.destination);
-  source.start(now);
-  source.stop(now + 0.08);
-
-  softTone(148, 0.16, 0.105, 'triangle', 88);
-  softTone(238, 0.075, 0.035, 'sine', 162);
-}
-
-function updateMovementSound(now: number) {
-  const ac = audioContext;
-  if (!ac || ac.state !== 'running' || !started || paused || world.over) return;
-  if (world.phase !== 'wait' && world.phase !== 'scroll') return;
-  // Small, irregular creaks follow the tower's actual angular speed.
-  if (now - movementSoundAt < 720 + Math.random() * 380) return;
-  const speed = Math.min(1, Math.abs(world.vel) / 150);
-  const volume = 0.008 + speed * 0.012;
-  softTone(115 + speed * 38, 0.19, volume, 'triangle', 82 + speed * 20);
-  if (speed > 0.45 && Math.random() > 0.45) {
-    softTone(178 + speed * 22, 0.13, volume * 0.38, 'sine', 132);
-  }
-  movementSoundAt = now;
-}
-
 let world: World = createWorld();
 let raf = 0;
 let last = 0;
@@ -147,7 +70,6 @@ function renderHome() {
 }
 
 function start() {
-  unlockAudio();
   if (endDialog.open) endDialog.close();
   world = createWorld();
   paused = false;
@@ -168,7 +90,6 @@ function start() {
 }
 
 function down() {
-  unlockAudio();
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
   if (!started) { started = true; setStatus(''); last = performance.now(); return; } // the first tap only starts the tower tipping
   launch(world);
@@ -207,12 +128,10 @@ function setStatus(title: string, hint = '') {
 function loop(now: number) {
   const dt = Math.min(MAX_DT, (now - last) / 1000);
   last = now;
-  updateMovementSound(now);
   if (started && !paused) {
     const was = world.over;
     const previousPhase = world.phase;
     step(world, dt);
-    if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') playWoodImpactSound();
     if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
