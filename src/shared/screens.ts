@@ -62,8 +62,18 @@ export class Screens {
   }
 
   history() {
-    this.o.renderHistory?.();
+    // Switch first: a malformed saved record must never make the History button appear unresponsive.
     this.show('history');
+    try {
+      this.o.renderHistory?.();
+    } catch (error) {
+      console.error('Could not render Qubo history:', error);
+      const empty = document.getElementById('history-empty');
+      if (empty) {
+        empty.textContent = 'History could not be loaded. Please refresh the game and try again.';
+        empty.hidden = false;
+      }
+    }
   }
 }
 
