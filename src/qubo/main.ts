@@ -43,36 +43,36 @@ function softTone(frequency: number, duration: number, volume: number, type: Osc
   osc.stop(now + duration + 0.02);
 }
 
-function playFallSound() {
+function playWoodImpactSound() {
   const ac = audioContext;
   if (!ac || ac.state !== 'running') return;
   const now = ac.currentTime;
-  // A short airy downward sweep, rather than a synthetic arcade laser.
-  const length = Math.floor(ac.sampleRate * 0.42);
+
+  // A compact wooden knock: a soft broadband contact followed by two warm,
+  // quickly-damped resonances. Kept short and quiet so it feels physical.
+  const length = Math.floor(ac.sampleRate * 0.075);
   const buffer = ac.createBuffer(1, length, ac.sampleRate);
   const data = buffer.getChannelData(0);
-  for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  for (let i = 0; i < length; i++) {
+    const fade = Math.pow(1 - i / length, 2.4);
+    data[i] = (Math.random() * 2 - 1) * fade;
+  }
   const source = ac.createBufferSource();
   const filter = ac.createBiquadFilter();
-  const gain = ac.createGain();
+  const noiseGain = ac.createGain();
   source.buffer = buffer;
   filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(950, now);
-  filter.frequency.exponentialRampToValueAtTime(180, now + 0.38);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(0.055, now + 0.07);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
-  source.connect(filter).connect(gain).connect(ac.destination);
+  filter.frequency.setValueAtTime(1250, now);
+  filter.frequency.exponentialRampToValueAtTime(420, now + 0.07);
+  noiseGain.gain.setValueAtTime(0.0001, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.045, now + 0.004);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.078);
+  source.connect(filter).connect(noiseGain).connect(ac.destination);
   source.start(now);
-  source.stop(now + 0.44);
-  // A muted, low wooden thump marks the tower/cube losing support.
-  softTone(105, 0.24, 0.075, 'sine', 48);
-}
+  source.stop(now + 0.08);
 
-function playImpactSound() {
-  // A rounded low thud with a tiny high-frequency contact tick.
-  softTone(82, 0.34, 0.13, 'sine', 38);
-  softTone(520, 0.055, 0.018, 'triangle', 260);
+  softTone(148, 0.16, 0.105, 'triangle', 88);
+  softTone(238, 0.075, 0.035, 'sine', 162);
 }
 
 function updateMovementSound(now: number) {
@@ -212,8 +212,7 @@ function loop(now: number) {
     const was = world.over;
     const previousPhase = world.phase;
     step(world, dt);
-    if (world.phase === 'drop' && previousPhase !== 'drop') playFallSound();
-    if (world.phase === 'over' && previousPhase !== 'over') playImpactSound();
+    if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') playWoodImpactSound();
     if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
