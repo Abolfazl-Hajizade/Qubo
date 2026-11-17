@@ -9,6 +9,8 @@ const rad = (d: number) => (d * Math.PI) / 180;
 const BEST_KEY = 'qubo.best';
 // Runs and history for the stats page, like the other arcade games'. Qubo shows only its best, so nothing here is on screen.
 const STATS_KEY = 'qubo.stats';
+const PROGRESS_KEY = 'qubo.progress';
+const CHECKPOINT_STEP = 30;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_DT = 1 / 30;
 const numberFormat = new Intl.NumberFormat();
@@ -21,11 +23,15 @@ let started = false;
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
-// Eleven animated environments rotate every ten points; the short blend is visual-only.
+// Eleven animated environments rotate every thirty points; the short blend is visual-only.
 let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
 let best = loadJSON<number>(BEST_KEY, 0);
+const savedProgress = loadJSON<unknown>(PROGRESS_KEY, 0);
+let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
+  ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
+  : 0;
 
 const canvas = $<HTMLCanvasElement>('stage');
 const ctx = canvas.getContext('2d')!;
@@ -98,12 +104,12 @@ function renderHistory() {
 
 function start() {
   if (endDialog.open) endDialog.close();
-  world = createWorld();
+  world = createWorld(Math.random, checkpoint);
   paused = false;
   started = false;
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
-  backdropIndex = Math.floor(world.score / 10) % 11;
+  backdropIndex = Math.floor(world.score / 30) % 11;
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
   screens.show('game');
@@ -163,7 +169,12 @@ function loop(now: number) {
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
     setScore();
-    const nextBackdrop = Math.floor(world.score / 10) % 11;
+    const reachedCheckpoint = Math.floor(world.score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
+    if (reachedCheckpoint > checkpoint) {
+      checkpoint = reachedCheckpoint;
+      saveJSON(PROGRESS_KEY, checkpoint);
+    }
+    const nextBackdrop = Math.floor(world.score / 30) % 11;
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
