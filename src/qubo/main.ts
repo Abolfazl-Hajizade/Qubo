@@ -228,7 +228,7 @@ async function loadLeaderboard() {
       status.textContent = 'Top 50 players';
       for (const entry of entries) {
         const item = document.createElement('li');
-        item.textContent = `#${entry.rank}  ${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
+        item.textContent = `${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
         if (entry.telegram_user_id && data.me && entry.rank === data.me.rank) item.classList.add('is-me');
         list.append(item);
       }
