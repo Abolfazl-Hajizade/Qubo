@@ -23,7 +23,7 @@ let started = false;
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
-// Eleven animated environments rotate every thirty points; the short blend is visual-only.
+// Twenty-six animated environments rotate every thirty points; the short blend is visual-only.
 let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
@@ -110,7 +110,7 @@ function start() {
   started = false;
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
-  backdropIndex = Math.floor(world.score / 30) % 11;
+  backdropIndex = Math.floor(world.score / 30) % 26;
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
   screens.show('game');
@@ -175,7 +175,7 @@ function loop(now: number) {
       checkpoint = reachedCheckpoint;
       saveJSON(PROGRESS_KEY, checkpoint);
     }
-    const nextBackdrop = Math.floor(world.score / 30) % 11;
+    const nextBackdrop = Math.floor(world.score / 30) % 26;
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
@@ -337,7 +337,7 @@ function draw() {
   ctx.stroke();
 }
 
-/** Eleven animated worlds, changing every thirty points with a soft crossfade. */
+/** Twenty-six animated worlds, changing every thirty points with a soft crossfade. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
   // Keep the page area behind the score/header in sync with the active canvas world.
@@ -367,7 +367,23 @@ function drawBackdrop(index: number, time: number) {
     ['#351b2a', '#a84332', '#f29a50'], // volcanic land
     ['#171b49', '#654c91', '#e7a8cf'], // meditation and chakra sanctuary
     ['#100f35', '#34316f', '#e04d9c'], // cyberpunk city
+    ['#171b49', '#654c91', '#e7a8cf'], // meditation and chakra sanctuary
+    ['#100f35', '#34316f', '#e04d9c'], // cyberpunk city
     ['#080d2b', '#29265d', '#66518f'], // cosmic space
+    ['#17152f', '#554b85', '#b9a4d8'], // metaphysics
+    ['#72634e', '#b7a184', '#e1cba6'], // philosophy
+    ['#381b3b', '#a34c78', '#f2a5b8'], // love
+    ['#10172d', '#343958', '#8b8cab'], // solitude
+    ['#071d3d', '#126d9b', '#a3eaff'], // quantum
+    ['#031d19', '#07543e', '#1ab56b'], // matrix
+    ['#080d2b', '#383b83', '#d2a8f2'], // cosmology
+    ['#333052', '#777ba7', '#d8d9f4'], // dreams
+    ['#111b38', '#45466e', '#d7b77e'], // time
+    ['#164c45', '#4f9b80', '#b2d8a1'], // nature
+    ['#101e40', '#3e6598', '#b5d9f4'], // consciousness
+    ['#25334a', '#778ba0', '#e9c994'], // freedom
+    ['#193b58', '#746a83', '#d8c6a1'], // balance
+    ['#211b46', '#67539a', '#f0c78d'], // inner power
   ];
   const colors = palettes[index];
   gradient.addColorStop(0, colors[0]);
@@ -392,7 +408,7 @@ function drawBackdrop(index: number, time: number) {
       ctx.ellipse(x, y, width, 30 + (i % 2) * 12, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    const cycle = time % 11.5;
+    const cycle = time % 26.5;
     const flash = cycle < 0.11 ? 0.24 : cycle > 0.24 && cycle < 0.31 ? 0.13 : 0;
     if (flash > 0) {
       ctx.fillStyle = `rgba(196, 218, 232, ${flash})`;
@@ -521,12 +537,14 @@ function drawBackdrop(index: number, time: number) {
     // Cyberpunk skyline with neon architecture and animated light trails.
     for(let i=0;i<13;i++){const x=i*30-5,height=95+((i*43)%155);ctx.fillStyle=i%2?'#171a46':'#24204f';ctx.fillRect(x,360-height,26,height+60);ctx.fillStyle=i%3?'rgba(73,224,255,0.78)':'rgba(255,82,184,0.8)';for(let y=375-height;y<395;y+=18){if((i+y)%3)ctx.fillRect(x+6,y,3,7);}}
     ctx.save();ctx.shadowBlur=13;for(let i=0;i<5;i++){const y=115+i*43+Math.sin(time*1.2+i)*5;ctx.strokeStyle=i%2?'rgba(70,225,255,0.7)':'rgba(255,76,190,0.72)';ctx.shadowColor=ctx.strokeStyle;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();ctx.fillStyle='#101333';ctx.fillRect(0,405,W,15);
-  } else {
+  } else if (index === 10) {
     // Cosmic space: a soft nebula, stars and a ringed distant planet.
     const nebula=ctx.createRadialGradient(115,185,5,115,185,170);nebula.addColorStop(0,'rgba(176,94,220,0.34)');nebula.addColorStop(1,'rgba(76,65,160,0)');
     ctx.fillStyle=nebula;ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(270,112);ctx.rotate(-.24);ctx.strokeStyle='rgba(219,196,255,0.8)';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(0,0,53,16,0,0,Math.PI*2);ctx.stroke();
     const planet=ctx.createRadialGradient(-12,-14,3,0,0,31);planet.addColorStop(0,'#e4c8ff');planet.addColorStop(1,'#6755a8');ctx.fillStyle=planet;ctx.beginPath();ctx.arc(0,0,29,0,Math.PI*2);ctx.fill();ctx.restore();
     for(let i=0;i<90;i++){const x=(i*47.3+(i%5)*13)%W,y=(i*83.7)%H;ctx.globalAlpha=.45+.45*Math.sin(time*(1+i%3)+i);ctx.fillStyle='#fff4ff';ctx.beginPath();ctx.arc(x,y,.7+(i%3)*.45,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+  } else {
+    drawNewWorld(index, time);
   }
 
   const shade = ctx.createLinearGradient(0, H * 0.58, 0, H);
@@ -534,6 +552,25 @@ function drawBackdrop(index: number, time: number) {
   shade.addColorStop(1, 'rgba(15,25,35,0.18)');
   ctx.fillStyle = shade;
   ctx.fillRect(0, 0, W, H);
+}
+
+
+function drawNewWorld(index: number, time: number) {
+  const stars=(n:number)=>{for(let i=0;i<n;i++){ctx.globalAlpha=.5+.4*Math.sin(time+i);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(i*53%W,(i*79+Math.sin(time+i)*5)%300,1+i%2,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;};
+  if(index===11){ctx.strokeStyle='#d7baff';ctx.lineWidth=3;for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(180,205,45+i*17,90+i*17,Math.sin(time*.3)*.04,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#30264e';[25,85,250,310].forEach(x=>ctx.fillRect(x,150,18,270));stars(30);}
+  else if(index===12){ctx.fillStyle='#d0bda0';for(let i=0;i<5;i++){const x=20+i*75;ctx.fillRect(x,180,14,240);ctx.fillRect(x-8,175,30,9);}ctx.beginPath();ctx.arc(180,220,20,0,Math.PI*2);ctx.fill();ctx.fillRect(162,240,36,70);ctx.beginPath();ctx.ellipse(180,310,42,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,230,180,.7)';ctx.beginPath();ctx.arc(285,80,25,0,Math.PI*2);ctx.fill();}
+  else if(index===13){ctx.fillStyle='rgba(255,110,165,.35)';ctx.beginPath();ctx.arc(180,150,120,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffb5d0';ctx.font='bold 120px serif';ctx.textAlign='center';ctx.fillText('♥',180,180);ctx.fillStyle='#211d3d';[148,211].forEach((x,i)=>{ctx.beginPath();ctx.arc(x,260-i*5,16,0,Math.PI*2);ctx.fill();ctx.fillRect(x-14,276-i*5,28,80);});stars(35);}
+  else if(index===14){ctx.fillStyle='#e7e1ff';ctx.beginPath();ctx.arc(270,95,40,0,Math.PI*2);ctx.fill();ctx.fillStyle='#252744';ctx.beginPath();ctx.moveTo(0,350);ctx.lineTo(85,260);ctx.lineTo(145,330);ctx.lineTo(225,235);ctx.lineTo(360,355);ctx.lineTo(360,420);ctx.lineTo(0,420);ctx.fill();ctx.fillStyle='#11172c';ctx.beginPath();ctx.arc(180,303,8,0,Math.PI*2);ctx.fill();ctx.fillRect(175,311,10,48);stars(55);}
+  else if(index===15){ctx.save();ctx.translate(180,205);for(let i=0;i<3;i++){ctx.save();ctx.rotate(time*.25+i*Math.PI/3);ctx.strokeStyle=['#75edff','#d5a6ff','#8dffce'][i];ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,0,105,37,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(105,0,5,0,Math.PI*2);ctx.fill();ctx.restore();}ctx.fillStyle='#ffe8a6';ctx.shadowColor='#7ceaff';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(0,0,14,0,Math.PI*2);ctx.fill();ctx.restore();stars(50);}
+  else if(index===16){ctx.strokeStyle='rgba(80,255,145,.4)';for(let x=10;x<W;x+=24){ctx.beginPath();ctx.moveTo(180,160);ctx.lineTo(x,410);ctx.stroke();}ctx.fillStyle='#70ff9b';ctx.font='13px monospace';for(let i=0;i<18;i++)ctx.fillText('0101',(i*29)%W,(i*37+time*35)%390);ctx.fillStyle='#071c1b';ctx.fillRect(145,190,70,180);ctx.fillStyle='#c4ffd5';ctx.beginPath();ctx.arc(180,180,13,0,Math.PI*2);ctx.fill();}
+  else if(index===17){const g=ctx.createRadialGradient(180,205,3,180,205,155);g.addColorStop(0,'#fff2cb');g.addColorStop(.2,'#f3a8ed');g.addColorStop(.6,'rgba(103,115,231,.5)');g.addColorStop(1,'rgba(20,25,75,0)');ctx.fillStyle=g;ctx.fillRect(0,35,W,340);ctx.save();ctx.translate(180,205);ctx.rotate(time*.03);for(let a=0;a<2;a++){ctx.strokeStyle=a?'#b4c3ff':'#ffb4e6';ctx.lineWidth=7;ctx.beginPath();for(let t=0;t<Math.PI*4;t+=.08){const r=4+t*8,x=Math.cos(t+a*Math.PI)*r,y=Math.sin(t+a*Math.PI)*r*.48;if(!t)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();}ctx.restore();stars(85);}
+  else if(index===18){for(let i=0;i<6;i++){const y=350-i*35;ctx.fillStyle='rgba(220,220,255,.5)';ctx.fillRect(95+i*10,y,170-i*20,12);ctx.beginPath();ctx.ellipse(180,y,90-i*9,15,0,0,Math.PI*2);ctx.fill();}ctx.strokeStyle='#ffe6ff';ctx.lineWidth=5;ctx.beginPath();ctx.arc(180,155,57,Math.PI,0);ctx.lineTo(237,300);ctx.lineTo(123,300);ctx.closePath();ctx.stroke();stars(35);}
+  else if(index===19){ctx.strokeStyle='#f5d9a5';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(135,95);ctx.lineTo(225,95);ctx.lineTo(185,205);ctx.lineTo(225,315);ctx.lineTo(135,315);ctx.lineTo(175,205);ctx.closePath();ctx.stroke();ctx.fillStyle='#ffdc96';ctx.beginPath();ctx.moveTo(145,108);ctx.lineTo(215,108);ctx.lineTo(180,190);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(180,220);ctx.lineTo(215,302);ctx.lineTo(145,302);ctx.closePath();ctx.fill();stars(55);}
+  else if(index===20){ctx.fillStyle='#2d665b';ctx.beginPath();ctx.moveTo(0,210);ctx.lineTo(70,95);ctx.lineTo(140,215);ctx.lineTo(225,70);ctx.lineTo(360,225);ctx.lineTo(360,420);ctx.lineTo(0,420);ctx.fill();ctx.fillStyle='#a0ebf0';ctx.fillRect(145,155,70,185);ctx.strokeStyle='#efffff';for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(145+i*10,180);ctx.lineTo(145+i*10+Math.sin(time*2+i)*4,330);ctx.stroke();}for(let i=0;i<9;i++){ctx.fillStyle=i%2?'#174c3d':'#28634a';ctx.beginPath();ctx.moveTo(i*43,375);ctx.lineTo(i*43+21,260-i%3*22);ctx.lineTo(i*43+42,375);ctx.fill();}}
+  else if(index===21){const pts=[];for(let i=0;i<18;i++)pts.push({x:65+i*71%230,y:85+i*47%235});ctx.strokeStyle='rgba(160,220,255,.6)';for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++)if(Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y)<95){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.stroke();}pts.forEach((p,i)=>{ctx.fillStyle=i%3?'#9feaff':'#e2b9ff';ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();});stars(25);}
+  else if(index===22){ctx.fillStyle='#53677d';ctx.beginPath();ctx.moveTo(0,390);ctx.lineTo(180,155);ctx.lineTo(360,390);ctx.lineTo(360,420);ctx.lineTo(0,420);ctx.fill();ctx.fillStyle='#17243a';ctx.beginPath();ctx.arc(180,190,10,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#17243a';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(180,202);ctx.lineTo(180,270);ctx.moveTo(180,215);ctx.lineTo(140,180);ctx.moveTo(180,215);ctx.lineTo(220,180);ctx.stroke();stars(30);}
+  else if(index===23){ctx.save();ctx.translate(180,205);ctx.rotate(time*.12);ctx.fillStyle='#f5e9c8';ctx.beginPath();ctx.arc(0,0,83,0,Math.PI*2);ctx.fill();ctx.fillStyle='#203b59';ctx.beginPath();ctx.arc(0,0,83,-Math.PI/2,Math.PI/2);ctx.fill();ctx.arc(0,-41,41,Math.PI/2,-Math.PI/2,true);ctx.arc(0,41,41,-Math.PI/2,Math.PI/2,true);ctx.fill();ctx.fillStyle='#203b59';ctx.beginPath();ctx.arc(0,-41,12,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f5e9c8';ctx.beginPath();ctx.arc(0,41,12,0,Math.PI*2);ctx.fill();ctx.restore();stars(30);}
+  else {const g=ctx.createRadialGradient(180,210,12,180,210,150);g.addColorStop(0,'rgba(255,226,160,.65)');g.addColorStop(.45,'rgba(174,117,255,.28)');g.addColorStop(1,'rgba(90,70,160,0)');ctx.fillStyle=g;ctx.fillRect(20,40,320,340);for(let r=0;r<4;r++){ctx.strokeStyle='rgba(255,220,170,'+(.3-r*.05)+')';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(180,215,65+r*20,95+r*20,0,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#292344';ctx.beginPath();ctx.arc(180,150,17,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(165,173);ctx.quadraticCurveTo(140,230,153,265);ctx.quadraticCurveTo(180,280,207,265);ctx.quadraticCurveTo(220,230,195,173);ctx.fill();ctx.beginPath();ctx.ellipse(180,278,60,15,0,0,Math.PI*2);ctx.fill();['#ff5c70','#ffad50','#f5df65','#75e39c','#69dfea','#72a5ff','#d0a0ff'].forEach((c,i)=>{ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=14;ctx.beginPath();ctx.arc(180,255-i*17,5,0,Math.PI*2);ctx.fill();});ctx.shadowBlur=0;stars(25);}
 }
 
 function drawClouds(time: number, color: string) {
