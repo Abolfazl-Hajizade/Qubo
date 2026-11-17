@@ -1,4 +1,4 @@
-import { $, Screens, onVisibility } from '../shared/screens';
+import { $, Screens, dateFormat, onVisibility } from '../shared/screens';
 import { createHistory, loadJSON, saveJSON } from '../shared/store';
 import { CUBE, H, W, type World, createWorld, launch, pivotX, step, towerLen } from './engine';
 
@@ -32,7 +32,7 @@ const ctx = canvas.getContext('2d')!;
 const frame = canvas.parentElement!;
 const endDialog = $<HTMLDialogElement>('end-dialog');
 
-const screens = new Screens({ leaveGame: stopLoop, renderHome });
+const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory });
 
 type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => void };
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
@@ -67,6 +67,31 @@ renderHome();
 
 function renderHome() {
   $('home-best').textContent = best ? `Best ${numberFormat.format(best)}` : '';
+}
+
+function renderHistory() {
+  const entries = history.load();
+  const list = $('history-list');
+  $('history-empty').hidden = entries.length > 0;
+  list.replaceChildren(...entries.map((entry) => {
+    const item = document.createElement('li');
+    const top = document.createElement('div');
+    top.className = 'qubo-history-top';
+    const score = document.createElement('b');
+    score.textContent = `${numberFormat.format(entry.score)} ${entry.score === 1 ? 'tower' : 'towers'}`;
+    const date = document.createElement('time');
+    date.dateTime = new Date(entry.endedAt).toISOString();
+    date.textContent = dateFormat.format(new Date(entry.endedAt));
+    top.append(score, date);
+    item.append(top);
+    if (entry.best) {
+      const badge = document.createElement('span');
+      badge.className = 'qubo-history-best';
+      badge.textContent = 'New best';
+      item.append(badge);
+    }
+    return item;
+  }));
 }
 
 function start() {
