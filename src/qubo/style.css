@@ -131,23 +131,27 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="5"] {
   background-image: linear-gradient(180deg, #344b70 0%, #839bb7 62%, #d5b98e 100%);
 }
 
-/* Keep leaderboard dimensions stable as more scores are added. */
-.leaderboard-dialog {
-  max-height: 82dvh;
-  overflow: hidden;
+/* Keep the leaderboard dialog fixed while the score list scrolls independently. */
+#leaderboard-dialog.leaderboard-dialog {
   display: flex;
   flex-direction: column;
+  max-height: 82vh;
+  max-height: 82dvh;
+  overflow: hidden;
 }
-.leaderboard-list {
+#leaderboard-dialog #leaderboard-list {
+  display: block;
   flex: 0 1 auto;
   min-height: 0;
+  max-height: 42vh;
   max-height: min(42dvh, 320px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
-.leaderboard-list li { flex: 0 0 auto; }
+#leaderboard-dialog #leaderboard-list li { flex: 0 0 auto; }
 
 /* Some embedded WebViews do not implement the native dialog closed-state default.
    Keep modal forms hidden until the app explicitly opens them. */
