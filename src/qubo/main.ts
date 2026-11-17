@@ -13,6 +13,84 @@ const history = createHistory<{ endedAt: number; score: number; best: boolean }>
 const MAX_DT = 1 / 30;
 const numberFormat = new Intl.NumberFormat();
 
+// Lightweight procedural sound effects. Audio starts only after a user gesture,
+// as required by mobile browser autoplay policies.
+let audioContext: AudioContext | null = null;
+let movementSoundAt = 0;
+let lastAudioPhase: World['phase'] = 'wait';
+
+function unlockAudio() {
+  if (!audioContext) {
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AudioContextClass) audioContext = new AudioContextClass();
+  }
+  if (audioContext?.state === 'suspended') void audioContext.resume();
+}
+
+function softTone(frequency: number, duration: number, volume: number, type: OscillatorType = 'sine', endFrequency = frequency) {
+  const ac = audioContext;
+  if (!ac || ac.state !== 'running') return;
+  const now = ac.currentTime;
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, now);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(25, endFrequency), now + duration);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + Math.min(0.025, duration * 0.18));
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.02);
+}
+
+function playFallSound() {
+  const ac = audioContext;
+  if (!ac || ac.state !== 'running') return;
+  const now = ac.currentTime;
+  // A short airy downward sweep, rather than a synthetic arcade laser.
+  const length = Math.floor(ac.sampleRate * 0.42);
+  const buffer = ac.createBuffer(1, length, ac.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+  const source = ac.createBufferSource();
+  const filter = ac.createBiquadFilter();
+  const gain = ac.createGain();
+  source.buffer = buffer;
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(950, now);
+  filter.frequency.exponentialRampToValueAtTime(180, now + 0.38);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.055, now + 0.07);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+  source.connect(filter).connect(gain).connect(ac.destination);
+  source.start(now);
+  source.stop(now + 0.44);
+  // A muted, low wooden thump marks the tower/cube losing support.
+  softTone(105, 0.24, 0.075, 'sine', 48);
+}
+
+function playImpactSound() {
+  // A rounded low thud with a tiny high-frequency contact tick.
+  softTone(82, 0.34, 0.13, 'sine', 38);
+  softTone(520, 0.055, 0.018, 'triangle', 260);
+}
+
+function updateMovementSound(now: number) {
+  const ac = audioContext;
+  if (!ac || ac.state !== 'running' || !started || paused || world.over) return;
+  if (world.phase !== 'wait' && world.phase !== 'scroll') return;
+  // Small, irregular creaks follow the tower's actual angular speed.
+  if (now - movementSoundAt < 720 + Math.random() * 380) return;
+  const speed = Math.min(1, Math.abs(world.vel) / 150);
+  const volume = 0.008 + speed * 0.012;
+  softTone(115 + speed * 38, 0.19, volume, 'triangle', 82 + speed * 20);
+  if (speed > 0.45 && Math.random() > 0.45) {
+    softTone(178 + speed * 22, 0.13, volume * 0.38, 'sine', 132);
+  }
+  movementSoundAt = now;
+}
+
 let world: World = createWorld();
 let raf = 0;
 let last = 0;
