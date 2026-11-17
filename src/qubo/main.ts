@@ -143,11 +143,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { pa
 renderHome();
 
 function renderHome() {
-  // Embedded Telegram WebViews can occasionally restore a stale modal state.
-  // The home screen must never open with a dialog covering the Play button.
-  const leaderboardDialog = $<HTMLDialogElement>('leaderboard-dialog');
-  if (leaderboardDialog.open) leaderboardDialog.close();
-  leaderboardDialog.removeAttribute('open');
   $('home-best').textContent = best ? `Best ${numberFormat.format(best)}` : '';
 }
 
