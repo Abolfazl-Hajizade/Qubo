@@ -21,7 +21,7 @@ let started = false;
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
-// Five animated environments rotate every ten points; the short blend is visual-only.
+// Eleven animated environments rotate every ten points; the short blend is visual-only.
 let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
@@ -103,7 +103,7 @@ function start() {
   started = false;
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
-  backdropIndex = Math.floor(world.score / 10) % 6;
+  backdropIndex = Math.floor(world.score / 10) % 11;
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
   screens.show('game');
@@ -163,7 +163,7 @@ function loop(now: number) {
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
     setScore();
-    const nextBackdrop = Math.floor(world.score / 10) % 6;
+    const nextBackdrop = Math.floor(world.score / 10) % 11;
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
@@ -325,7 +325,7 @@ function draw() {
   ctx.stroke();
 }
 
-/** Five animated worlds, changing every ten points with a soft crossfade. */
+/** Eleven animated worlds, changing every ten points with a soft crossfade. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
   // Keep the page area behind the score/header in sync with the active canvas world.
@@ -350,7 +350,12 @@ function drawBackdrop(index: number, time: number) {
     ['#174c49', '#68a77a', '#b5c88b'],
     ['#087da8', '#61c5d2', '#d4f0d8'],
     ['#e99b52', '#f5d18a', '#b96e42'],
-    ['#344b70', '#839bb7', '#d5b98e'],
+    ['#344b70', '#839bb7', '#d5b98e'], // city
+    ['#152b49', '#7199bd', '#e1efff'], // snowy mountains
+    ['#351b2a', '#a84332', '#f29a50'], // volcanic land
+    ['#171b49', '#654c91', '#e7a8cf'], // meditation and chakra sanctuary
+    ['#100f35', '#34316f', '#e04d9c'], // cyberpunk city
+    ['#080d2b', '#29265d', '#66518f'], // cosmic space
   ];
   const colors = palettes[index];
   gradient.addColorStop(0, colors[0]);
@@ -454,7 +459,7 @@ function drawBackdrop(index: number, time: number) {
       ctx.fillStyle = 'rgba(255,246,210,0.5)';
       ctx.fillRect(x, y, 2, 2);
     }
-  } else {
+  } else if (index === 5) {
     // Big city: distant skyline, lit windows and a few slow-moving clouds.
     drawClouds(time * 0.45, 'rgba(240,245,255,0.35)');
     for (let i = 0; i < 12; i++) {
@@ -470,6 +475,47 @@ function drawBackdrop(index: number, time: number) {
       }
     }
     ctx.fillStyle = '#34485e'; ctx.fillRect(0, 405, W, 15);
+  } else if (index === 6) {
+    // Snowy mountains: layered alpine peaks and gently falling snow.
+    ctx.fillStyle = 'rgba(255,255,255,0.72)'; ctx.beginPath(); ctx.arc(278,72,22,0,Math.PI*2); ctx.fill();
+    for (let layer=0; layer<3; layer++) {
+      const base=310+layer*35; ctx.fillStyle=['#6689a8','#456887','#294b6b'][layer];
+      ctx.beginPath(); ctx.moveTo(0,base);
+      for(let x=0;x<=W;x+=45){const peak=base-75-((Math.floor(x/45)*37+layer*19)%90);ctx.lineTo(x+22,peak);ctx.lineTo(x+45,base);}
+      ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+    }
+    ctx.fillStyle='rgba(245,250,255,0.9)';
+    for(let i=0;i<65;i++){const x=(i*53+Math.sin(time+i)*8)%W;const y=(i*71+time*(15+i%4)*2)%H;ctx.beginPath();ctx.arc(x,y,1+i%2,0,Math.PI*2);ctx.fill();}
+  } else if (index === 7) {
+    // Volcanic land: glowing crater, lava streams and drifting embers.
+    const glow=ctx.createRadialGradient(180,250,8,180,250,170);glow.addColorStop(0,'rgba(255,126,42,0.38)');glow.addColorStop(1,'rgba(255,70,25,0)');
+    ctx.fillStyle=glow;ctx.fillRect(0,100,W,320);ctx.fillStyle='#382b38';
+    ctx.beginPath();ctx.moveTo(0,355);ctx.lineTo(75,305);ctx.lineTo(142,185);ctx.lineTo(174,220);ctx.lineTo(206,190);ctx.lineTo(285,330);ctx.lineTo(W,360);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#ff8b3d';ctx.lineWidth=7;ctx.shadowColor='#ff542b';ctx.shadowBlur=18;ctx.beginPath();ctx.moveTo(174,218);ctx.quadraticCurveTo(160,285,118,355);ctx.moveTo(204,225);ctx.quadraticCurveTo(232,290,260,370);ctx.stroke();ctx.shadowBlur=0;
+    ctx.fillStyle='#ffb45e';for(let i=0;i<28;i++){const x=(i*47+Math.sin(time*1.3+i)*15)%W;const y=160+((i*61-time*(12+i%4)*5+1800)%230);ctx.globalAlpha=.45+(i%4)*.13;ctx.beginPath();ctx.arc(x,y,1+i%3,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+  } else if (index === 8) {
+    // Serene meditation sanctuary with a symbolic seated silhouette and seven chakra lights.
+    const halo=ctx.createRadialGradient(180,190,8,180,190,155);halo.addColorStop(0,'rgba(255,220,246,0.48)');halo.addColorStop(1,'rgba(255,220,246,0)');
+    ctx.fillStyle=halo;ctx.fillRect(0,20,W,360);ctx.strokeStyle='rgba(246,220,255,0.42)';ctx.lineWidth=2;
+    for(let ring=0;ring<4;ring++){ctx.beginPath();ctx.arc(180,190,62+ring*22+Math.sin(time+ring)*2,0,Math.PI*2);ctx.stroke();}
+    ctx.fillStyle='#282344';ctx.beginPath();ctx.arc(180,151,18,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.moveTo(165,174);ctx.quadraticCurveTo(145,218,153,255);ctx.quadraticCurveTo(180,274,207,255);ctx.quadraticCurveTo(215,218,195,174);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.ellipse(180,274,62,17,0,0,Math.PI*2);ctx.fill();
+    const chakra=['#ff5268','#ff9a45','#f6d65b','#70d58a','#55d8d8','#659bff','#c18aff'];
+    for(let i=0;i<chakra.length;i++){ctx.save();ctx.shadowColor=chakra[i];ctx.shadowBlur=15;ctx.fillStyle=chakra[i];ctx.beginPath();ctx.arc(180,252-i*18,5.5,0,Math.PI*2);ctx.fill();ctx.restore();}
+    ctx.fillStyle='rgba(255,226,246,0.8)';for(let i=0;i<24;i++){const x=(i*67+time*(i%2?3:-2)+W*3)%W;const y=65+(i*43)%260;ctx.beginPath();ctx.arc(x,y,1.2+(i%3)*.5,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='#49385f';ctx.fillRect(0,385,W,35);
+  } else if (index === 9) {
+    // Cyberpunk skyline with neon architecture and animated light trails.
+    for(let i=0;i<13;i++){const x=i*30-5,height=95+((i*43)%155);ctx.fillStyle=i%2?'#171a46':'#24204f';ctx.fillRect(x,360-height,26,height+60);ctx.fillStyle=i%3?'rgba(73,224,255,0.78)':'rgba(255,82,184,0.8)';for(let y=375-height;y<395;y+=18){if((i+y)%3)ctx.fillRect(x+6,y,3,7);}}
+    ctx.save();ctx.shadowBlur=13;for(let i=0;i<5;i++){const y=115+i*43+Math.sin(time*1.2+i)*5;ctx.strokeStyle=i%2?'rgba(70,225,255,0.7)':'rgba(255,76,190,0.72)';ctx.shadowColor=ctx.strokeStyle;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();ctx.fillStyle='#101333';ctx.fillRect(0,405,W,15);
+  } else {
+    // Cosmic space: a soft nebula, stars and a ringed distant planet.
+    const nebula=ctx.createRadialGradient(115,185,5,115,185,170);nebula.addColorStop(0,'rgba(176,94,220,0.34)');nebula.addColorStop(1,'rgba(76,65,160,0)');
+    ctx.fillStyle=nebula;ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(270,112);ctx.rotate(-.24);ctx.strokeStyle='rgba(219,196,255,0.8)';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(0,0,53,16,0,0,Math.PI*2);ctx.stroke();
+    const planet=ctx.createRadialGradient(-12,-14,3,0,0,31);planet.addColorStop(0,'#e4c8ff');planet.addColorStop(1,'#6755a8');ctx.fillStyle=planet;ctx.beginPath();ctx.arc(0,0,29,0,Math.PI*2);ctx.fill();ctx.restore();
+    for(let i=0;i<90;i++){const x=(i*47.3+(i%5)*13)%W,y=(i*83.7)%H;ctx.globalAlpha=.45+.45*Math.sin(time*(1+i%3)+i);ctx.fillStyle='#fff4ff';ctx.beginPath();ctx.arc(x,y,.7+(i%3)*.45,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+  }
   }
 
   const shade = ctx.createLinearGradient(0, H * 0.58, 0, H);
