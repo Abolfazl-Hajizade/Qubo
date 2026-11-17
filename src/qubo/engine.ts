@@ -94,14 +94,14 @@ function seat(w: World) {
   w.cubeAngle = Math.round(w.cubeAngle / 90) * 90 + w.angle;
 }
 
-export function createWorld(rng: () => number = Math.random): World {
+export function createWorld(rng: () => number = Math.random, initialScore = 0): World {
   const a: Tower = { x: START_RIGHT - 44, w: 44, top: 270, tipStart: 3.5, tipAccel: 0.9, leanAccel: 0.85, rhythm: 0.94 };
-  const b = nextTower(a, rng, 0);
+  const b = nextTower(a, rng, initialScore);
   const towers = [a, b];
-  while (towers.length < 6) towers.push(nextTower(towers[towers.length - 1], rng, 0));
+  while (towers.length < 6) towers.push(nextTower(towers[towers.length - 1], rng, initialScore));
   const w: World = {
     phase: 'wait', towers, angle: 0, vel: a.tipStart,
-    fallen: [], offset: 0, slide: 0, landed: 1, landingAge: 0, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: 0, over: false, rescueAvailable: false, rescueInPlace: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, landingAge: 0, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: initialScore, over: false, rescueAvailable: false, rescueInPlace: false,
   };
   seat(w);
   return w;
