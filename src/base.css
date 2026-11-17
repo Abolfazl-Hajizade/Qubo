@@ -555,14 +555,15 @@ span.icon-btn { background: none; box-shadow: none; }
 
 /* ---------- Leaderboard dialog (src/shared/leaderboard/board.ts) ---------- */
 /* A game's board on its own page: level chips, the .summary table and the player's row, from the shared tokens. */
-.lb-dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 24px); overflow-y: auto; text-align: left; }
+.lb-dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 24px); overflow: hidden; display: flex; flex-direction: column; text-align: left; }
 .lb-dialog h2 { text-align: center; }
 .lb-variants { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
 .lb-variants:empty { display: none; }
 .lb-variants .btn { padding: 8px 14px; text-transform: capitalize; }
 .lb-variants .btn[aria-pressed='true'] { background: var(--c); color: var(--sheet); }
 .lb-status { margin: 14px 4px; font-weight: 600; line-height: 1.5; }
-.lb-table { margin-top: 10px; }
+.lb-table-scroll { flex: 1 1 auto; min-height: 0; max-height: min(55dvh, 480px); overflow-y: auto; overscroll-behavior: contain; border-radius: var(--r-board); margin-top: 10px; }
+.lb-table { margin-top: 0; }
 .lb-table td:nth-child(2), .lb-table th:nth-child(2) { text-align: left; overflow-wrap: anywhere; }
 .lb-table th:first-child, .lb-table td:first-child { width: 3.2em; text-align: left; }
 .lb-table tr.you th, .lb-table tr.you td { background: var(--tint); font-weight: 800; }
