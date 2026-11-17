@@ -28,10 +28,11 @@ let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
 let best = loadJSON<number>(BEST_KEY, 0);
-const savedProgress = loadJSON<unknown>(PROGRESS_KEY, 0);
+const savedProgress = loadJSON<unknown>(PROGRESS_KEY, null);
 let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
   ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
-  : 0;
+  : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
+if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
 
 const canvas = $<HTMLCanvasElement>('stage');
 const ctx = canvas.getContext('2d')!;
