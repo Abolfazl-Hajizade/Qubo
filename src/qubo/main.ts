@@ -76,7 +76,7 @@ function start() {
   started = false;
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
-  backdropIndex = Math.floor(world.score / 10) % 5;
+  backdropIndex = Math.floor(world.score / 10) % 6;
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
   screens.show('game');
@@ -318,6 +318,7 @@ function drawWeatherBackground() {
 function drawBackdrop(index: number, time: number) {
   const gradient = ctx.createLinearGradient(0, 0, 0, H);
   const palettes = [
+    ['#101923', '#27333d', '#46515a'],
     ['#70c8f4', '#d8f1ff', '#f5d98b'],
     ['#174c49', '#68a77a', '#b5c88b'],
     ['#087da8', '#61c5d2', '#d4f0d8'],
@@ -332,13 +333,51 @@ function drawBackdrop(index: number, time: number) {
   ctx.fillRect(0, 0, W, H);
 
   if (index === 0) {
+    // Original Qubo storm atmosphere is preserved as the opening world.
+    ctx.save();
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 71 + time * (3 + (i % 3) * 1.4)) % (W + 180)) - 90;
+      const y = 20 + (i % 4) * 43;
+      const width = 72 + (i % 3) * 22;
+      const cloud = ctx.createRadialGradient(x, y, 4, x, y, width);
+      cloud.addColorStop(0, i % 2 ? 'rgba(10, 17, 25, 0.96)' : 'rgba(24, 34, 43, 0.96)');
+      cloud.addColorStop(0.62, 'rgba(31, 43, 53, 0.82)');
+      cloud.addColorStop(1, 'rgba(35, 48, 58, 0)');
+      ctx.fillStyle = cloud;
+      ctx.beginPath();
+      ctx.ellipse(x, y, width, 30 + (i % 2) * 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const cycle = time % 11.5;
+    const flash = cycle < 0.11 ? 0.24 : cycle > 0.24 && cycle < 0.31 ? 0.13 : 0;
+    if (flash > 0) {
+      ctx.fillStyle = `rgba(196, 218, 232, ${flash})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(225, 238, 248, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(180, 215, 245, 0.95)';
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.moveTo(238, 18); ctx.lineTo(218, 54); ctx.lineTo(231, 54); ctx.lineTo(205, 96);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(190, 211, 224, 0.38)';
+    ctx.lineWidth = 0.9;
+    for (let i = 0; i < 82; i++) {
+      const x = (i * 39.7 + (i % 7) * 11) % W;
+      const y = ((i * 53.9 + time * (65 + (i % 5) * 8)) % (H + 30)) - 15;
+      const length = 9 + (i % 4) * 2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 4, y + length); ctx.stroke();
+    }
+    ctx.restore();
+  } else if (index === 1) {
     // Sunny open sky: a glowing sun and gently drifting soft clouds.
     ctx.fillStyle = 'rgba(255, 232, 135, 0.95)';
     ctx.beginPath(); ctx.arc(278, 72, 27, 0, Math.PI * 2); ctx.fill();
     drawClouds(time, 'rgba(255,255,255,0.78)');
     ctx.fillStyle = 'rgba(94, 157, 105, 0.48)';
     ctx.beginPath(); ctx.moveTo(0, 330); ctx.quadraticCurveTo(95, 270, 190, 330); ctx.quadraticCurveTo(285, 275, 360, 326); ctx.lineTo(360, 420); ctx.lineTo(0, 420); ctx.fill();
-  } else if (index === 1) {
+  } else if (index === 2) {
     // Forest: layered evergreen silhouettes sway slightly in the breeze.
     drawClouds(time * 0.35, 'rgba(224,245,221,0.2)');
     for (let layer = 0; layer < 3; layer++) {
@@ -352,7 +391,7 @@ function drawBackdrop(index: number, time: number) {
       }
     }
     ctx.fillStyle = '#234d3b'; ctx.fillRect(0, 385, W, 35);
-  } else if (index === 2) {
+  } else if (index === 3) {
     // Sea: a bright horizon, distant islands and continuously rolling waves.
     ctx.fillStyle = 'rgba(255,238,171,0.9)';
     ctx.beginPath(); ctx.arc( 286, 82, 23, 0, Math.PI * 2); ctx.fill();
@@ -368,7 +407,7 @@ function drawBackdrop(index: number, time: number) {
       }
       ctx.stroke();
     }
-  } else if (index === 3) {
+  } else if (index === 4) {
     // Desert: warm dunes slide slowly past one another under a hazy sun.
     ctx.fillStyle = 'rgba(255,244,190,0.9)';
     ctx.beginPath(); ctx.arc(278, 78, 30, 0, Math.PI * 2); ctx.fill();
