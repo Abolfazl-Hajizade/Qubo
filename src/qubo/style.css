@@ -152,3 +152,12 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="5"] {
 /* Some embedded WebViews do not implement the native dialog closed-state default.
    Keep modal forms hidden until the app explicitly opens them. */
 dialog.dialog:not([open]) { display: none; }
+
+
+/* Qubo run history */
+.qubo-history-list { list-style: none; margin: 12px 0 24px; padding: 0; display: grid; gap: 8px; }
+.qubo-history-list li { padding: 12px 14px; border-radius: var(--r-card); background: var(--sheet); color: var(--ink); box-shadow: var(--shadow); }
+.qubo-history-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.qubo-history-top time { color: var(--ink-2); font-size: .88rem; }
+.qubo-history-best { display: inline-block; margin-top: 5px; color: var(--c); font-size: .82rem; font-weight: 800; }
+.lb-dialog > h2, .lb-dialog > .dialog-actions { flex: 0 0 auto; }
