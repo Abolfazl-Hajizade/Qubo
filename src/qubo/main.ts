@@ -516,7 +516,6 @@ function drawBackdrop(index: number, time: number) {
     const planet=ctx.createRadialGradient(-12,-14,3,0,0,31);planet.addColorStop(0,'#e4c8ff');planet.addColorStop(1,'#6755a8');ctx.fillStyle=planet;ctx.beginPath();ctx.arc(0,0,29,0,Math.PI*2);ctx.fill();ctx.restore();
     for(let i=0;i<90;i++){const x=(i*47.3+(i%5)*13)%W,y=(i*83.7)%H;ctx.globalAlpha=.45+.45*Math.sin(time*(1+i%3)+i);ctx.fillStyle='#fff4ff';ctx.beginPath();ctx.arc(x,y,.7+(i%3)*.45,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
   }
-  }
 
   const shade = ctx.createLinearGradient(0, H * 0.58, 0, H);
   shade.addColorStop(0, 'rgba(15,25,35,0)');
