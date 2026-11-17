@@ -175,3 +175,9 @@ dialog.dialog:not([open]) { display: none; }
 #history-btn.history-link span { color: #fff; font-weight: 800; }
 #history-btn.history-link svg { stroke: currentColor; }
 #history-btn.history-link:active { background: #102b52; color: #fff; }
+
+/* Match Play to the red Jump control, with high-contrast white text. */
+#play-btn.btn-primary { background: var(--coral); color: #fff; }
+#play-btn.btn-primary span,
+#play-btn.btn-primary small { color: #fff; }
+#play-btn.btn-primary:active { background: var(--coral); filter: brightness(0.92); }
