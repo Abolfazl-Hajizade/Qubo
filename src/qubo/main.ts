@@ -136,7 +136,7 @@ function loop(now: number) {
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
     setScore();
-    const nextBackdrop = Math.floor(world.score / 10) % 5;
+    const nextBackdrop = Math.floor(world.score / 10) % 6;
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
@@ -303,6 +303,8 @@ function draw() {
 /** Five animated worlds, changing every ten points with a soft crossfade. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
+  // Keep the page area behind the score/header in sync with the active canvas world.
+  document.body.dataset.quboBackdrop = String(backdropIndex);
   if (backdropTransitionAge >= 1) {
     drawBackdrop(backdropIndex, time);
     return;
