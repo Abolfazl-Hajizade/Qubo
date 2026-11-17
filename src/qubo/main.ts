@@ -357,20 +357,18 @@ function drawWeatherBackground() {
 function drawBackdrop(index: number, time: number) {
   const gradient = ctx.createLinearGradient(0, 0, 0, H);
   const palettes = [
-    ['#101923', '#27333d', '#46515a'],
-    ['#70c8f4', '#d8f1ff', '#f5d98b'],
-    ['#174c49', '#68a77a', '#b5c88b'],
-    ['#087da8', '#61c5d2', '#d4f0d8'],
-    ['#e99b52', '#f5d18a', '#b96e42'],
+    ['#101923', '#27333d', '#46515a'], // storm
+    ['#70c8f4', '#d8f1ff', '#f5d98b'], // sunny
+    ['#174c49', '#68a77a', '#b5c88b'], // forest
+    ['#087da8', '#61c5d2', '#d4f0d8'], // sea
+    ['#e99b52', '#f5d18a', '#b96e42'], // desert
     ['#344b70', '#839bb7', '#d5b98e'], // city
-    ['#152b49', '#7199bd', '#e1efff'], // snowy mountains
-    ['#351b2a', '#a84332', '#f29a50'], // volcanic land
-    ['#171b49', '#654c91', '#e7a8cf'], // meditation and chakra sanctuary
-    ['#100f35', '#34316f', '#e04d9c'], // cyberpunk city
-    ['#171b49', '#654c91', '#e7a8cf'], // meditation and chakra sanctuary
-    ['#100f35', '#34316f', '#e04d9c'], // cyberpunk city
-    ['#080d2b', '#29265d', '#66518f'], // cosmic space
-    ['#171b49', '#654c91', '#e7a8cf'], // spirituality
+    ['#152b49', '#7199bd', '#e1efff'], // snow
+    ['#351b2a', '#a84332', '#f29a50'], // volcano
+    ['#171b49', '#654c91', '#e7a8cf'], // meditation
+    ['#100f35', '#34316f', '#e04d9c'], // cyberpunk
+    ['#080d2b', '#29265d', '#66518f'], // cosmic
+    ['#17152f', '#554b85', '#b9a4d8'], // spirituality
     ['#17152f', '#554b85', '#b9a4d8'], // metaphysics
     ['#72634e', '#b7a184', '#e1cba6'], // philosophy
     ['#381b3b', '#a34c78', '#f2a5b8'], // love
