@@ -70,7 +70,10 @@ function renderHome() {
 }
 
 function renderHistory() {
-  const entries = history.load();
+  // Ignore malformed/legacy local records so one bad item cannot break the whole History screen.
+  const entries = history.load().filter((entry) =>
+    !!entry && Number.isFinite(entry.endedAt) && Number.isFinite(entry.score),
+  );
   const list = $('history-list');
   $('history-empty').hidden = entries.length > 0;
   list.replaceChildren(...entries.map((entry) => {
