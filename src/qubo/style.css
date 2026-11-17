@@ -149,3 +149,6 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="5"] {
 }
 .leaderboard-list li { flex: 0 0 auto; }
 
+/* Some embedded WebViews do not implement the native dialog closed-state default.
+   Keep modal forms hidden until the app explicitly opens them. */
+dialog.dialog:not([open]) { display: none; }
