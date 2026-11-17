@@ -336,7 +336,7 @@ function draw() {
   ctx.stroke();
 }
 
-/** Eleven animated worlds, changing every ten points with a soft crossfade. */
+/** Eleven animated worlds, changing every thirty points with a soft crossfade. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
   // Keep the page area behind the score/header in sync with the active canvas world.
