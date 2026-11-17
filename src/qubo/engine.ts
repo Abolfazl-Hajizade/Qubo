@@ -94,6 +94,7 @@ function seat(w: World) {
   w.cubeAngle = Math.round(w.cubeAngle / 90) * 90 + w.angle;
 }
 
+/** Create a world at the locally saved checkpoint; this score is not a leaderboard submission. */
 export function createWorld(rng: () => number = Math.random, initialScore = 0): World {
   const a: Tower = { x: START_RIGHT - 44, w: 44, top: 270, tipStart: 3.5, tipAccel: 0.9, leanAccel: 0.85, rhythm: 0.94 };
   const b = nextTower(a, rng, initialScore);
