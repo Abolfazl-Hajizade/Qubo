@@ -16,10 +16,12 @@ function build(): HTMLDialogElement {
   d.innerHTML = `<h2 id="lb-title">Leaderboard</h2>
     <div class="lb-variants" role="group" aria-label="Level"></div>
     <p class="lb-status muted" role="status" aria-live="polite"></p>
-    <table class="summary lb-table" hidden>
-      <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="lb-value-head">Best</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="lb-table-scroll" hidden>
+      <table class="summary lb-table">
+        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="lb-value-head">Best</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <p class="lb-me" hidden></p>
     <div class="dialog-actions one"><button type="button" class="btn btn-primary lb-done">Done</button></div>`;
   d.querySelector('.lb-done')!.addEventListener('click', () => d.close());
@@ -63,7 +65,7 @@ function render(game: string, b: Board) {
       return tr;
     }),
   );
-  el<HTMLElement>('.lb-table').hidden = b.entries.length === 0;
+  el<HTMLElement>('.lb-table-scroll').hidden = b.entries.length === 0;
   setStatus(b.entries.length ? '' : 'No one is on this board yet. Play a game while signed in to take the first place.');
   const me = el<HTMLElement>('.lb-me');
   me.hidden = !b.me || !!you;
@@ -82,7 +84,7 @@ async function load(game: string, variant?: string) {
     if (mine === token) render(game, b);
   } catch (e) {
     if (mine !== token) return;
-    el<HTMLElement>('.lb-table').hidden = true;
+    el<HTMLElement>('.lb-table-scroll').hidden = true;
     el<HTMLElement>('.lb-me').hidden = true;
     setStatus(e instanceof ApiError && e.offline ? "You're offline. Leaderboards need a connection." : "Couldn't load this leaderboard. Please try again.");
   }
