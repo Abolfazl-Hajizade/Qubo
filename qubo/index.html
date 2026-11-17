@@ -53,6 +53,23 @@
         </div>
       </section>
 
+      <!-- Global records -->
+      <section id="records" class="screen" hidden>
+        <header class="topbar">
+          <button id="records-back-btn" class="icon-btn" aria-label="Back to menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div class="meta"><b>Qubo</b><span>Global records</span></div>
+          <span class="icon-btn" aria-hidden="true"></span>
+        </header>
+        <div class="home-inner">
+          <h2 class="section-label">🏆 Global Leaderboard</h2>
+          <p id="records-status" class="muted" aria-live="polite">Loading records...</p>
+          <ol id="records-list" class="records-list"></ol>
+          <p id="records-me" class="records-me"></p>
+        </div>
+      </section>
+
       <!-- Game -->
       <section id="game" class="screen" hidden>
         <header class="topbar">
@@ -82,15 +99,6 @@
         <div class="dialog-actions">
           <button id="end-menu" class="btn">Menu</button>
           <button id="end-again" class="btn btn-primary">Play again</button>
-        </div>
-      </dialog>
-      <dialog id="leaderboard-dialog" class="dialog leaderboard-dialog">
-        <h2>🏆 Global Leaderboard</h2>
-        <p id="leaderboard-status" aria-live="polite">Loading leaderboard...</p>
-        <ol id="leaderboard-list" class="leaderboard-list"></ol>
-        <p id="leaderboard-me" class="leaderboard-me"></p>
-        <div class="dialog-actions">
-          <button id="leaderboard-close" class="btn btn-primary">Close</button>
         </div>
       </dialog>
     </div>
