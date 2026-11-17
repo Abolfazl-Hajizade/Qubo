@@ -37,8 +37,21 @@
         </div>
       </section>
 
-      <!-- Unused, but the shared screens expect it -->
-      <section id="history" class="screen" hidden></section>
+      <!-- Run history -->
+      <section id="history" class="screen" hidden>
+        <header class="topbar">
+          <button id="history-back-btn" class="icon-btn" aria-label="Back to menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div class="meta"><b>Qubo</b><span>History &amp; stats</span></div>
+          <span class="icon-btn" aria-hidden="true"></span>
+        </header>
+        <div class="home-inner">
+          <h2 class="section-label">Recent games</h2>
+          <p id="history-empty" class="muted" hidden>No games played yet. Your finished runs will appear here.</p>
+          <ol id="history-list" class="qubo-history-list"></ol>
+        </div>
+      </section>
 
       <!-- Game -->
       <section id="game" class="screen" hidden>
