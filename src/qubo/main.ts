@@ -32,7 +32,7 @@ const ctx = canvas.getContext('2d')!;
 const frame = canvas.parentElement!;
 const endDialog = $<HTMLDialogElement>('end-dialog');
 
-const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory });
+const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory, renderRecords: loadLeaderboard });
 
 type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => void };
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
@@ -40,8 +40,7 @@ telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
 
 $('play-btn').addEventListener('click', start);
-$('leaderboard-btn').addEventListener('click', openLeaderboard);
-$('leaderboard-close').addEventListener('click', () => $<HTMLDialogElement>('leaderboard-dialog').close());
+$('leaderboard-btn').addEventListener('click', () => screens.records());
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
 
@@ -198,14 +197,12 @@ async function submitScore(score: number) {
   }
 }
 
-async function openLeaderboard() {
-  const dialog = $<HTMLDialogElement>('leaderboard-dialog');
-  const status = $('leaderboard-status');
-  const list = $('leaderboard-list');
-  const me = $('leaderboard-me');
+async function loadLeaderboard() {
+  const status = $('records-status');
+  const list = $('records-list');
+  const me = $('records-me');
   list.replaceChildren();
   me.textContent = '';
-  dialog.showModal();
 
   const initData = telegramWebApp?.initData;
   if (!initData) {
