@@ -147,6 +147,7 @@ function renderHome() {
 }
 
 function start() {
+  unlockAudio();
   if (endDialog.open) endDialog.close();
   world = createWorld();
   paused = false;
@@ -167,6 +168,7 @@ function start() {
 }
 
 function down() {
+  unlockAudio();
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
   if (!started) { started = true; setStatus(''); last = performance.now(); return; } // the first tap only starts the tower tipping
   launch(world);
@@ -205,10 +207,13 @@ function setStatus(title: string, hint = '') {
 function loop(now: number) {
   const dt = Math.min(MAX_DT, (now - last) / 1000);
   last = now;
+  updateMovementSound(now);
   if (started && !paused) {
     const was = world.over;
     const previousPhase = world.phase;
     step(world, dt);
+    if (world.phase === 'drop' && previousPhase !== 'drop') playFallSound();
+    if (world.phase === 'over' && previousPhase !== 'over') playImpactSound();
     if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
