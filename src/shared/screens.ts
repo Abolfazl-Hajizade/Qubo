@@ -11,7 +11,7 @@ export const dateFormat = new Intl.DateTimeFormat(undefined, {
   month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
 });
 
-export type Screen = 'home' | 'game' | 'history';
+export type Screen = 'home' | 'game' | 'history' | 'records';
 
 interface Options {
   /** Runs before the menu shows, e.g. to stop the clock and save. */
@@ -20,16 +20,18 @@ interface Options {
   renderHome?: () => void;
   /** Runs before the history shows. */
   renderHistory?: () => void;
+  renderRecords?: () => void;
   /** The Android app went to the background. */
   onPause?: () => void;
 }
 
 export class Screens {
-  private els: Record<Screen, HTMLElement> = { home: $('home'), game: $('game'), history: $('history') };
+  private els: Record<Screen, HTMLElement> = { home: $('home'), game: $('game'), history: $('history'), records: $('records') };
 
   constructor(private o: Options) {
     $('history-btn')?.addEventListener('click', () => this.history());
     $('history-back-btn')?.addEventListener('click', () => this.home());
+    $('records-back-btn')?.addEventListener('click', () => this.home());
     $('back-btn')?.addEventListener('click', () => this.home());
 
     document.addEventListener('keydown', (e) => {
@@ -62,17 +64,22 @@ export class Screens {
   }
 
   history() {
-    // Switch first: a malformed saved record must never make the History button appear unresponsive.
     this.show('history');
-    try {
-      this.o.renderHistory?.();
-    } catch (error) {
+    try { this.o.renderHistory?.(); }
+    catch (error) {
       console.error('Could not render Qubo history:', error);
       const empty = document.getElementById('history-empty');
-      if (empty) {
-        empty.textContent = 'History could not be loaded. Please refresh the game and try again.';
-        empty.hidden = false;
-      }
+      if (empty) { empty.textContent = 'History could not be loaded. Please refresh and try again.'; empty.hidden = false; }
+    }
+  }
+
+  records() {
+    this.show('records');
+    try { this.o.renderRecords?.(); }
+    catch (error) {
+      console.error('Could not open Qubo records:', error);
+      const status = document.getElementById('records-status');
+      if (status) status.textContent = 'Records could not be loaded. Please try again.';
     }
   }
 }
