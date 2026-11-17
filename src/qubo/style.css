@@ -161,3 +161,11 @@ dialog.dialog:not([open]) { display: none; }
 .qubo-history-top time { color: var(--ink-2); font-size: .88rem; }
 .qubo-history-best { display: inline-block; margin-top: 5px; color: var(--c); font-size: .82rem; font-weight: 800; }
 .lb-dialog > h2, .lb-dialog > .dialog-actions { flex: 0 0 auto; }
+
+
+/* Qubo global records page */
+#records { padding-bottom: 24px; }
+.records-list { list-style: none; margin: 8px 0 16px; padding: 0; display: grid; gap: 8px; }
+.records-list li { padding: 12px 14px; border-radius: var(--r-card); background: var(--sheet); color: var(--ink); box-shadow: var(--shadow); font-weight: 700; }
+.records-list li.is-me { background: var(--tint); box-shadow: inset 0 0 0 1px var(--c); }
+.records-me { margin: 8px 0 20px; padding: 14px 16px; border-radius: var(--r-card); background: var(--note); color: var(--ink); font-weight: 800; }
