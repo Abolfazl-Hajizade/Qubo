@@ -77,10 +77,35 @@ document.addEventListener('guide:open', pause);
 new ResizeObserver(resize).observe(frame);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { palette = readPalette(); draw(); });
 
+repairTemporaryTestHistory();
 renderHome();
 
 function renderHome() {
   $('home-best').textContent = best ? `Best ${numberFormat.format(best)}` : '';
+}
+
+function repairTemporaryTestHistory() {
+  const marker = 'qubo.history.repair.20261118';
+  try {
+    if (localStorage.getItem(marker)) return;
+    const from = Date.parse('2026-11-18T02:16:00Z');
+    const to = Date.parse('2026-11-18T02:22:00Z');
+    const entries = history.load();
+    const cleaned = entries.filter((entry) =>
+      !(entry && entry.score === 39 && Number.isFinite(entry.endedAt)
+        && entry.endedAt >= from && entry.endedAt <= to),
+    );
+    if (cleaned.length !== entries.length) {
+      saveJSON('qubo.history', cleaned);
+      const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
+      stats.runs = Math.max(0, (stats.runs ?? 0) - (entries.length - cleaned.length));
+      if (stats.best === 39) stats.best = 28;
+      saveJSON(STATS_KEY, stats);
+    }
+    localStorage.setItem(marker, '1');
+  } catch {
+    // A blocked local store must never interrupt the game.
+  }
 }
 
 function renderHistory() {
@@ -226,16 +251,42 @@ async function syncCheckpoint() {
       headers: { 'x-telegram-init-data': initData },
     });
     if (!response.ok) return;
-    const data = await response.json() as { checkpoint?: number };
+    const data = await response.json() as { checkpoint?: number; hasCheckpoint?: boolean };
     const remote = Number.isSafeInteger(data.checkpoint) && (data.checkpoint ?? -1) >= 0
       ? Math.floor((data.checkpoint ?? 0) / CHECKPOINT_STEP) * CHECKPOINT_STEP
       : 0;
-    const merged = Math.max(checkpoint, remote);
-    if (merged > checkpoint) {
-      checkpoint = merged;
-      saveJSON(PROGRESS_KEY, checkpoint);
+    // An existing server checkpoint is authoritative, including an intentional reset to zero.
+    // If no server row exists, preserve offline progress and upload it as before.
+    if (data.hasCheckpoint) {
+      if (checkpoint !== remote) {
+        checkpoint = remote;
+        saveJSON(PROGRESS_KEY, checkpoint);
+      }
+    } else {
+      const merged = Math.max(checkpoint, remote);
+      if (merged > checkpoint) {
+        checkpoint = merged;
+        saveJSON(PROGRESS_KEY, checkpoint);
+      }
+      if (merged > remote) await saveRemoteCheckpoint(merged);
     }
-    if (merged > remote) await saveRemoteCheckpoint(merged);
+    // Restore the account's verified best score after the temporary test run.
+    const boardResponse = await fetch('/api/leaderboard', {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    if (boardResponse.ok) {
+      const board = await boardResponse.json() as { me?: { best_score?: number } | null };
+      if (board.me?.best_score === 28 && best === 39) {
+        best = 28;
+        saveJSON(BEST_KEY, best);
+        const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
+        if (stats.best === 39) {
+          stats.best = 28;
+          saveJSON(STATS_KEY, stats);
+        }
+        renderHome();
+      }
+    }
   } catch {
     // Keep playing offline; a later launch will retry the account sync.
   }
