@@ -395,7 +395,7 @@ async function refreshChat(initial: boolean) {
     if (response.status === 403 && data.eligible === false) {
       $('chat-content').hidden = true;
       $('chat-locked').hidden = false;
-      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۶`;
+      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۹`;
       stopChatPolling();
       return;
     }
@@ -453,7 +453,7 @@ async function sendChatMessage(event: SubmitEvent) {
     if (response.status === 403 && data.eligible === false) {
       $('chat-content').hidden = true;
       $('chat-locked').hidden = false;
-      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۶`;
+      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۹`;
       stopChatPolling();
       return;
     }
