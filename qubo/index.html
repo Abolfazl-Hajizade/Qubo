@@ -33,6 +33,7 @@
 
           <button id="history-btn" class="btn history-link"><span>History &amp; stats</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
           <button id="leaderboard-btn" class="btn history-link">🏆 Global Leaderboard</button>
+          <button id="guide-btn" class="btn history-link">راهنمای بازی / Game Guide</button>
 
         </div>
       </section>
@@ -91,6 +92,26 @@
           <button id="hold-btn" class="btn btn-primary hold-btn">Jump</button>
         </div>
       </section>
+
+
+      <!-- Bilingual game guide -->
+      <dialog id="guide-dialog" class="dialog guide-dialog" aria-labelledby="guide-title">
+        <header class="guide-header">
+          <h2 id="guide-title">راهنمای بازی / Game Guide</h2>
+          <button id="guide-close-btn" class="icon-btn" type="button" aria-label="Close guide">×</button>
+        </header>
+        <section class="guide-language" lang="fa" dir="rtl">
+          <h3>راهنمای بازی</h3>
+          <p>این بازی دارای ۲۶ فضای مختلف است. وقتی امتیاز شما به ۳۰ برسد، دفعه‌ی بعد بازی از امتیاز ۳۰ شروع می‌شود و در فضای دیگری بازی می‌کنید. ممکن است چالش بازی در فضای جدید آسان‌تر یا سخت‌تر باشد. با ادامه‌ی بازی، به‌ازای هر ۳۰ امتیاز، بازی بعدی از امتیاز جدید و در فضای تازه‌ای آغاز می‌شود.</p>
+          <div class="guide-cheat"><h4>کد تقلب</h4><p>کد تقلب: روی هر ستون می‌توانید چند بار پرش کنید.</p></div>
+        </section>
+        <section class="guide-language" lang="en" dir="ltr">
+          <h3>Game Guide</h3>
+          <p>The game has 26 different environments. When your score reaches 30, your next game starts from 30 points in a different environment. The challenge may become easier or harder in the new environment. As you keep progressing, every 30 points unlocks a new starting score and a new environment for your next game.</p>
+          <div class="guide-cheat"><h4>Cheat Code</h4><p>Cheat code: You can jump several times on each column.</p></div>
+        </section>
+        <div class="dialog-actions"><button id="guide-back-btn" class="btn btn-primary" type="button">بازگشت / Back</button></div>
+      </dialog>
 
       <!-- Run over -->
       <dialog id="end-dialog" class="dialog">
