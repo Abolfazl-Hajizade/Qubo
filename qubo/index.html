@@ -33,6 +33,7 @@
 
           <button id="history-btn" class="btn history-link"><span>History &amp; stats</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
           <button id="leaderboard-btn" class="btn history-link">🏆 Global Leaderboard</button>
+          <button id="chat-btn" class="btn history-link">🌍 Global Chat</button>
 
         </div>
       </section>
@@ -92,6 +93,38 @@
         </div>
       </section>
 
+
+      <!-- Global chat -->
+      <dialog id="chat-dialog" class="dialog chat-dialog" aria-labelledby="chat-title">
+        <header class="chat-header">
+          <button id="chat-close-btn" class="icon-btn" type="button" aria-label="Back to menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div class="chat-heading">
+            <h2 id="chat-title">🌍 Global Chat</h2>
+            <span>One room · All Qubo players</span>
+          </div>
+          <span class="chat-online" aria-label="Live updates">● LIVE</span>
+        </header>
+        <section id="chat-locked" class="chat-locked" hidden aria-live="polite">
+          <div class="chat-lock-icon">🔒</div>
+          <h3>چت جهانی قفل است</h3>
+          <p>برای ورود به چت جهانی باید امتیاز جهانی شما حداقل ۲۶ باشد.</p>
+          <strong>بازی کن، امتیازت رو بالا ببر و دوباره امتحان کن! 🎮</strong>
+          <p id="chat-required-score" class="chat-required-score"></p>
+        </section>
+        <section id="chat-content" class="chat-content" hidden>
+          <ol id="chat-messages" class="chat-messages" aria-live="polite" aria-relevant="additions"></ol>
+          <p id="chat-status" class="chat-status" aria-live="polite"></p>
+          <form id="chat-form" class="chat-form">
+            <input id="chat-input" name="message" type="text" maxlength="500" autocomplete="off" placeholder="پیامت رو بنویس..." aria-label="Your message" required />
+            <button id="chat-send-btn" class="chat-send-btn" type="submit" aria-label="Send message">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+            </button>
+          </form>
+          <p class="chat-footnote">لطفاً محترمانه گفتگو کنید · حداکثر ۵۰۰ کاراکتر</p>
+        </section>
+      </dialog>
 
       <!-- Bilingual game guide -->
       <dialog id="guide-dialog" class="dialog guide-dialog" aria-labelledby="guide-title">
