@@ -52,9 +52,9 @@ telegramWebApp?.expand?.();
 void syncCheckpoint();
 
 $('play-btn').addEventListener('click', start);
-$('guide-btn').addEventListener('click', () => $<HTMLDialogElement>('guide-dialog').showModal());
-$('guide-close-btn').addEventListener('click', () => $<HTMLDialogElement>('guide-dialog').close());
-$('guide-back-btn').addEventListener('click', () => $<HTMLDialogElement>('guide-dialog').close());
+$('guide-btn').addEventListener('click', () => $('guide-dialog') as HTMLDialogElement.showModal());
+$('guide-close-btn').addEventListener('click', () => $('guide-dialog') as HTMLDialogElement.close());
+$('guide-back-btn').addEventListener('click', () => $('guide-dialog') as HTMLDialogElement.close());
 $('leaderboard-btn').addEventListener('click', () => screens.records());
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
