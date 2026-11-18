@@ -89,17 +89,17 @@ function repairTemporaryTestHistory() {
   try {
     if (localStorage.getItem(marker)) return;
     const from = Date.parse('2026-11-18T02:16:00Z');
-    const to = Date.parse('2026-11-18T02:22:00Z');
+    const to = Date.parse('2026-11-18T02:26:00Z');
     const entries = history.load();
     const cleaned = entries.filter((entry) =>
-      !(entry && entry.score === 39 && Number.isFinite(entry.endedAt)
+      !(entry && entry.score >= 30 && Number.isFinite(entry.endedAt)
         && entry.endedAt >= from && entry.endedAt <= to),
     );
     if (cleaned.length !== entries.length) {
       saveJSON('qubo.history', cleaned);
       const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
       stats.runs = Math.max(0, (stats.runs ?? 0) - (entries.length - cleaned.length));
-      if (stats.best === 39) stats.best = 28;
+      if ((stats.best ?? 0) > 28) stats.best = 28;
       saveJSON(STATS_KEY, stats);
     }
     localStorage.setItem(marker, '1');
@@ -276,11 +276,11 @@ async function syncCheckpoint() {
     });
     if (boardResponse.ok) {
       const board = await boardResponse.json() as { me?: { best_score?: number } | null };
-      if (board.me?.best_score === 28 && best === 39) {
+      if (board.me?.best_score === 28 && best > 28) {
         best = 28;
         saveJSON(BEST_KEY, best);
         const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
-        if (stats.best === 39) {
+        if ((stats.best ?? 0) > 28) {
           stats.best = 28;
           saveJSON(STATS_KEY, stats);
         }
