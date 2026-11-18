@@ -49,6 +49,7 @@ type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => voi
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
+void syncCheckpoint();
 
 $('play-btn').addEventListener('click', start);
 $('leaderboard-btn').addEventListener('click', () => screens.records());
@@ -178,6 +179,7 @@ function loop(now: number) {
     if (reachedCheckpoint > checkpoint) {
       checkpoint = reachedCheckpoint;
       saveJSON(PROGRESS_KEY, checkpoint);
+      void saveRemoteCheckpoint(checkpoint);
     }
     const nextBackdrop = Math.floor(world.score / 30) % 26;
     if (nextBackdrop !== backdropIndex) {
@@ -197,6 +199,43 @@ interface LeaderboardEntry {
   display_name: string;
   best_score: number;
   telegram_user_id: string;
+}
+
+async function saveRemoteCheckpoint(value: number) {
+  const initData = telegramWebApp?.initData;
+  if (!initData) return;
+  try {
+    await fetch('/api/checkpoint', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initData, checkpoint: value }),
+    });
+  } catch {
+    // A failed sync must never interrupt the game; the local checkpoint remains saved.
+  }
+}
+
+async function syncCheckpoint() {
+  const initData = telegramWebApp?.initData;
+  if (!initData) return;
+  try {
+    const response = await fetch('/api/checkpoint', {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    if (!response.ok) return;
+    const data = await response.json() as { checkpoint?: number };
+    const remote = Number.isSafeInteger(data.checkpoint) && (data.checkpoint ?? -1) >= 0
+      ? Math.floor((data.checkpoint ?? 0) / CHECKPOINT_STEP) * CHECKPOINT_STEP
+      : 0;
+    const merged = Math.max(checkpoint, remote);
+    if (merged > checkpoint) {
+      checkpoint = merged;
+      saveJSON(PROGRESS_KEY, checkpoint);
+    }
+    if (merged > remote) await saveRemoteCheckpoint(merged);
+  } catch {
+    // Keep playing offline; a later launch will retry the account sync.
+  }
 }
 
 async function submitScore(score: number) {
