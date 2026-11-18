@@ -282,3 +282,9 @@ dialog.dialog:not([open]) { display: none; }
   .chat-dialog { width: min(100vw, 560px); height: min(100dvh, 900px); margin: auto; border-radius: 20px; }
   .chat-content { height: calc(min(100dvh, 900px) - 82px); }
 }
+
+
+#home #chat-btn { display: flex; align-items: center; gap: 9px; }
+.chat-live-indicator { display: inline-block; flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: #39ef78; box-shadow: 0 0 7px rgba(57, 239, 120, .9); animation: chat-live-blink 1.15s ease-in-out infinite; }
+@keyframes chat-live-blink { 0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(57, 239, 120, .95); } 50% { opacity: .28; box-shadow: 0 0 2px rgba(57, 239, 120, .35); } }
+@media (prefers-reduced-motion: reduce) { .chat-live-indicator { animation: none; } }
