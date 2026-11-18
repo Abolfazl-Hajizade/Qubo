@@ -19,7 +19,7 @@ const ACC = 8; // quicker tower acceleration leaves a tighter timing window
 const ACC_LEAN = 0.9; // gentler acceleration as the tower leans
 const FALL_AT = 82; // degrees: past this the cube slides off with the tower
 
-export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number; moveOrigin?: number; moveAmplitude?: number; moveSpeed?: number; movePhase?: number; moveTime?: number }
+export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number; moveOrigin?: number; moveAmplitude?: number; moveSpeed?: number; movePhase?: number; moveTime?: number; moveTopOrigin?: number }
 /** A tower left behind: either it is carried out of view during a jump, or it topples after a fall. */
 export interface Fallen { pivot: number; w: number; len: number; angle: number; vel: number; fixed?: boolean }
 export type Phase = 'wait' | 'air' | 'scroll' | 'rescue' | 'drop' | 'over';
@@ -77,11 +77,14 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
 
   const speedBoost = challengeMode === 1;
   const x = from.x + from.w + gap;
-  // From score 100, a small number of platforms drift gently side to side.
-  const movesSideways = score >= 100 && rng() < 0.15;
+  // From score 100, platforms may drift sideways; from 200, some move vertically instead.
+  const movementRoll = rng();
+  const movesSideways = score >= 100 && movementRoll < 0.15;
+  const movesVertically = score >= 200 && movementRoll >= 0.15 && movementRoll < 0.30;
   return {
     x, w, top,
     ...(movesSideways ? { moveOrigin: x, moveAmplitude: between(rng, 10, 16), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
+    ...(movesVertically ? { moveTopOrigin: top, moveAmplitude: between(rng, 6, 10), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
     tipStart: between(rng, speedBoost ? 4.2 : 3.2, speedBoost ? 7.1 : 6),
     tipAccel: between(rng, speedBoost ? 0.9 : 0.72, speedBoost ? 1.42 : 1.28),
     leanAccel: between(rng, speedBoost ? 0.85 : 0.65, speedBoost ? 1.48 : 1.35),
@@ -189,9 +192,11 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
   const firstMovingIndex = w.phase === 'scroll' || w.phase === 'rescue' ? w.landed + 1 : 1;
   for (let i = firstMovingIndex; i < w.towers.length; i++) {
     const t = w.towers[i];
-    if (t.moveOrigin === undefined || t.moveAmplitude === undefined || t.moveSpeed === undefined || t.movePhase === undefined) continue;
+    if (t.moveAmplitude === undefined || t.moveSpeed === undefined || t.movePhase === undefined) continue;
     t.moveTime = (t.moveTime ?? 0) + dt;
-    t.x = t.moveOrigin + Math.sin(t.moveTime * t.moveSpeed + t.movePhase) * t.moveAmplitude;
+    const movement = Math.sin(t.moveTime * t.moveSpeed + t.movePhase) * t.moveAmplitude;
+    if (t.moveOrigin !== undefined) t.x = t.moveOrigin + movement;
+    if (t.moveTopOrigin !== undefined) t.top = t.moveTopOrigin + movement;
   }
   switch (w.phase) {
     case 'wait':
