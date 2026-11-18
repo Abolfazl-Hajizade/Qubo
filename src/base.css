@@ -58,34 +58,7 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #121825;
-    --sheet: #1a2233;
-    --sunk: #0e1420;
-    --ink: #e6ebf5;
-    --ink-2: #a2aec3;
-    --rule: #2b3650;
-    --rule-2: #5b6a88;
-    --on-ink: #121825;
-    --blue: #8fa9ff;
-    --teal: #6cc4ea;
-    --coral: #ff8e9f;
-    --yellow: #e8c062;
-    --lilac: #ad9cff;
-    --mint: #86d1b4;
-    --orange: #f0a867;
-    --sky: #6fd3c6;
-    --olive: #a3d36f;
-    --berry: #f59bc0;
-    --plum: #d6a0ee;
-    --cocoa: #d2b08f;
-    --field: 20%;
-    --note: color-mix(in srgb, var(--c) 22%, var(--sheet));
-    --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 20px -10px rgb(0 0 0 / 0.6);
-    color-scheme: dark;
-  }
-}
+/* Keep the approved light palette independent of the device color preference. */
 
 * { box-sizing: border-box; }
 
