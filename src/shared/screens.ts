@@ -99,6 +99,4 @@ document.addEventListener('keydown', (e) => {
 /** Calls `hidden` when the page is hidden (tab switch, screen off), and `back` when it returns. */
 export function onVisibility(hidden: () => void, back: () => void) {
   document.addEventListener('visibilitychange', () => (document.hidden ? hidden() : back()));
-  // pagehide also covers browsers that suspend or freeze a page before visibilitychange is delivered.
-  window.addEventListener('pagehide', hidden);
 }
