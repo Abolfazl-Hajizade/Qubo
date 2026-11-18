@@ -65,12 +65,7 @@ $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
 
 for (const el of [frame, $('hold-btn')]) {
-  el.addEventListener('pointerdown', (e) => {
-    // Ignore secondary fingers and input while a modal dialog owns interaction.
-    if (!e.isPrimary || document.querySelector('dialog[open]')) return;
-    e.preventDefault();
-    down();
-  });
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); down(); });
 }
 // Space starts a game from the menu, and plays again from the end dialog.
 document.addEventListener('keydown', (e) => {
@@ -79,7 +74,7 @@ document.addEventListener('keydown', (e) => {
   else if (screens.is('home') && !document.querySelector('dialog[open]')) { e.preventDefault(); start(); }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented || !screens.is('game') || document.querySelector('dialog[open]') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.defaultPrevented || !screens.is('game') || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); if (!e.repeat) down(); }
 });
 onVisibility(pause, () => {});
@@ -167,8 +162,6 @@ function start() {
 }
 
 function down() {
-  // A stray pointer/keyboard event must never control a hidden screen or a modal dialog.
-  if (!screens.is('game') || document.querySelector('dialog[open]')) return;
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
   if (!started) { started = true; setStatus(''); last = performance.now(); return; } // the first tap only starts the tower tipping
   launch(world);
