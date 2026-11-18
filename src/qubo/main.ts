@@ -363,12 +363,21 @@ let chatLoading = false;
 function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
   if (!dialog.open) dialog.showModal();
+  stopChatPolling();
   $('chat-locked').hidden = true;
   $('chat-content').hidden = true;
   $('chat-status').textContent = 'در حال اتصال به چت...';
+  // Contact the server only while the chat dialog is open.
   void refreshChat(true);
-  stopChatPolling();
-  chatPollTimer = window.setInterval(() => { if (dialog.open) void refreshChat(false); }, 2000);
+}
+
+function startChatPolling() {
+  const dialog = $('chat-dialog') as HTMLDialogElement;
+  if (!dialog.open || chatPollTimer !== undefined) return;
+  chatPollTimer = window.setInterval(() => {
+    if (dialog.open) void refreshChat(false);
+    else stopChatPolling();
+  }, 2000);
 }
 
 function stopChatPolling() {
@@ -377,7 +386,8 @@ function stopChatPolling() {
 }
 
 async function refreshChat(initial: boolean) {
-  if (chatLoading) return;
+  const dialog = $('chat-dialog') as HTMLDialogElement;
+  if (!dialog.open || chatLoading) return;
   const initData = telegramWebApp?.initData;
   if (!initData) {
     $('chat-content').hidden = true;
@@ -404,8 +414,10 @@ async function refreshChat(initial: boolean) {
     $('chat-content').hidden = false;
     renderChatMessages(data.messages ?? [], initial);
     $('chat-status').textContent = 'پیام‌ها هر ۲ ثانیه به‌روزرسانی می‌شوند';
+    startChatPolling();
   } catch (error) {
     $('chat-status').textContent = error instanceof Error ? error.message : 'خطا در دریافت پیام‌ها';
+    startChatPolling();
   } finally {
     chatLoading = false;
   }
