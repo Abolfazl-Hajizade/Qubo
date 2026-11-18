@@ -226,7 +226,7 @@ dialog.dialog:not([open]) { display: none; }
 
 
 /* Qubo global chat */
-#home #chat-btn { margin-top: 10px; background: #244b70; color: #fff; }
+#home #chat-btn { width: 100%; justify-content: center; margin-top: 10px; background: #244b70; color: #fff; }
 #home #chat-btn:active { background: #193b5c; }
 .chat-dialog {
   width: 100vw;
