@@ -815,63 +815,8 @@ function drawClouds(time: number, color: string) {
   ctx.restore();
 }
 
-/** Towers keep their original shape; in the forest world they are rendered as timber. */
+/** A lattice tower standing up from the origin: crossed braces in each square bay. */
 function drawTower(w: number, len: number) {
-  if (backdropIndex === 2) {
-    // A solid warm-wood face, subtle grain, knots and darker timber braces.
-    const wood = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-    wood.addColorStop(0, '#704321');
-    wood.addColorStop(0.2, '#a66b35');
-    wood.addColorStop(0.52, '#c18a4c');
-    wood.addColorStop(0.82, '#98602f');
-    wood.addColorStop(1, '#633a20');
-    ctx.save();
-    ctx.fillStyle = wood;
-    ctx.fillRect(-w / 2, -len, w, len + 40);
-    ctx.beginPath();
-    ctx.rect(-w / 2, -len, w, len + 40);
-    ctx.clip();
-    ctx.lineCap = 'round';
-    for (let i = 0; i < 5; i++) {
-      const x = -w * 0.39 + i * w * 0.19;
-      ctx.strokeStyle = i % 2 ? 'rgba(73, 39, 17, 0.22)' : 'rgba(255, 210, 139, 0.24)';
-      ctx.lineWidth = i % 2 ? 1.4 : 1;
-      ctx.beginPath();
-      ctx.moveTo(x, -len - 5);
-      ctx.bezierCurveTo(x - 2, -len * 0.65, x + 2, -len * 0.32, x, 38);
-      ctx.stroke();
-    }
-    if (w > 20 && len > 35) {
-      ctx.strokeStyle = 'rgba(75, 39, 18, 0.48)';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.ellipse(-w * 0.12, -len * 0.58, Math.max(2, w * 0.055), Math.max(4, w * 0.12), -0.2, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(w * 0.19, -len * 0.24, Math.max(1.5, w * 0.04), Math.max(3, w * 0.09), 0.15, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    // Keep the original crossed-lattice construction, now as dark wooden braces.
-    ctx.beginPath();
-    let flip = false;
-    for (let y = -len; y < 0; y += w * 0.8) {
-      const e = Math.min(y + w * 0.8, 0);
-      ctx.moveTo(flip ? w / 2 : -w / 2, y);
-      ctx.lineTo(flip ? -w / 2 : w / 2, e);
-      ctx.moveTo(-w / 2, e);
-      ctx.lineTo(w / 2, e);
-      flip = !flip;
-    }
-    ctx.strokeStyle = 'rgba(75, 42, 22, 0.9)';
-    ctx.lineWidth = 5;
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255, 207, 135, 0.5)';
-    ctx.lineWidth = 1.2;
-    ctx.strokeRect(-w / 2 + 1, -len, w - 2, len + 40);
-    ctx.restore();
-    return;
-  }
-
   ctx.beginPath();
   ctx.rect(-w / 2, -len, w, len + 40);
   let flip = false;
