@@ -187,8 +187,9 @@ dialog.dialog:not([open]) { display: none; }
 .home-title-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
+  width: 100%;
 }
 .home-title-row .logo { margin: 0; }
 .home-title-row .guide-btn {
@@ -196,10 +197,11 @@ dialog.dialog:not([open]) { display: none; }
   padding: 7px 12px;
   font-size: .9rem;
   line-height: 1;
-  background: var(--sheet);
-  color: var(--ink);
+  background: #c5cbd3;
+  color: #202936;
   box-shadow: var(--shadow);
 }
+.home-title-row .guide-btn:active { background: #aeb7c2; }
 .guide-dialog {
   width: min(92vw, 560px);
   max-width: 560px;
