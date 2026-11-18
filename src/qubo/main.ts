@@ -1,4 +1,4 @@
-import { $, Screens, dateFormat, onVisibility } from '../shared/screens';
+import { $, Screens, onVisibility } from '../shared/screens';
 import { createHistory, loadJSON, saveJSON } from '../shared/store';
 import { CUBE, H, W, type World, createWorld, launch, pivotX, step, towerLen } from './engine';
 
@@ -13,7 +13,11 @@ const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_DT = 1 / 30;
-const numberFormat = new Intl.NumberFormat();
+// Keep Qubo's displayed numbers and dates English, regardless of the Telegram/WebView locale.
+const numberFormat = new Intl.NumberFormat('en-US', { numberingSystem: 'latn' });
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', numberingSystem: 'latn',
+});
 
 let world: World = createWorld();
 let raf = 0;
