@@ -18,8 +18,9 @@ const FRICTION = 0.16; // lower kinetic/static friction for quicker, more natura
 const ACC = 8; // quicker tower acceleration leaves a tighter timing window
 const ACC_LEAN = 0.9; // gentler acceleration as the tower leans
 const FALL_AT = 82; // degrees: past this the cube slides off with the tower
+const SHORT_TOWER_LAUNCH_ANGLE = 22; // short platforms must bend this far before a forward jump
 
-export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number; moveOrigin?: number; moveAmplitude?: number; moveSpeed?: number; movePhase?: number; moveTime?: number; moveTopOrigin?: number }
+export interface Tower { x: number; w: number; top: number; tipStart: number; tipAccel: number; leanAccel: number; rhythm: number; moveOrigin?: number; moveAmplitude?: number; moveSpeed?: number; movePhase?: number; moveTime?: number; moveTopOrigin?: number; isShort?: boolean }
 /** A tower left behind: either it is carried out of view during a jump, or it topples after a fall. */
 export interface Fallen { pivot: number; w: number; len: number; angle: number; vel: number; fixed?: boolean }
 export type Phase = 'wait' | 'air' | 'scroll' | 'rescue' | 'drop' | 'over';
@@ -63,7 +64,10 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   // height variation, tower speed, then jump distance.
   const challengeMode = score < 70 ? -1 : Math.floor((score - 70) / 3) % 3;
   const heightSwing = 45 + (challengeMode === 0 ? 17 : 0);
-  const top = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -heightSwing, heightSwing)));
+  const generatedTop = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -heightSwing, heightSwing)));
+  // From score 300, occasionally create a platform about 25% shorter; avoid consecutive short platforms.
+  const isShort = score >= 300 && !from.isShort && rng() < 0.12;
+  const top = isShort ? H - (H - generatedTop) * 0.75 : generatedTop;
 
   // Keep spacing varied and account for the height change.
   const heightDelta = from.top - top;
@@ -83,6 +87,7 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const movesVertically = score >= 200 && movementRoll >= 0.15 && movementRoll < 0.30;
   return {
     x, w, top,
+    ...(isShort ? { isShort: true } : {}),
     ...(movesSideways ? { moveOrigin: x, moveAmplitude: between(rng, 10, 16), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
     ...(movesVertically ? { moveTopOrigin: top, moveAmplitude: between(rng, 6, 10), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
     tipStart: between(rng, speedBoost ? 4.2 : 3.2, speedBoost ? 7.1 : 6),
@@ -136,6 +141,8 @@ export function launch(w: World) {
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
   const activeIndex = (fromScroll || rescue) ? w.landed : 0;
   const t = w.towers[activeIndex];
+  // Short platforms require a deliberate wait until their support has bent enough.
+  if (fromScroll && t.isShort && w.angle < SHORT_TOWER_LAUNCH_ANGLE) return;
   const a = rad(w.angle);
   const tip = (towerLen(t) + ((fromScroll || rescue) ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
