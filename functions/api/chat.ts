@@ -15,7 +15,7 @@ type TelegramUser = { id: number; first_name?: string; last_name?: string; usern
 type AuthenticatedUser = { id: string; displayName: string };
 type ChatRow = { id: number; display_name: string; message: string; created_at: string };
 const encoder = new TextEncoder();
-const MIN_SCORE = 26;
+const MIN_SCORE = 29;
 const MAX_MESSAGE_LENGTH = 500;
 
 function hex(bytes: ArrayBuffer): string {
