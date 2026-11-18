@@ -78,7 +78,7 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const speedBoost = challengeMode === 1;
   const x = from.x + from.w + gap;
   // From score 100, a small number of platforms drift gently side to side.
-  const movesSideways = score >= 100 && rng() < 0.15;
+  const movesSideways = score >= 60 && rng() < 0.15;
   return {
     x, w, top,
     ...(movesSideways ? { moveOrigin: x, moveAmplitude: between(rng, 10, 16), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
