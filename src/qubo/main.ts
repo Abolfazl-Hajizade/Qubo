@@ -56,6 +56,11 @@ $('guide-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogE
 $('guide-close-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).close());
 $('guide-back-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).close());
 $('leaderboard-btn').addEventListener('click', () => screens.records());
+$('chat-btn').addEventListener('click', openChat);
+$('chat-close-btn').addEventListener('click', () => ($('chat-dialog') as HTMLDialogElement).close());
+$('chat-dialog').addEventListener('close', stopChatPolling);
+$('chat-form').addEventListener('submit', sendChatMessage);
+
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
 
@@ -347,6 +352,119 @@ async function loadLeaderboard() {
       : 'You have not submitted a score yet.';
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : 'Error loading leaderboard';
+  }
+}
+
+
+type ChatMessage = { id: number; display_name: string; message: string; created_at: string };
+let chatPollTimer: number | undefined;
+let chatLoading = false;
+
+function openChat() {
+  const dialog = $('chat-dialog') as HTMLDialogElement;
+  if (!dialog.open) dialog.showModal();
+  $('chat-locked').hidden = true;
+  $('chat-content').hidden = true;
+  $('chat-status').textContent = 'در حال اتصال به چت...';
+  void refreshChat(true);
+  stopChatPolling();
+  chatPollTimer = window.setInterval(() => { if (dialog.open) void refreshChat(false); }, 2000);
+}
+
+function stopChatPolling() {
+  if (chatPollTimer !== undefined) window.clearInterval(chatPollTimer);
+  chatPollTimer = undefined;
+}
+
+async function refreshChat(initial: boolean) {
+  if (chatLoading) return;
+  const initData = telegramWebApp?.initData;
+  if (!initData) {
+    $('chat-content').hidden = true;
+    $('chat-locked').hidden = false;
+    $('chat-required-score').textContent = 'لطفاً بازی را از طریق ربات تلگرام باز کنید.';
+    return;
+  }
+  chatLoading = true;
+  try {
+    const response = await fetch('/api/chat', { headers: { 'x-telegram-init-data': initData } });
+    const data = await response.json() as {
+      error?: string; eligible?: boolean; best_score?: number;
+      messages?: ChatMessage[];
+    };
+    if (response.status === 403 && data.eligible === false) {
+      $('chat-content').hidden = true;
+      $('chat-locked').hidden = false;
+      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۶`;
+      stopChatPolling();
+      return;
+    }
+    if (!response.ok) throw new Error(data.error || 'ارتباط با چت برقرار نشد.');
+    $('chat-locked').hidden = true;
+    $('chat-content').hidden = false;
+    renderChatMessages(data.messages ?? [], initial);
+    $('chat-status').textContent = 'پیام‌ها هر ۲ ثانیه به‌روزرسانی می‌شوند';
+  } catch (error) {
+    $('chat-status').textContent = error instanceof Error ? error.message : 'خطا در دریافت پیام‌ها';
+  } finally {
+    chatLoading = false;
+  }
+}
+
+function renderChatMessages(messages: ChatMessage[], initial: boolean) {
+  const list = $('chat-messages');
+  const wasNearBottom = initial || list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+  list.replaceChildren();
+  for (const message of messages) {
+    const item = document.createElement('li');
+    item.className = 'chat-message';
+    const top = document.createElement('div');
+    top.className = 'chat-message-top';
+    const name = document.createElement('strong');
+    name.textContent = message.display_name;
+    const time = document.createElement('time');
+    const parsed = new Date(message.created_at);
+    time.textContent = Number.isNaN(parsed.getTime())
+      ? '' : new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(parsed);
+    top.append(name, time);
+    const body = document.createElement('p');
+    body.textContent = message.message;
+    item.append(top, body);
+    list.append(item);
+  }
+  if (wasNearBottom) list.scrollTop = list.scrollHeight;
+}
+
+async function sendChatMessage(event: SubmitEvent) {
+  event.preventDefault();
+  const input = $('chat-input') as HTMLInputElement;
+  const message = input.value.trim();
+  const initData = telegramWebApp?.initData;
+  if (!message || !initData) return;
+  const button = $('chat-send-btn') as HTMLButtonElement;
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initData, message }),
+    });
+    const data = await response.json() as { error?: string; eligible?: boolean; best_score?: number };
+    if (response.status === 403 && data.eligible === false) {
+      $('chat-content').hidden = true;
+      $('chat-locked').hidden = false;
+      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۶`;
+      stopChatPolling();
+      return;
+    }
+    if (!response.ok) throw new Error(data.error || 'ارسال پیام ناموفق بود.');
+    input.value = '';
+    await refreshChat(false);
+    input.focus();
+  } catch (error) {
+    $('chat-status').textContent = error instanceof Error ? error.message : 'ارسال پیام ناموفق بود.';
+  } finally {
+    button.disabled = false;
   }
 }
 
