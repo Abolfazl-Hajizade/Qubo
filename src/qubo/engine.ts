@@ -51,6 +51,7 @@ export interface World {
 
 const between = (rng: () => number, lo: number, hi: number) => lo + rng() * (hi - lo);
 const rad = (d: number) => (d * Math.PI) / 180;
+const leanSpeedMultiplier = (score: number) => score >= 20 && score < 30 ? 1.08 : 1;
 
 export const pivotX = (t: Tower) => t.x + t.w / 2;
 export const towerLen = (t: Tower) => H - t.top;
@@ -208,7 +209,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
   switch (w.phase) {
     case 'wait':
       const tower = w.towers[0];
-      w.vel += (ACC * tower.tipAccel + ACC_LEAN * tower.leanAccel * w.angle) * tower.rhythm * dt;
+      w.vel += (ACC * tower.tipAccel + ACC_LEAN * tower.leanAccel * w.angle) * tower.rhythm * leanSpeedMultiplier(w.score) * dt;
       w.angle += w.vel * dt;
       {
         // Gravity acts along the slope; friction always opposes the current slide.
@@ -344,7 +345,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // while the cube stays supported and remains jumpable during the movement.
       const landedTower = w.towers[w.landed];
       w.landingAge += dt;
-      w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * dt;
+      w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * leanSpeedMultiplier(w.score) * dt;
       w.angle += w.vel * dt;
       const cameraAim = Math.max(0, pivotX(landedTower) + towerLen(landedTower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
       w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
@@ -432,7 +433,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       const t = w.towers[w.landed];
       const previousTowerAngle = w.angle;
       if (!w.rescueInPlace) {
-        w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * dt;
+        w.vel += (ACC * t.tipAccel + ACC_LEAN * t.leanAccel * w.angle) * t.rhythm * leanSpeedMultiplier(w.score) * dt;
         w.angle += w.vel * dt;
         const cameraAim = Math.max(0, pivotX(t) + towerLen(t) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
         w.cam += (cameraAim - w.cam) * (1 - Math.exp(-10 * dt));
