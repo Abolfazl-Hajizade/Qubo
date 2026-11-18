@@ -184,10 +184,18 @@ dialog.dialog:not([open]) { display: none; }
 
 
 /* Bilingual Qubo game guide */
-#home #guide-btn {
-  width: 100%;
+.home-title-row {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  margin-top: 14px;
+  gap: 10px;
+}
+.home-title-row .logo { margin: 0; }
+.home-title-row .guide-btn {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  font-size: .9rem;
+  line-height: 1;
   background: var(--sheet);
   color: var(--ink);
   box-shadow: var(--shadow);
