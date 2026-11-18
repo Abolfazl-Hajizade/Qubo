@@ -76,7 +76,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const row = await env.DB.prepare(
     "SELECT checkpoint FROM player_checkpoints WHERE telegram_user_id = ?"
   ).bind(user.id).first<{ checkpoint: number }>();
-  return json({ checkpoint: row?.checkpoint ?? 0 });
+  return json({ checkpoint: row?.checkpoint ?? 0, hasCheckpoint: row !== null });
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
