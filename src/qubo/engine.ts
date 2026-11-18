@@ -55,7 +55,10 @@ export const pivotX = (t: Tower) => t.x + t.w / 2;
 export const towerLen = (t: Tower) => H - t.top;
 
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
-  const w = CUBE;
+  // From score 30, occasionally generate a narrower landing platform.
+  // Never place two narrow platforms back-to-back so each challenge stays readable.
+  const narrowChance = score >= 100 ? 0.25 : score >= 60 ? 0.20 : score >= 30 ? 0.12 : 0;
+  const w = from.w >= CUBE && rng() < narrowChance ? Math.round(CUBE * 0.8) : CUBE;
   // After 70 points, rotate the focus of the challenge every three points:
   // height variation, tower speed, then jump distance.
   const challengeMode = score < 70 ? -1 : Math.floor((score - 70) / 3) % 3;
