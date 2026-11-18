@@ -58,7 +58,7 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   // From score 30, occasionally generate a narrower landing platform.
   // Never place two narrow platforms back-to-back so each challenge stays readable.
   const narrowChance = score >= 100 ? 0.25 : score >= 60 ? 0.20 : score >= 30 ? 0.12 : 0;
-  const w = from.w >= CUBE && rng() < narrowChance ? Math.round(CUBE * 0.8) : CUBE;
+  const w = from.w >= CUBE && rng() < narrowChance ? Math.round(CUBE * 0.6) : CUBE;
   // After 70 points, rotate the focus of the challenge every three points:
   // height variation, tower speed, then jump distance.
   const challengeMode = score < 70 ? -1 : Math.floor((score - 70) / 3) % 3;
@@ -78,7 +78,7 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const speedBoost = challengeMode === 1;
   const x = from.x + from.w + gap;
   // From score 100, a small number of platforms drift gently side to side.
-  const movesSideways = score >= 60 && rng() < 0.15;
+  const movesSideways = score >= 100 && rng() < 0.15;
   return {
     x, w, top,
     ...(movesSideways ? { moveOrigin: x, moveAmplitude: between(rng, 10, 16), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
