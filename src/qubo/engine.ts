@@ -81,7 +81,7 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const maxGap = showSecondTower
     ? Math.max(minGap + 8, Math.min(134, 112 + heightDelta * 0.25 + gapBoost))
     : Math.max(minGap + 8, Math.min(162, 140 + heightDelta * 0.38 + gapBoost));
-  const gap = between(rng, minGap, maxGap);
+  const gap = between(rng, minGap, maxGap) * intensity;
 
   const speedBoost = challengeMode === 1;
   const x = from.x + from.w + gap;
