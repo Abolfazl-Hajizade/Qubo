@@ -830,6 +830,18 @@ function drawTower(w: number, len: number) {
   ctx.stroke();
 }
 
+// A distinct outline color for each environment, blended with the same visual transition as the backdrop.
+const cubeOutlineColors = ["#70d7ff","#ffd166","#8ee6a1","#55d9e8","#f4b56b","#8bb8ff","#d8efff","#ff784e","#e69cff","#55eaff","#b99aff","#ff9fcf","#c7a7ff","#f1d6a4","#ff8fb4","#b6c9ff","#79f1e1","#79ffad","#e5a8ff","#c8d9ff","#ffe1a0","#83e5c4","#a6dfff","#d6e1f0","#f5e9c8","#ffd18a"];
+function currentCubeOutlineColor() {
+  const from = cubeOutlineColors[previousBackdropIndex] ?? cubeOutlineColors[0];
+  const to = cubeOutlineColors[backdropIndex] ?? cubeOutlineColors[0];
+  const t = backdropTransitionAge * backdropTransitionAge * (3 - 2 * backdropTransitionAge);
+  const channel = (a: number, b: number) => Math.round(a + (b - a) * t);
+  const rgb = (hex: string) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+  const a = rgb(from), b = rgb(to);
+  return `rgb(${channel(a[0], b[0])}, ${channel(a[1], b[1])}, ${channel(a[2], b[2])})`;
+}
+
 /** The cube, with a pair of eyes looking ahead. */
 function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, scaleX = 1, scaleY = 1) {
   const p = palette;
@@ -846,8 +858,8 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(190, 205, 216, 0.72)';
-  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = currentCubeOutlineColor();
+  ctx.lineWidth = 3.2;
   ctx.stroke();
   // White eyes with small dark pupils looking slightly forward.
   ctx.fillStyle = p.paper;
