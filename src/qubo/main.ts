@@ -1034,16 +1034,10 @@ function drawTower(w: number, len: number) {
   }
   ctx.lineWidth = 7;
   if (world.score >= 800) {
-    const rainbow = ctx.createLinearGradient(-w / 2, -len, w / 2, 0);
-    ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
-      rainbow.addColorStop(i / (colors.length - 1), color);
-    });
-    ctx.strokeStyle = rainbow;
-    ctx.shadowColor = 'rgba(12, 8, 35, 0.8)';
-    ctx.shadowBlur = 5;
+    ctx.strokeStyle = '#050505';
+    ctx.shadowBlur = 0;
   }
   ctx.stroke();
-  if (world.score >= 800) ctx.shadowBlur = 0;
 }
 
 // A distinct outline color for each environment, blended with the same visual transition as the backdrop.
@@ -1079,7 +1073,15 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   // Scale around the cube centre; keep all physics coordinates independent from this effect.
   ctx.scale(scaleX, scaleY);
   const endlessWorld = world.score >= 800;
-  ctx.fillStyle = endlessWorld ? '#ffffff' : '#05090e';
+  if (endlessWorld) {
+    const rainbowCube = ctx.createLinearGradient(-CUBE / 2, -CUBE / 2, CUBE / 2, CUBE / 2);
+    ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
+      rainbowCube.addColorStop(i / (colors.length - 1), color);
+    });
+    ctx.fillStyle = rainbowCube;
+  } else {
+    ctx.fillStyle = '#05090e';
+  }
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
