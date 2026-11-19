@@ -1,6 +1,7 @@
 import { $, Screens, onVisibility } from '../shared/screens';
 import { createHistory, loadJSON, saveJSON } from '../shared/store';
 import { CUBE, H, W, type World, createWorld, launch, pivotX, step, towerLen } from './engine';
+import { createDeviceAdaptive } from './device-adaptive';
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
@@ -45,6 +46,7 @@ if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, 
 
 const canvas = $<HTMLCanvasElement>('stage');
 const ctx = canvas.getContext('2d')!;
+const deviceAdaptive = createDeviceAdaptive(navigator);
 const frame = canvas.parentElement!;
 const endDialog = $<HTMLDialogElement>('end-dialog');
 
@@ -263,6 +265,7 @@ function loop(now: number) {
   // not change with the device's refresh rate or intermittent frame drops.
   const frameDelta = Math.min(MAX_FRAME_DELTA, Math.max(0, (now - last) / 1000));
   last = now;
+  if (started && !paused && deviceAdaptive.observeFrame(frameDelta)) resize();
   if (started && !paused) {
     const was = world.over;
     physicsAccumulator = Math.min(MAX_FRAME_DELTA, physicsAccumulator + frameDelta);
@@ -613,7 +616,8 @@ function readPalette(): Palette {
 let palette = readPalette();
 
 function resize() {
-  const dpr = window.devicePixelRatio || 1;
+  // Device-adaptive backing resolution affects rendering only; CSS size and game physics stay fixed.
+  const dpr = deviceAdaptive.getRenderScale();
   const width = frame.clientWidth;
   if (!width) return;
   canvas.width = Math.round(width * dpr);
