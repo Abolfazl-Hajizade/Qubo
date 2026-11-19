@@ -59,21 +59,24 @@ export const towerLen = (t: Tower) => H - t.top;
 function nextTower(from: Tower, rng: () => number, score: number): Tower {
   // From score 30, occasionally generate a narrower landing platform.
   // Never place two narrow platforms back-to-back so each challenge stays readable.
-  const narrowChance = score >= 100 ? 0.25 : score >= 60 ? 0.20 : score >= 30 ? 0.12 : 0;
+  const endlessWorld = score >= 800;
+  const narrowChance = (score >= 100 ? 0.25 : score >= 60 ? 0.20 : score >= 30 ? 0.12 : 0)
+    + (endlessWorld ? 0.05 : 0);
   const w = from.w >= CUBE && rng() < narrowChance ? Math.round(CUBE * 0.6) : CUBE;
   // After 70 points, rotate the focus of the challenge every three points:
   // height variation, tower speed, then jump distance.
-  const challengeMode = score < 70 ? -1 : Math.floor((score - 70) / 3) % 3;
-  const heightSwing = 45 + (challengeMode === 0 ? 17 : 0);
+  const challengeMode = score < 70 ? -1 : Math.floor(((endlessWorld ? 800 : score) - 70) / 3) % 3;
+  const intensity = endlessWorld ? 1.05 : 1;
+  const heightSwing = (45 + (challengeMode === 0 ? 17 : 0)) * intensity;
   const generatedTop = Math.max(MIN_TOP, Math.min(MAX_TOP, from.top + between(rng, -heightSwing, heightSwing)));
   // From score 300, occasionally create a platform about 25% shorter; avoid consecutive short platforms.
-  const isShort = score >= 300 && !from.isShort && rng() < 0.12;
+  const isShort = score >= 300 && !from.isShort && rng() < (0.12 + (endlessWorld ? 0.05 : 0));
   const top = isShort ? H - (H - generatedTop) * 0.75 : generatedTop;
 
   // Keep spacing varied and account for the height change.
   const heightDelta = from.top - top;
-  const showSecondTower = rng() < 0.28;
-  const gapBoost = challengeMode === 2 ? 14 : 0;
+  const showSecondTower = rng() < (0.28 + (endlessWorld ? 0.05 : 0));
+  const gapBoost = (challengeMode === 2 ? 14 : 0) * intensity;
   const minGap = (showSecondTower ? 78 : 102) + gapBoost;
   const maxGap = showSecondTower
     ? Math.max(minGap + 8, Math.min(134, 112 + heightDelta * 0.25 + gapBoost))
@@ -84,17 +87,18 @@ function nextTower(from: Tower, rng: () => number, score: number): Tower {
   const x = from.x + from.w + gap;
   // From score 100, platforms may drift sideways; from 200, some move vertically instead.
   const movementRoll = rng();
-  const movesSideways = score >= 100 && movementRoll < 0.15;
-  const movesVertically = score >= 200 && movementRoll >= 0.15 && movementRoll < 0.30;
+  const movementChance = 0.15 + (endlessWorld ? 0.05 : 0);
+  const movesSideways = score >= 100 && movementRoll < movementChance;
+  const movesVertically = score >= 200 && movementRoll >= movementChance && movementRoll < movementChance * 2;
   return {
     x, w, top,
     ...(isShort ? { isShort: true } : {}),
-    ...(movesSideways ? { moveOrigin: x, moveAmplitude: between(rng, 10, 16), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
-    ...(movesVertically ? { moveTopOrigin: top, moveAmplitude: between(rng, 6, 10), moveSpeed: between(rng, 0.65, 0.9), movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
-    tipStart: between(rng, speedBoost ? 4.2 : 3.2, speedBoost ? 7.1 : 6),
-    tipAccel: between(rng, speedBoost ? 0.9 : 0.72, speedBoost ? 1.42 : 1.28),
-    leanAccel: between(rng, speedBoost ? 0.85 : 0.65, speedBoost ? 1.48 : 1.35),
-    rhythm: between(rng, speedBoost ? 0.9 : 0.82, speedBoost ? 1.24 : 1.18),
+    ...(movesSideways ? { moveOrigin: x, moveAmplitude: between(rng, 10, 16) * intensity, moveSpeed: between(rng, 0.65, 0.9) * intensity, movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
+    ...(movesVertically ? { moveTopOrigin: top, moveAmplitude: between(rng, 6, 10) * intensity, moveSpeed: between(rng, 0.65, 0.9) * intensity, movePhase: between(rng, 0, Math.PI * 2), moveTime: 0 } : {}),
+    tipStart: between(rng, speedBoost ? 4.2 : 3.2, speedBoost ? 7.1 : 6) * intensity,
+    tipAccel: between(rng, speedBoost ? 0.9 : 0.72, speedBoost ? 1.42 : 1.28) * intensity,
+    leanAccel: between(rng, speedBoost ? 0.85 : 0.65, speedBoost ? 1.48 : 1.35) * intensity,
+    rhythm: between(rng, speedBoost ? 0.9 : 0.82, speedBoost ? 1.24 : 1.18) * intensity,
   };
 }
 
