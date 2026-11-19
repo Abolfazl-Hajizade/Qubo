@@ -697,7 +697,8 @@ function drawBackdrop(index: number, time: number) {
   ];
   const colors = index === 26 ? ['#071426', '#101f3c', '#263b59']
     : index === 27 ? ['#26395f', '#f0a77d', '#f8d9a0']
-      : palettes[index];
+      : index === 28 ? ['#090b28', '#211747', '#092c3c']
+        : palettes[index];
   gradient.addColorStop(0, colors[0]);
   gradient.addColorStop(0.62, colors[1]);
   gradient.addColorStop(1, colors[2]);
