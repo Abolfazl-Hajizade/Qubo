@@ -174,10 +174,13 @@ function renderHistory() {
   }));
 }
 
-// Split the 30–60 world into a moonlit first half and its original sunny second half.
+// Give the 30–60 world a gradual night → dawn → daylight progression.
 function backdropForScore(score: number) {
   const worldIndex = Math.floor(score / 30) % 26;
-  return score >= 30 && score < 45 ? 26 : worldIndex;
+  if (score >= 30 && score < 40) return 26;
+  if (score >= 40 && score < 50) return 27;
+  if (score >= 50 && score < 60) return 1;
+  return worldIndex;
 }
 
 function start() {
@@ -691,7 +694,9 @@ function drawBackdrop(index: number, time: number) {
     ['#193b58', '#746a83', '#d8c6a1'], // balance
     ['#211b46', '#67539a', '#f0c78d'], // inner power
   ];
-  const colors = index === 26 ? ['#071426', '#101f3c', '#263b59'] : palettes[index];
+  const colors = index === 26 ? ['#071426', '#101f3c', '#263b59']
+    : index === 27 ? ['#26395f', '#f0a77d', '#f8d9a0']
+      : palettes[index];
   gradient.addColorStop(0, colors[0]);
   gradient.addColorStop(0.62, colors[1]);
   gradient.addColorStop(1, colors[2]);
@@ -745,6 +750,42 @@ function drawBackdrop(index: number, time: number) {
     ctx.moveTo(0, 365);
     ctx.quadraticCurveTo(88, 330, 176, 365);
     ctx.quadraticCurveTo(270, 337, W, 365);
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+    ctx.fill();
+  } else if (index === 27) {
+    // Early dawn: the horizon begins to glow as the last cool night tones fade.
+    const sunrise = ctx.createRadialGradient(180, 258, 8, 180, 258, 205);
+    sunrise.addColorStop(0, 'rgba(255, 239, 190, 0.92)');
+    sunrise.addColorStop(0.28, 'rgba(255, 190, 137, 0.48)');
+    sunrise.addColorStop(1, 'rgba(255, 170, 130, 0)');
+    ctx.fillStyle = sunrise;
+    ctx.fillRect(0, 80, W, 300);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 231, 185, 0.72)';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#fff0c6';
+    ctx.beginPath();
+    ctx.arc(180, 258, 23, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Soft clouds catch the first warm light.
+    for (let i = 0; i < 5; i++) {
+      const x = (i * 91 + 22) % (W + 70) - 25;
+      const y = 145 + (i % 3) * 34;
+      ctx.fillStyle = i % 2 ? 'rgba(255, 221, 194, 0.28)' : 'rgba(255, 239, 218, 0.34)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 38 + (i % 2) * 12, 7 + (i % 3), 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Distant hills silhouette, softened by the sunrise.
+    ctx.fillStyle = 'rgba(91, 104, 133, 0.24)';
+    ctx.beginPath();
+    ctx.moveTo(0, 345);
+    ctx.quadraticCurveTo(75, 309, 150, 344);
+    ctx.quadraticCurveTo(240, 313, W, 346);
     ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
     ctx.fill();
   } else if (index === 0) {
