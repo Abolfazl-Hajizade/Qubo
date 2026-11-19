@@ -370,6 +370,8 @@ async function submitScore(score: number) {
 }
 
 async function loadLeaderboard() {
+  // Keep the private statistics panel unique across repeated visits to Records.
+  document.getElementById('records-private-games')?.remove();
   const status = $('records-status');
   const list = $('records-list');
   const me = $('records-me');
@@ -422,6 +424,7 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
     if (response.status === 403 || !response.ok) return;
     const data = await response.json() as { players?: Array<{ display_name: string; game_count: number }> };
     const section = document.createElement('section');
+    section.id = 'records-private-games';
     section.className = 'records-admin';
     const heading = document.createElement('h3');
     heading.textContent = 'Private · Games played';
@@ -433,6 +436,7 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
       list.append(item);
     }
     section.append(heading, list);
+    document.getElementById('records-private-games')?.remove();
     anchor.insertAdjacentElement('afterend', section);
   } catch {
     // Private statistics are optional and never affect the public leaderboard.
