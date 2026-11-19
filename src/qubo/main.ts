@@ -1008,7 +1008,9 @@ function currentCubeOutlineColor() {
     ? original
     : index === 26
       ? [20, 86, 160]
-      : [1, 3, 5].map((i) => Number.parseInt((cubeOutlineColors[index] ?? cubeOutlineColors[0]).slice(i, i + 2), 16));
+      : index === 27
+        ? [255, 139, 120]
+        : [1, 3, 5].map((i) => Number.parseInt((cubeOutlineColors[index] ?? cubeOutlineColors[0]).slice(i, i + 2), 16));
   if (previousBackdropIndex === 0 && backdropIndex === 0) return 'rgba(190, 205, 216, 0.72)';
   const from = colorAt(previousBackdropIndex);
   const to = colorAt(backdropIndex);
