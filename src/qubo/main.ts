@@ -265,7 +265,10 @@ function loop(now: number) {
   // not change with the device's refresh rate or intermittent frame drops.
   const frameDelta = Math.min(MAX_FRAME_DELTA, Math.max(0, (now - last) / 1000));
   last = now;
-  if (started && !paused && deviceAdaptive.observeFrame(frameDelta)) resize();
+  if (started && !paused && deviceAdaptive.observeFrame(frameDelta)) {
+    resize();
+    void syncDeviceSettings();
+  }
   if (started && !paused) {
     const was = world.over;
     physicsAccumulator = Math.min(MAX_FRAME_DELTA, physicsAccumulator + frameDelta);
@@ -315,6 +318,13 @@ interface LeaderboardEntry {
 }
 
 
+function currentDeviceSettings() {
+  return {
+    ...deviceAdaptive.getSettings(),
+    devicePixelRatio: window.devicePixelRatio || 1,
+  };
+}
+
 async function recordGameStart() {
   const initData = telegramWebApp?.initData;
   if (!initData) return;
@@ -322,10 +332,24 @@ async function recordGameStart() {
     await fetch('/api/game-stats', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initData }),
+      body: JSON.stringify({ initData, deviceSettings: currentDeviceSettings() }),
     });
   } catch {
     // Counting is best-effort and must never interrupt a game.
+  }
+}
+
+async function syncDeviceSettings() {
+  const initData = telegramWebApp?.initData;
+  if (!initData) return;
+  try {
+    await fetch('/api/game-stats', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initData, deviceSettings: currentDeviceSettings(), settingsOnly: true }),
+    });
+  } catch {
+    // Device settings sync is best-effort and must never interrupt a game.
   }
 }
 
@@ -459,7 +483,17 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
       headers: { 'x-telegram-init-data': initData },
     });
     if (response.status === 403 || !response.ok) return;
-    const data = await response.json() as { players?: Array<{ display_name: string; game_count: number }> };
+    const data = await response.json() as {
+      players?: Array<{
+        display_name: string;
+        game_count: number;
+        base_render_scale: number | null;
+        current_render_scale: number | null;
+        adaptive_enabled: number | null;
+        adaptive_change_count: number | null;
+        device_pixel_ratio: number | null;
+      }>;
+    };
     const section = document.createElement('section');
     section.id = 'records-private-games';
     section.className = 'records-admin';
@@ -469,7 +503,21 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
     list.className = 'records-list';
     for (const player of data.players ?? []) {
       const item = document.createElement('li');
-      item.textContent = `${player.display_name} — ${numberFormat.format(player.game_count)} games`;
+      const summary = document.createElement('span');
+      summary.textContent = `${player.display_name} — ${numberFormat.format(player.game_count)} games`;
+      item.append(summary);
+      const settings = document.createElement('small');
+      settings.className = 'records-private-device';
+      if (player.current_render_scale !== null && player.base_render_scale !== null) {
+        const current = player.current_render_scale.toFixed(2);
+        const base = player.base_render_scale.toFixed(2);
+        const changes = numberFormat.format(player.adaptive_change_count ?? 0);
+        const dpr = player.device_pixel_ratio?.toFixed(2) ?? '–';
+        settings.textContent = `Render ${current}× / base ${base}× · Adaptive ${player.adaptive_enabled ? 'ON' : 'OFF'} · ${changes} changes · DPR ${dpr}`;
+      } else {
+        settings.textContent = 'Device settings not recorded yet';
+      }
+      item.append(settings);
       list.append(item);
     }
     section.append(heading, list);

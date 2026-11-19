@@ -53,6 +53,12 @@ test('reduces canvas resolution after sustained slow frame windows', () => {
   for (let i = 0; i < 120; i++) changed = adaptive.observeFrame(0.025) || changed;
   assert.equal(changed, true);
   assert.equal(adaptive.getRenderScale(), 1.25);
+  assert.deepEqual(adaptive.getSettings(), {
+    enabled: true,
+    baseRenderScale: 1.5,
+    currentRenderScale: 1.25,
+    adjustmentCount: 1,
+  });
 });
 
 test('recovers quality gradually after sustained stable frame pacing', () => {
@@ -68,4 +74,5 @@ test('recovers quality gradually after sustained stable frame pacing', () => {
   for (let i = 0; i < 360; i++) changed = adaptive.observeFrame(1 / 60) || changed;
   assert.equal(changed, true);
   assert.equal(adaptive.getRenderScale(), 1.35);
+  assert.equal(adaptive.getSettings().adjustmentCount, 2);
 });

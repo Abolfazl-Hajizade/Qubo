@@ -51,9 +51,16 @@ export function createDeviceAdaptive(hints: Navigator & { deviceMemory?: number;
   let samples: number[] = [];
   let slowWindows = 0;
   let stableWindows = 0;
+  let adjustmentCount = 0;
 
   return {
     getRenderScale: () => renderScale,
+    getSettings: () => ({
+      enabled: true,
+      baseRenderScale: baseScale,
+      currentRenderScale: renderScale,
+      adjustmentCount,
+    }),
     observeFrame(frameDeltaSeconds: number): boolean {
       if (!Number.isFinite(frameDeltaSeconds) || frameDeltaSeconds <= 0) return false;
       samples.push(frameDeltaSeconds * 1000);
@@ -68,6 +75,7 @@ export function createDeviceAdaptive(hints: Navigator & { deviceMemory?: number;
         stableWindows = 0;
         if (slowWindows >= 2 && renderScale > 1) {
           renderScale = Math.max(1, Math.round((renderScale - 0.25) * 100) / 100);
+          adjustmentCount++;
           slowWindows = 0;
           return true;
         }
@@ -76,6 +84,7 @@ export function createDeviceAdaptive(hints: Navigator & { deviceMemory?: number;
         slowWindows = 0;
         if (stableWindows >= 6 && renderScale < baseScale) {
           renderScale = Math.min(baseScale, Math.round((renderScale + 0.1) * 100) / 100);
+          adjustmentCount++;
           stableWindows = 0;
           return true;
         }
