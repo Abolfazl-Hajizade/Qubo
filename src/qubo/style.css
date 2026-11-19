@@ -294,3 +294,19 @@ dialog.dialog:not([open]) { display: none; }
 .chat-live-indicator { display: inline-block; flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: #39ef78; box-shadow: 0 0 7px rgba(57, 239, 120, .9); animation: chat-live-blink 1.15s ease-in-out infinite; }
 @keyframes chat-live-blink { 0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(57, 239, 120, .95); } 50% { opacity: .28; box-shadow: 0 0 2px rgba(57, 239, 120, .35); } }
 @media (prefers-reduced-motion: reduce) { .chat-live-indicator { animation: none; } }
+
+
+/* Endless 800+ enchanted bioluminescent mushroom grove. */
+body:has(#game:not([hidden]))[data-qubo-backdrop="28"] {
+  background-color: #080d25;
+  background-image:
+    radial-gradient(ellipse at 18% 78%, rgba(40,226,205,.32) 0, transparent 36%),
+    radial-gradient(ellipse at 82% 70%, rgba(214,75,255,.28) 0, transparent 38%),
+    radial-gradient(ellipse at 50% 18%, rgba(74,92,190,.3) 0, transparent 46%),
+    linear-gradient(180deg, #090b28 0%, #211747 52%, #092c3c 100%);
+  background-attachment: fixed;
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar,
+body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .meta span,
+body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score span { color: #f5edff; }
+body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score b { color: #ff9bd7; }
