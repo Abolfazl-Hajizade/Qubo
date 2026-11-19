@@ -176,6 +176,7 @@ function renderHistory() {
 
 // Give the 30–60 world a gradual night → dawn → daylight progression.
 function backdropForScore(score: number) {
+  if (score >= 800) return 28;
   const worldIndex = Math.floor(score / 30) % 26;
   if (score >= 30 && score < 40) return 26;
   if (score >= 40 && score < 50) return 27;
@@ -788,6 +789,40 @@ function drawBackdrop(index: number, time: number) {
     ctx.quadraticCurveTo(240, 313, W, 346);
     ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
     ctx.fill();
+  } else if (index === 28) {
+    // Fixed enchanted bioluminescent mushroom grove for the endless 800+ world.
+    const haze = ctx.createRadialGradient(180, 230, 18, 180, 230, 245);
+    haze.addColorStop(0, 'rgba(80, 255, 220, 0.18)');
+    haze.addColorStop(0.48, 'rgba(174, 75, 255, 0.12)');
+    haze.addColorStop(1, 'rgba(5, 8, 28, 0)');
+    ctx.fillStyle = haze; ctx.fillRect(0, 0, W, H);
+    const colors = ['#ff6bd6', '#7c8cff', '#50f4dc', '#d18cff', '#ff9bce', '#73d7ff', '#b5ff78'];
+    for (let i = 0; i < 9; i++) {
+      const x = i * 49 - 22, base = 355 + (i % 3) * 17, stem = 58 + (i % 4) * 16, capY = base - stem;
+      const color = colors[i % colors.length];
+      ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 18;
+      ctx.fillStyle = 'rgba(20, 17, 53, 0.92)'; ctx.fillRect(x - 5, capY, 10, stem);
+      ctx.fillStyle = color; ctx.beginPath();
+      ctx.ellipse(x, capY, 22 + (i % 3) * 5, 10 + (i % 2) * 3, 0, Math.PI, Math.PI * 2);
+      ctx.quadraticCurveTo(x + 18, capY + 12, x, capY + 8);
+      ctx.quadraticCurveTo(x - 18, capY + 12, x - 22, capY); ctx.fill();
+      ctx.globalAlpha = 0.8; ctx.fillStyle = '#fff4ff';
+      for (let dot = 0; dot < 4; dot++) { ctx.beginPath(); ctx.arc(x - 12 + dot * 8, capY - 3 - (dot % 2) * 3, 1.5, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    }
+    for (let layer = 0; layer < 3; layer++) {
+      ctx.fillStyle = ['rgba(24,35,83,.62)','rgba(22,57,79,.72)','rgba(12,34,54,.9)'][layer];
+      ctx.beginPath(); ctx.moveTo(0,350+layer*18);
+      for(let x=0;x<=W;x+=12){const y=342+layer*19+Math.sin(x*.018+time*(.18+layer*.08))*(9+layer*4);ctx.lineTo(x,y);}
+      ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+    }
+    for(let i=0;i<34;i++){
+      const x=(i*83.7+Math.sin(time*.32+i)*15+W)%W, y=(i*47.3-time*(8+i%4)+470)%390;
+      const color=['#71fff0','#ff8de1','#c4a0ff','#d9ff8c'][i%4];
+      ctx.globalAlpha=.35+.35*(.5+.5*Math.sin(time*1.4+i));ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=8;
+      ctx.beginPath();ctx.arc(x,y,1.2+(i%3)*.45,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;ctx.shadowBlur=0;
   } else if (index === 0) {
     // Original Qubo storm atmosphere is preserved as the opening world.
     ctx.save();
@@ -997,12 +1032,21 @@ function drawTower(w: number, len: number) {
     flip = !flip;
   }
   ctx.lineWidth = 7;
+  const rainbow = ctx.createLinearGradient(-w / 2, -len, w / 2, 0);
+  ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
+    rainbow.addColorStop(i / (colors.length - 1), color);
+  });
+  ctx.strokeStyle = rainbow;
+  ctx.shadowColor = 'rgba(12, 8, 35, 0.8)';
+  ctx.shadowBlur = 5;
   ctx.stroke();
+  ctx.shadowBlur = 0;
 }
 
 // A distinct outline color for each environment, blended with the same visual transition as the backdrop.
 const cubeOutlineColors = ["#70d7ff","#ffd166","#8ee6a1","#55d9e8","#f4b56b","#8bb8ff","#d8efff","#ff784e","#e69cff","#55eaff","#b99aff","#ff9fcf","#c7a7ff","#f1d6a4","#ff8fb4","#b6c9ff","#79f1e1","#79ffad","#e5a8ff","#c8d9ff","#ffe1a0","#83e5c4","#a6dfff","#d6e1f0","#f5e9c8","#ffd18a"];
 function currentCubeOutlineColor() {
+  if (world.score >= 800) return '#ff8fcf';
   const original = [190, 205, 216];
   const colorAt = (index: number) => index === 0
     ? original
@@ -1031,21 +1075,22 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   ctx.rotate(rad(tilt));
   // Scale around the cube centre; keep all physics coordinates independent from this effect.
   ctx.scale(scaleX, scaleY);
-  ctx.fillStyle = '#05090e';
+  const endlessWorld = world.score >= 800;
+  ctx.fillStyle = endlessWorld ? '#ffffff' : '#05090e';
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
   ctx.strokeStyle = currentCubeOutlineColor();
   ctx.lineWidth = 1.4;
   ctx.stroke();
-  // White eyes with small dark pupils looking slightly forward.
-  ctx.fillStyle = p.paper;
+  // Blue eyes in the endless world; original eye palette before 800.
+  ctx.fillStyle = endlessWorld ? '#36a9ff' : p.paper;
   for (const ex of [CUBE / 2 - 20, CUBE / 2 - 8]) {
     ctx.beginPath();
     ctx.arc(ex, -CUBE / 2 + 12, 5.2, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.fillStyle = '#05090e';
+  ctx.fillStyle = endlessWorld ? '#eaf8ff' : '#05090e';
   for (const ex of [CUBE / 2 - 18.2, CUBE / 2 - 6.2]) {
     ctx.beginPath();
     ctx.arc(ex, -CUBE / 2 + 12.5, 2, 0, Math.PI * 2);
