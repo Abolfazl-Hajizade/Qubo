@@ -130,6 +130,9 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="4"] {
 body:has(#game:not([hidden]))[data-qubo-backdrop="5"] {
   background-image: linear-gradient(180deg, #344b70 0%, #839bb7 62%, #d5b98e 100%);
 }
+body:has(#game:not([hidden]))[data-qubo-backdrop="26"] {
+  background-image: linear-gradient(180deg, #071426 0%, #101f3c 62%, #263b59 100%);
+}
 
 /* Keep leaderboard dimensions stable as more scores are added. */
 .leaderboard-dialog {
