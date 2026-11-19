@@ -146,8 +146,10 @@ export function launch(w: World) {
   if (w.phase !== 'wait' && !rescue && !fromScroll) return;
   const activeIndex = (fromScroll || rescue) ? w.landed : 0;
   const t = w.towers[activeIndex];
-  // Short platforms require a deliberate wait until their support has bent enough.
-  if (fromScroll && t.isShort && w.angle < SHORT_TOWER_LAUNCH_ANGLE) return;
+  // Short platforms require a deliberate wait before a forward jump.
+  // A rear-corner in-place hop is a balance recovery, not a forward launch,
+  // so the short-platform timing gate must not silently cancel that recovery.
+  if (fromScroll && !inPlace && t.isShort && w.angle < SHORT_TOWER_LAUNCH_ANGLE) return;
   const a = rad(w.angle);
   const tip = (towerLen(t) + ((fromScroll || rescue) ? w.offset : 0)) * rad(w.vel); // velocity of the cube's support point
   w.vx = THROW * Math.sin(a) + (tip + w.slide) * Math.cos(a);
