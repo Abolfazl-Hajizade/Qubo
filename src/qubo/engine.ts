@@ -459,15 +459,6 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
-      if (w.rescueInPlace) {
-        // During a balance hop, gently rotate the cube back toward an upright
-        // attitude relative to the landing surface instead of letting the hop
-        // add uncontrolled spin.
-        const relativeAngle = w.cubeAngle - w.angle;
-        const nearestUpright = Math.round(relativeAngle / 90) * 90 + w.angle;
-        const angleError = w.cubeAngle - nearestUpright;
-        w.cubeSpin += (-angleError * 18 - (w.cubeSpin - w.vel) * 5) * dt;
-      }
       w.cubeAngle += w.cubeSpin * dt;
       w.cubeSpin *= Math.exp(-0.32 * dt);
 
