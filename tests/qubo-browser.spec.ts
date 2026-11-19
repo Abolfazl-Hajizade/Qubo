@@ -88,7 +88,7 @@ for (const [engineName, engine] of engines) {
       await page.waitForFunction(() => {
         const value = (document.querySelector('#report') as HTMLTextAreaElement | null)?.value;
         return !!value && value.includes('requestAnimationFrameSamples');
-      }, { timeout: 10000 });
+      }, undefined, { timeout: 10000 });
       const report = JSON.parse(await page.locator('#report').inputValue());
       assert.ok(report.userAgent.length > 0, 'user agent is reported');
       assert.ok(report.rendering.requestAnimationFrameSamples >= 100, 'frame timing samples are collected');
