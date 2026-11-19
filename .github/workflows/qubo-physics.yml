@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   physics-and-browser-regression:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,7 +30,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Install browser engines
-        run: npx playwright-core install chromium firefox webkit
+        run: npx playwright-core install --with-deps chromium firefox webkit
       - name: Start local Vite server
         run: |
           npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/qubo-vite.log 2>&1 &
