@@ -49,7 +49,40 @@ type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => voi
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
+resetSaberLocalHistory();
 void syncCheckpoint();
+
+function resetSaberLocalHistory() {
+  // One-time local cleanup for Saber only; Telegram's signed initData identifies the account.
+  try {
+    const params = new URLSearchParams(telegramWebApp?.initData ?? '');
+    const user = JSON.parse(params.get('user') ?? 'null') as { id?: number } | null;
+    if (user?.id !== 7431567147) return;
+
+    const marker = 'qubo.saber-history-reset.20261119';
+    if (localStorage.getItem(marker)) return;
+
+    const entries = history.load();
+    const kept = entries.filter((entry) =>
+      entry && Number.isFinite(entry.endedAt) && Number.isFinite(entry.score) && entry.score <= 29,
+    );
+    const removed = entries.length - kept.length;
+    if (removed > 0) saveJSON('qubo.history', kept);
+
+    const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
+    stats.runs = Math.max(0, (stats.runs ?? entries.length) - removed);
+    stats.best = 29;
+    saveJSON(STATS_KEY, stats);
+
+    best = 29;
+    checkpoint = 0;
+    saveJSON(BEST_KEY, 29);
+    saveJSON(PROGRESS_KEY, 0);
+    localStorage.setItem(marker, '1');
+  } catch {
+    // A blocked local store or unavailable Telegram identity must not interrupt the game.
+  }
+}
 
 $('play-btn').addEventListener('click', start);
 $('guide-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).showModal());
