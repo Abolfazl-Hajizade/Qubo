@@ -174,6 +174,12 @@ function renderHistory() {
   }));
 }
 
+// Split the 30–60 world into a moonlit first half and its original sunny second half.
+function backdropForScore(score: number) {
+  const worldIndex = Math.floor(score / 30) % 26;
+  return score >= 30 && score < 45 ? 26 : worldIndex;
+}
+
 function start() {
   if (endDialog.open) endDialog.close();
   world = createWorld(Math.random, checkpoint);
@@ -181,7 +187,7 @@ function start() {
   started = false;
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
-  backdropIndex = Math.floor(world.score / 30) % 26;
+  backdropIndex = backdropForScore(world.score);
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
   screens.show('game');
@@ -247,7 +253,7 @@ function loop(now: number) {
       saveJSON(PROGRESS_KEY, checkpoint);
       void saveRemoteCheckpoint(checkpoint);
     }
-    const nextBackdrop = Math.floor(world.score / 30) % 26;
+    const nextBackdrop = backdropForScore(world.score);
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
@@ -685,14 +691,63 @@ function drawBackdrop(index: number, time: number) {
     ['#193b58', '#746a83', '#d8c6a1'], // balance
     ['#211b46', '#67539a', '#f0c78d'], // inner power
   ];
-  const colors = palettes[index];
+  const colors = index === 26 ? ['#071426', '#101f3c', '#263b59'] : palettes[index];
   gradient.addColorStop(0, colors[0]);
   gradient.addColorStop(0.62, colors[1]);
   gradient.addColorStop(1, colors[2]);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, W, H);
 
-  if (index === 0) {
+  if (index === 26) {
+    // Moonlit night sky for the first half of the 30–60 world.
+    const glow = ctx.createRadialGradient(278, 86, 8, 278, 86, 78);
+    glow.addColorStop(0, 'rgba(190, 220, 255, 0.2)');
+    glow.addColorStop(1, 'rgba(130, 175, 235, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(190, 0, 170, 190);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(224, 239, 255, 0.85)';
+    ctx.shadowBlur = 22;
+    ctx.fillStyle = '#f4f0d6';
+    ctx.beginPath();
+    ctx.arc(278, 86, 27, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(291, 75, 25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    for (let i = 0; i < 76; i++) {
+      const x = (i * 47.3 + (i % 6) * 17) % W;
+      const y = (i * 71.9 + (i % 5) * 13) % 300;
+      const twinkle = 0.42 + 0.48 * (0.5 + 0.5 * Math.sin(time * (1.1 + (i % 4) * 0.35) + i));
+      const radius = i % 9 === 0 ? 1.8 : 0.8 + (i % 3) * 0.35;
+      ctx.globalAlpha = twinkle;
+      ctx.fillStyle = i % 7 === 0 ? '#c8e3ff' : '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      if (i % 9 === 0) {
+        ctx.strokeStyle = 'rgba(225, 239, 255, 0.62)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y);
+        ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(13, 28, 49, 0.36)';
+    ctx.beginPath();
+    ctx.moveTo(0, 365);
+    ctx.quadraticCurveTo(88, 330, 176, 365);
+    ctx.quadraticCurveTo(270, 337, W, 365);
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+    ctx.fill();
+  } else if (index === 0) {
     // Original Qubo storm atmosphere is preserved as the opening world.
     ctx.save();
     for (let i = 0; i < 9; i++) {
