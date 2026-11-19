@@ -39,10 +39,10 @@ function percentile(values: number[], fraction: number): number {
   return sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * fraction))] ?? 0;
 }
 
-export function createDeviceAdaptive(hints: Navigator = navigator) {
-  const nav = hints as Navigator & { deviceMemory?: number };
+export function createDeviceAdaptive(hints: Navigator & { deviceMemory?: number; devicePixelRatio?: number }) {
+  const nav = hints;
   const baseScale = getInitialRenderScale({
-    devicePixelRatio: window.devicePixelRatio || 1,
+    devicePixelRatio: nav.devicePixelRatio ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
     userAgent: nav.userAgent || '',
     hardwareConcurrency: nav.hardwareConcurrency,
     deviceMemory: nav.deviceMemory,

@@ -43,6 +43,7 @@ test('keeps rendering scale within the device pixel ratio and desktop cap', () =
 
 test('reduces canvas resolution after sustained slow frame windows', () => {
   const adaptive = createDeviceAdaptive({
+    devicePixelRatio: 3,
     userAgent: 'Mozilla/5.0 (Linux; Android 12) Chrome/113.0.0.0 Mobile',
     hardwareConcurrency: 8,
     deviceMemory: 8,
@@ -56,6 +57,7 @@ test('reduces canvas resolution after sustained slow frame windows', () => {
 
 test('recovers quality gradually after sustained stable frame pacing', () => {
   const adaptive = createDeviceAdaptive({
+    devicePixelRatio: 3,
     userAgent: 'Mozilla/5.0 (Linux; Android 12) Chrome/113.0.0.0 Mobile',
     hardwareConcurrency: 8,
     deviceMemory: 8,
