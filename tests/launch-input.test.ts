@@ -70,7 +70,7 @@ test('the first tap after a rescue landing is a forward launch even at the rear 
 
   step(world, 1 / 60);
   assert.equal(world.phase, 'scroll');
-  assert.equal(world.landingAge, 1 / 60);
+  assert.equal(world.landingAge, 0);
   assert.equal(world.rescueLandingCooldown, true);
 
   world.offset = -10;
