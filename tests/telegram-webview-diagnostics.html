@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>Qubo Telegram WebView diagnostics</title>
+  <style>
+    :root{color-scheme:dark;font:16px/1.5 system-ui,sans-serif;background:#111827;color:#f9fafb}
+    body{max-width:760px;margin:0 auto;padding:24px 16px}
+    h1{font-size:1.35rem}p,small{color:#cbd5e1}
+    button{font:inherit;padding:12px 16px;border:0;border-radius:10px;background:#38bdf8;color:#082f49;font-weight:700;margin:8px 8px 8px 0}
+    pre,textarea{white-space:pre-wrap;overflow-wrap:any-word;background:#1f2937;border:1px solid #475569;border-radius:10px;padding:12px;width:100%;box-sizing:border-box;color:#e5e7eb}
+    textarea{min-height:190px}
+    #touch{width:100%;min-height:100px;background:#334155;color:white;touch-action:manipulation}
+    .note{font-size:.9rem}
+  </style>
+</head>
+<body>
+  <h1>Qubo — Telegram WebView diagnostics</h1>
+  <p>This page measures browser capabilities and rendering timing. It does not change the game or identify your phone model with certainty.</p>
+  <button id="run">Run diagnostics</button>
+  <button id="copy">Copy report</button>
+  <button id="touch">Tap here to verify touch input</button>
+  <p id="touchResult" aria-live="polite">Touch test: waiting</p>
+  <h2>Diagnostic report</h2>
+  <pre id="status">Collecting diagnostics…</pre>
+  <textarea id="report" readonly aria-label="Diagnostic report"></textarea>
+  <p class="note">For a useful report, open this page inside the Telegram app on the phone being tested. Do not treat estimated refresh rate as the screen's advertised refresh rate.</p>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const touchEvents = [];
+  ['pointerdown','touchstart','click'].forEach(type => $('touch').addEventListener(type, event => {
+    touchEvents.push({type, pointerType:event.pointerType || null, at:Math.round(performance.now())});
+    $('touchResult').textContent = 'Touch test: received ' + type + (event.pointerType ? ' (' + event.pointerType + ')' : '');
+  }, {passive:true}));
+  const parseVersion = (ua, token) => {
+    const match = ua.match(new RegExp(token + '/([0-9.]+)','i'));
+    return match ? match[1] : null;
+  };
+  async function run() {
+    $('status').textContent = 'Measuring requestAnimationFrame timing (about 2 seconds)…';
+    const ua = navigator.userAgent || '';
+    const frames = [];
+    await new Promise(resolve => {
+      let last = null;
+      const sample = now => {
+        if (last !== null) frames.push(now-last);
+        last = now;
+        if (frames.length < 120) requestAnimationFrame(sample);
+        else resolve();
+      };
+      requestAnimationFrame(sample);
+    });
+    const sorted = [...frames].sort((a,b)=>a-b);
+    const percentile = p => sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))] || null;
+    const avg = frames.reduce((a,b)=>a+b,0)/Math.max(1,frames.length);
+    const canvas = document.createElement('canvas');
+    canvas.width=64; canvas.height=64;
+    const ctx=canvas.getContext('2d');
+    let canvasOK=false;
+    if(ctx){ctx.fillStyle='#0ea5e9';ctx.fillRect(0,0,64,64);canvasOK=ctx.getImageData(10,10,1,1).data[3]>0;}
+    let uaData=null;
+    if(navigator.userAgentData){
+      try { uaData={platform:navigator.userAgentData.platform,mobile:navigator.userAgentData.mobile,brands:navigator.userAgentData.brands}; } catch {}
+    }
+    const report = {
+      capturedAt:new Date().toISOString(),
+      context:{href:location.href,referrer:document.referrer || null,visibilityState:document.visibilityState},
+      userAgent:ua,
+      userAgentData:uaData,
+      platform:navigator.platform || null,
+      vendor:navigator.vendor || null,
+      detectedVersions:{
+        android:parseVersion(ua,'Android'),
+        chromeOrWebView:parseVersion(ua,'Chrome'),
+        webkit:parseVersion(ua,'AppleWebKit'),
+        safari:parseVersion(ua,'Version')
+      },
+      device:{
+        language:navigator.language,
+        hardwareConcurrency:navigator.hardwareConcurrency || null,
+        deviceMemoryGB:navigator.deviceMemory || null,
+        screenWidth:screen.width,screenHeight:screen.height,
+        viewportWidth:innerWidth,viewportHeight:innerHeight,
+        devicePixelRatio:devicePixelRatio,
+        maxTouchPoints:navigator.maxTouchPoints || 0,
+        touchEventSupported:'ontouchstart' in window,
+        pointerEventSupported:'PointerEvent' in window
+      },
+      rendering:{
+        requestAnimationFrameSamples:frames.length,
+        averageFrameIntervalMs:Number(avg.toFixed(2)),
+        p50FrameIntervalMs:Number(percentile(.5)?.toFixed(2)),
+        p95FrameIntervalMs:Number(percentile(.95)?.toFixed(2)),
+        estimatedAverageFPS:Number((1000/avg).toFixed(1)),
+        canvas2DReadback:canvasOK
+      },
+      note:'The user agent does not reliably expose OEM or exact device model. WebView/Chromium version is not proof of the Telegram app version.',
+      touchEvents
+    };
+    $('status').textContent='Diagnostics complete. Copy the report and share it with the tester.';
+    $('report').value=JSON.stringify(report,null,2);
+  }
+  $('run').addEventListener('click',run);
+  $('copy').addEventListener('click',async()=>{
+    try { await navigator.clipboard.writeText($('report').value); $('status').textContent='Report copied.'; }
+    catch { $('report').focus(); $('report').select(); $('status').textContent='Clipboard unavailable; select and copy the report manually.'; }
+  });
+  run();
+})();
+</script>
+</body>
+</html>
