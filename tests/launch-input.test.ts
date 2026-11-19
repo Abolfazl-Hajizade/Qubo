@@ -48,6 +48,17 @@ test('a normal quick rear-edge tap retains the existing rescue behaviour', () =>
   assert.equal(world.phase, 'rescue');
 });
 
+
+test('a rear-edge landing keeps its rescue jump available after the former 350ms window', () => {
+  const world = landingWorld(-10);
+  world.landingAge = 1.2;
+  launch(world);
+  assert.equal(world.phase, 'rescue');
+  assert.equal(world.rescueInPlace, true);
+  assert.equal(world.vx, 600 * 0.14);
+  assert.equal(world.vy, -600 * 0.6);
+});
+
 test('a buffered second tap at the rear edge launches forward instead of repeating rescue', () => {
   const world = landingWorld(-10);
   launch(world, { skipRearCornerHop: true });
