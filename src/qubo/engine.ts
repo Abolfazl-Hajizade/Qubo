@@ -47,6 +47,7 @@ export interface World {
   over: boolean;
   rescueAvailable: boolean; // one recovery jump after sliding/falling off a fresh landing
   rescueInPlace: boolean; // an in-place hop must not move the tower or camera
+  rescueLandingCooldown: boolean; // prevent an immediate repeat rear rescue after recovery landing
 }
 
 const between = (rng: () => number, lo: number, hi: number) => lo + rng() * (hi - lo);
@@ -122,20 +123,22 @@ export function createWorld(rng: () => number = Math.random, initialScore = 0): 
   while (towers.length < 6) towers.push(nextTower(towers[towers.length - 1], rng, initialScore));
   const w: World = {
     phase: 'wait', towers, angle: 0, vel: a.tipStart,
-    fallen: [], offset: 0, slide: 0, landed: 1, landingAge: 0, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: initialScore, over: false, rescueAvailable: false, rescueInPlace: false,
+    fallen: [], offset: 0, slide: 0, landed: 1, landingAge: 0, cubeAngle: 0, cubeSpin: 0, cubeX: 0, cubeY: 0, vx: 0, vy: 0, cam: 0, camTarget: 0, score: initialScore, over: false, rescueAvailable: false, rescueInPlace: false, rescueLandingCooldown: false,
   };
   seat(w);
   return w;
 }
 
 /** Throws the cube off the top of the tower, along the lean, plus the speed the tip is swinging at. */
-export function launch(w: World) {
+export interface LaunchOptions { skipRearCornerHop?: boolean }
+
+export function launch(w: World, options: LaunchOptions = {}) {
   const fromScroll = w.phase === 'scroll';
   // A forward jump is always available while the cube is on the landing
   // platform, even if it is still rotating or sliding.
   // The in-place rescue is reserved for losing balance off the REAR edge;
   // that condition sets rescueAvailable when offset crosses the rear limit.
-  const quickRearCornerHop = fromScroll &&
+  const quickRearCornerHop = !options.skipRearCornerHop && !w.rescueLandingCooldown && fromScroll &&
     w.landingAge <= 0.35 &&
     w.offset <= -w.towers[w.landed].w * 0.2;
   const quickFrontCornerHop = fromScroll &&
@@ -330,6 +333,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
           w.score += i;
           w.landed = i;
           w.landingAge = 0;
+          w.rescueLandingCooldown = false;
           w.camTarget = w.cam;
           w.angle = 0;
           w.vel = w.towers[w.landed].tipStart;
@@ -351,6 +355,7 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       // while the cube stays supported and remains jumpable during the movement.
       const landedTower = w.towers[w.landed];
       w.landingAge += dt;
+      if (w.rescueLandingCooldown && w.landingAge > 0.35) w.rescueLandingCooldown = false;
       w.vel += (ACC * landedTower.tipAccel + ACC_LEAN * landedTower.leanAccel * w.angle) * landedTower.rhythm * leanSpeedMultiplier(w.score) * dt;
       w.angle += w.vel * dt;
       const cameraAim = Math.max(0, pivotX(landedTower) + towerLen(landedTower) * Math.sin(rad(w.angle)) - (START_RIGHT - 22));
@@ -483,6 +488,10 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.slide = 0;
         w.rescueAvailable = false;
         w.rescueInPlace = false;
+        // A rescue landing must not immediately retrigger the same rear-corner hop.
+        // Keep this cooldown separate from landingAge so front-corner behavior is unchanged.
+        w.landingAge = 0;
+        w.rescueLandingCooldown = true;
         w.phase = 'scroll';
         return;
       }
