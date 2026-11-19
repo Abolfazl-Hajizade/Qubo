@@ -13,6 +13,7 @@ const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_DT = 1 / 30;
+const INPUT_BUFFER_MS = 100; // absorb taps that arrive just before a landing frame
 // Keep Qubo's displayed numbers and dates English, regardless of the Telegram/WebView locale.
 const numberFormat = new Intl.NumberFormat('en-US', { numberingSystem: 'latn' });
 const dateFormat = new Intl.DateTimeFormat('en-US', {
@@ -24,6 +25,7 @@ let raf = 0;
 let last = 0;
 let paused = false;
 let started = false;
+let pendingLaunchUntil = 0;
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
@@ -189,6 +191,7 @@ function start() {
   world = createWorld(Math.random, checkpoint);
   paused = false;
   started = false;
+  pendingLaunchUntil = 0;
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
   backdropIndex = backdropForScore(world.score);
@@ -207,8 +210,19 @@ function start() {
 function down() {
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
   if (!started) { started = true; setStatus(''); last = performance.now(); void recordGameStart(); return; } // the first tap only starts the tower tipping
+  if (world.phase === 'air') {
+    // A tap in the final moments before touchdown belongs to the landing,
+    // even if this device dispatches it just before the collision frame.
+    pendingLaunchUntil = performance.now() + INPUT_BUFFER_MS;
+    return;
+  }
+  tryLaunch();
+}
+
+function tryLaunch() {
   launch(world);
   if (world.phase === 'air' || world.phase === 'rescue') {
+    pendingLaunchUntil = 0;
     takeoffAgeVisual = 0;
     landingAgeVisual = Infinity;
   }
@@ -247,6 +261,10 @@ function loop(now: number) {
     const was = world.over;
     const previousPhase = world.phase;
     step(world, dt);
+    if (pendingLaunchUntil) {
+      if (now > pendingLaunchUntil) pendingLaunchUntil = 0;
+      else if (world.phase === 'scroll' || (world.phase === 'drop' && world.rescueAvailable)) tryLaunch();
+    }
     if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
     if (landingAgeVisual < 2) landingAgeVisual += dt;
     if (takeoffAgeVisual < 1) takeoffAgeVisual += dt;
