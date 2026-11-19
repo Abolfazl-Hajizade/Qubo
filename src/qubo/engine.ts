@@ -138,8 +138,10 @@ export function launch(w: World, options: LaunchOptions = {}) {
   // platform, even if it is still rotating or sliding.
   // The in-place rescue is reserved for losing balance off the REAR edge;
   // that condition sets rescueAvailable when offset crosses the rear limit.
+  // Reserve the in-place balance hop for the actual rear-edge zone, not
+  // ordinary landings in the rear half of the platform.
   const quickRearCornerHop = !options.skipRearCornerHop && !w.rescueLandingCooldown && fromScroll &&
-    w.offset <= -w.towers[w.landed].w * 0.2;
+    w.offset <= -w.towers[w.landed].w * 0.4;
   const quickFrontCornerHop = fromScroll &&
     w.landingAge <= 0.35 &&
     w.offset >= w.towers[w.landed].w * 0.2;
@@ -457,6 +459,15 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
       w.vy += GRAVITY * dt;
       w.cubeX += w.vx * dt;
       w.cubeY += w.vy * dt;
+      if (w.rescueInPlace) {
+        // During a balance hop, gently rotate the cube back toward an upright
+        // attitude relative to the landing surface instead of letting the hop
+        // add uncontrolled spin.
+        const relativeAngle = w.cubeAngle - w.angle;
+        const nearestUpright = Math.round(relativeAngle / 90) * 90 + w.angle;
+        const angleError = w.cubeAngle - nearestUpright;
+        w.cubeSpin += (-angleError * 18 - (w.cubeSpin - w.vel) * 5) * dt;
+      }
       w.cubeAngle += w.cubeSpin * dt;
       w.cubeSpin *= Math.exp(-0.32 * dt);
 
