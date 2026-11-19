@@ -25,6 +25,7 @@
       <section id="home" class="screen">
         <div class="home-inner">
           <div class="home-title-row"><h1 class="logo">Qubo</h1><button id="guide-btn" class="btn guide-btn" type="button">help</button></div>
+          <button id="device-check-btn" class="btn device-check-btn" type="button">Device &amp; browser check</button>
           <p class="tagline">The tower tips over like a pendulum. Time your tap to throw the cube onto the next tower before it falls.</p>
 
           <div class="levels">
@@ -144,6 +145,24 @@
         </section>
         <div class="dialog-actions"><button id="guide-back-btn" class="btn btn-primary" type="button">بازگشت / Back</button></div>
       </dialog>
+
+
+      <!-- Local device and Telegram WebView diagnostics -->
+      <dialog id="device-dialog" class="dialog device-dialog" aria-labelledby="device-title">
+        <header class="guide-header">
+          <h2 id="device-title">Device &amp; browser diagnostics</h2>
+          <button id="device-close" class="icon-btn" type="button" aria-label="Close diagnostics">×</button>
+        </header>
+        <p class="device-note">اطلاعات فقط روی همین صفحه جمع‌آوری می‌شود و به سرور ارسال نمی‌شود. مدل و برند ممکن است توسط مرورگر مخفی شده باشند.</p>
+        <div class="device-actions">
+          <button id="device-refresh" class="btn" type="button">Refresh report</button>
+          <button id="device-copy" class="btn btn-primary" type="button">Copy report</button>
+        </div>
+        <button id="device-touch-test" class="btn device-touch-test" type="button">Tap here to test touch</button>
+        <p id="device-touch-result" class="device-note" aria-live="polite">Touch test not run yet.</p>
+        <pre id="device-report" class="device-report" aria-live="polite">Preparing diagnostics…</pre>
+      </dialog>
+      <script type="module" src="/src/qubo/device-diagnostics.ts"></script>
 
       <!-- Run over -->
       <dialog id="end-dialog" class="dialog">
