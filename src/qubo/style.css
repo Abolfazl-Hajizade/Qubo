@@ -310,3 +310,45 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar,
 body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .meta span,
 body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score span { color: #f5edff; }
 body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score b { color: #ff9bd7; }
+
+
+/* Local device and Telegram WebView diagnostics; never changes game physics. */
+.device-check-btn {
+  align-self: flex-start;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  background: rgba(230, 238, 246, .92);
+  color: #203044;
+  font-size: .82rem;
+  font-weight: 800;
+}
+.device-dialog {
+  width: min(94vw, 620px);
+  max-width: 620px;
+  max-height: 88dvh;
+  overflow: auto;
+  padding: 18px;
+  border: 0;
+  border-radius: var(--r-card);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.device-dialog::backdrop { background: rgba(5, 12, 20, .76); }
+.device-note { margin: 8px 0 12px; color: var(--ink-2); font-size: .84rem; line-height: 1.6; }
+.device-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.device-touch-test { width: 100%; justify-content: center; margin: 8px 0; background: var(--tint); color: var(--ink); }
+.device-report {
+  max-height: 38dvh;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: #111b29;
+  color: #dce9f6;
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
