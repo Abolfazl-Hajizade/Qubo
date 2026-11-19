@@ -1,7 +1,6 @@
 import { $, Screens, onVisibility } from '../shared/screens';
 import { createHistory, loadJSON, saveJSON } from '../shared/store';
 import { CUBE, H, W, type World, createWorld, launch, pivotX, step, towerLen } from './engine';
-import { createDeviceAdaptive } from './device-adaptive';
 import { createLaunchInputBuffer } from './launch-input';
 
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -49,7 +48,6 @@ if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, 
 
 const canvas = $<HTMLCanvasElement>('stage');
 const ctx = canvas.getContext('2d')!;
-const deviceAdaptive = createDeviceAdaptive(navigator);
 const frame = canvas.parentElement!;
 const endDialog = $<HTMLDialogElement>('end-dialog');
 
@@ -275,10 +273,6 @@ function loop(now: number) {
   // not change with the device's refresh rate or intermittent frame drops.
   const frameDelta = Math.min(MAX_FRAME_DELTA, Math.max(0, (now - last) / 1000));
   last = now;
-  if (started && !paused && deviceAdaptive.observeFrame(frameDelta)) {
-    resize();
-    void syncDeviceSettings();
-  }
   if (started && !paused) {
     const was = world.over;
     physicsAccumulator = Math.min(MAX_FRAME_DELTA, physicsAccumulator + frameDelta);
@@ -332,13 +326,6 @@ interface LeaderboardEntry {
 }
 
 
-function currentDeviceSettings() {
-  return {
-    ...deviceAdaptive.getSettings(),
-    devicePixelRatio: window.devicePixelRatio || 1,
-  };
-}
-
 async function recordGameStart() {
   const initData = telegramWebApp?.initData;
   if (!initData) return;
@@ -346,24 +333,10 @@ async function recordGameStart() {
     await fetch('/api/game-stats', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initData, deviceSettings: currentDeviceSettings() }),
+      body: JSON.stringify({ initData }),
     });
   } catch {
     // Counting is best-effort and must never interrupt a game.
-  }
-}
-
-async function syncDeviceSettings() {
-  const initData = telegramWebApp?.initData;
-  if (!initData) return;
-  try {
-    await fetch('/api/game-stats', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initData, deviceSettings: currentDeviceSettings(), settingsOnly: true }),
-    });
-  } catch {
-    // Device settings sync is best-effort and must never interrupt a game.
   }
 }
 
@@ -488,60 +461,7 @@ async function loadLeaderboard() {
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : 'Error loading leaderboard';
   }
-  void loadPrivateGameStats(initData, me);
 }
-
-async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
-  try {
-    const response = await fetch('/api/game-stats', {
-      headers: { 'x-telegram-init-data': initData },
-    });
-    if (response.status === 403 || !response.ok) return;
-    const data = await response.json() as {
-      players?: Array<{
-        display_name: string;
-        game_count: number;
-        base_render_scale: number | null;
-        current_render_scale: number | null;
-        adaptive_enabled: number | null;
-        adaptive_change_count: number | null;
-        device_pixel_ratio: number | null;
-      }>;
-    };
-    const section = document.createElement('section');
-    section.id = 'records-private-games';
-    section.className = 'records-admin';
-    const heading = document.createElement('h3');
-    heading.textContent = 'Private · Games played';
-    const list = document.createElement('ol');
-    list.className = 'records-list';
-    for (const player of data.players ?? []) {
-      const item = document.createElement('li');
-      const summary = document.createElement('span');
-      summary.textContent = `${player.display_name} — ${numberFormat.format(player.game_count)} games`;
-      item.append(summary);
-      const settings = document.createElement('small');
-      settings.className = 'records-private-device';
-      if (player.current_render_scale !== null && player.base_render_scale !== null) {
-        const current = player.current_render_scale.toFixed(2);
-        const base = player.base_render_scale.toFixed(2);
-        const changes = numberFormat.format(player.adaptive_change_count ?? 0);
-        const dpr = player.device_pixel_ratio?.toFixed(2) ?? '–';
-        settings.textContent = `Render ${current}× / base ${base}× · Adaptive ${player.adaptive_enabled ? 'ON' : 'OFF'} · ${changes} changes · DPR ${dpr}`;
-      } else {
-        settings.textContent = 'Device settings not recorded yet';
-      }
-      item.append(settings);
-      list.append(item);
-    }
-    section.append(heading, list);
-    document.getElementById('records-private-games')?.remove();
-    anchor.insertAdjacentElement('afterend', section);
-  } catch {
-    // Private statistics are optional and never affect the public leaderboard.
-  }
-}
-
 
 type ChatMessage = { id: number; display_name: string; message: string; created_at: string };
 let chatPollTimer: number | undefined;
@@ -678,8 +598,8 @@ function readPalette(): Palette {
 let palette = readPalette();
 
 function resize() {
-  // Device-adaptive backing resolution affects rendering only; CSS size and game physics stay fixed.
-  const dpr = deviceAdaptive.getRenderScale();
+  // Use the device's native pixel ratio; do not apply game-specific render scaling.
+  const dpr = window.devicePixelRatio || 1;
   const width = frame.clientWidth;
   if (!width) return;
   canvas.width = Math.round(width * dpr);
