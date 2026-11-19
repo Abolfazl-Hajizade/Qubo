@@ -59,25 +59,25 @@ function resetSaberLocalHistory() {
     const user = JSON.parse(params.get('user') ?? 'null') as { id?: number } | null;
     if (user?.id !== 7431567147) return;
 
-    const marker = 'qubo.saber-history-reset.20261119';
+    const marker = 'qubo.saber-history-reset.20261119.v2';
     if (localStorage.getItem(marker)) return;
 
     const entries = history.load();
     const kept = entries.filter((entry) =>
-      entry && Number.isFinite(entry.endedAt) && Number.isFinite(entry.score) && entry.score <= 29,
+      entry && Number.isFinite(entry.endedAt) && Number.isFinite(entry.score) && entry.score <= 54,
     );
     const removed = entries.length - kept.length;
     if (removed > 0) saveJSON('qubo.history', kept);
 
     const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
     stats.runs = Math.max(0, (stats.runs ?? entries.length) - removed);
-    stats.best = 29;
+    stats.best = 54;
     saveJSON(STATS_KEY, stats);
 
-    best = 29;
-    checkpoint = 0;
-    saveJSON(BEST_KEY, 29);
-    saveJSON(PROGRESS_KEY, 0);
+    best = 54;
+    checkpoint = 30;
+    saveJSON(BEST_KEY, 54);
+    saveJSON(PROGRESS_KEY, 30);
     localStorage.setItem(marker, '1');
   } catch {
     // A blocked local store or unavailable Telegram identity must not interrupt the game.
