@@ -352,3 +352,7 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score b { 
   user-select: text;
   -webkit-user-select: text;
 }
+
+
+/* Keep the diagnostics private: no public-facing entry button. */
+#device-check-btn { display: none !important; }
