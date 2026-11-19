@@ -833,13 +833,16 @@ function drawTower(w: number, len: number) {
 // A distinct outline color for each environment, blended with the same visual transition as the backdrop.
 const cubeOutlineColors = ["#70d7ff","#ffd166","#8ee6a1","#55d9e8","#f4b56b","#8bb8ff","#d8efff","#ff784e","#e69cff","#55eaff","#b99aff","#ff9fcf","#c7a7ff","#f1d6a4","#ff8fb4","#b6c9ff","#79f1e1","#79ffad","#e5a8ff","#c8d9ff","#ffe1a0","#83e5c4","#a6dfff","#d6e1f0","#f5e9c8","#ffd18a"];
 function currentCubeOutlineColor() {
-  const from = cubeOutlineColors[previousBackdropIndex] ?? cubeOutlineColors[0];
-  const to = cubeOutlineColors[backdropIndex] ?? cubeOutlineColors[0];
+  const original = [190, 205, 216];
+  const colorAt = (index: number) => index === 0
+    ? original
+    : [1, 3, 5].map((i) => Number.parseInt((cubeOutlineColors[index] ?? cubeOutlineColors[0]).slice(i, i + 2), 16));
+  if (previousBackdropIndex === 0 && backdropIndex === 0) return 'rgba(190, 205, 216, 0.72)';
+  const from = colorAt(previousBackdropIndex);
+  const to = colorAt(backdropIndex);
   const t = backdropTransitionAge * backdropTransitionAge * (3 - 2 * backdropTransitionAge);
   const channel = (a: number, b: number) => Math.round(a + (b - a) * t);
-  const rgb = (hex: string) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
-  const a = rgb(from), b = rgb(to);
-  return `rgb(${channel(a[0], b[0])}, ${channel(a[1], b[1])}, ${channel(a[2], b[2])})`;
+  return `rgb(${channel(from[0], to[0])}, ${channel(from[1], to[1])}, ${channel(from[2], to[2])})`;
 }
 
 /** The cube, with a pair of eyes looking ahead. */
@@ -859,7 +862,7 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
   ctx.strokeStyle = currentCubeOutlineColor();
-  ctx.lineWidth = 3.2;
+  ctx.lineWidth = 1.4;
   ctx.stroke();
   // White eyes with small dark pupils looking slightly forward.
   ctx.fillStyle = p.paper;
