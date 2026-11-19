@@ -461,6 +461,37 @@ async function loadLeaderboard() {
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : 'Error loading leaderboard';
   }
+  void loadPrivateGameStats(initData, me);
+}
+
+async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
+  try {
+    const response = await fetch('/api/game-stats', {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    // The endpoint is admin-only; ordinary players simply won't see this private section.
+    if (response.status === 403 || !response.ok) return;
+    const data = await response.json() as {
+      players?: Array<{ display_name: string; game_count: number }>;
+    };
+    const section = document.createElement('section');
+    section.id = 'records-private-games';
+    const heading = document.createElement('h2');
+    heading.className = 'section-label';
+    heading.textContent = 'Private · Games played';
+    const list = document.createElement('ol');
+    list.className = 'records-list';
+    for (const player of data.players ?? []) {
+      const item = document.createElement('li');
+      item.textContent = `${player.display_name} — ${numberFormat.format(player.game_count)} games`;
+      list.append(item);
+    }
+    section.append(heading, list);
+    document.getElementById('records-private-games')?.remove();
+    anchor.insertAdjacentElement('afterend', section);
+  } catch {
+    // Private statistics are optional and never affect the public leaderboard.
+  }
 }
 
 type ChatMessage = { id: number; display_name: string; message: string; created_at: string };
