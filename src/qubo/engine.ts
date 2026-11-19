@@ -485,6 +485,9 @@ export function step(w: World, dt: number, rng: () => number = Math.random) {
         w.slide = 0;
         w.rescueAvailable = false;
         w.rescueInPlace = false;
+        // A rescue landing must not immediately retrigger the same rear-corner hop.
+        // Give the next tap the normal forward-launch behavior for the quick-hop window.
+        w.landingAge = 0.36;
         w.phase = 'scroll';
         return;
       }
