@@ -196,7 +196,7 @@ function start() {
 
 function down() {
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
-  if (!started) { started = true; setStatus(''); last = performance.now(); return; } // the first tap only starts the tower tipping
+  if (!started) { started = true; setStatus(''); last = performance.now(); void recordGameStart(); return; } // the first tap only starts the tower tipping
   launch(world);
   if (world.phase === 'air' || world.phase === 'rescue') {
     takeoffAgeVisual = 0;
@@ -265,6 +265,21 @@ interface LeaderboardEntry {
   display_name: string;
   best_score: number;
   telegram_user_id: string;
+}
+
+
+async function recordGameStart() {
+  const initData = telegramWebApp?.initData;
+  if (!initData) return;
+  try {
+    await fetch('/api/game-stats', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initData }),
+    });
+  } catch {
+    // Counting is best-effort and must never interrupt a game.
+  }
 }
 
 async function saveRemoteCheckpoint(value: number) {
@@ -385,6 +400,32 @@ async function loadLeaderboard() {
       : 'You have not submitted a score yet.';
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : 'Error loading leaderboard';
+  }
+  void loadPrivateGameStats(initData, me);
+}
+
+async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
+  try {
+    const response = await fetch('/api/game-stats', {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    if (response.status === 403 || !response.ok) return;
+    const data = await response.json() as { players?: Array<{ display_name: string; game_count: number }> };
+    const section = document.createElement('section');
+    section.className = 'records-admin';
+    const heading = document.createElement('h3');
+    heading.textContent = 'Private · Games played';
+    const list = document.createElement('ol');
+    list.className = 'records-list';
+    for (const player of data.players ?? []) {
+      const item = document.createElement('li');
+      item.textContent = `${player.display_name} — ${numberFormat.format(player.game_count)} games`;
+      list.append(item);
+    }
+    section.append(heading, list);
+    anchor.insertAdjacentElement('afterend', section);
+  } catch {
+    // Private statistics are optional and never affect the public leaderboard.
   }
 }
 
