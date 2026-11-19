@@ -70,4 +70,35 @@ for (const [engineName, engine] of engines) {
       await browser.close();
     }
   });
+
+  test(`${engineName}: Telegram WebView diagnostics page reports browser and rendering capabilities`, async () => {
+    const browser = await engine.launch({ headless: true });
+    try {
+      const context = await browser.newContext({
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 2,
+        hasTouch: true,
+        isMobile: engineName === 'Chromium',
+      });
+      const page = await context.newPage();
+      const pageErrors: string[] = [];
+      page.on('pageerror', error => pageErrors.push(error.message));
+      await page.goto(`${baseURL}/tests/telegram-webview-diagnostics.html`, { waitUntil: 'domcontentloaded' });
+      await page.locator('#report').waitFor({ state: 'visible' });
+      await page.waitForFunction(() => {
+        const value = (document.querySelector('#report') as HTMLTextAreaElement | null)?.value;
+        return !!value && value.includes('requestAnimationFrameSamples');
+      }, { timeout: 10000 });
+      const report = JSON.parse(await page.locator('#report').inputValue());
+      assert.ok(report.userAgent.length > 0, 'user agent is reported');
+      assert.ok(report.rendering.requestAnimationFrameSamples >= 100, 'frame timing samples are collected');
+      assert.equal(typeof report.rendering.canvas2DReadback, 'boolean');
+      await page.locator('#touch').tap();
+      await page.waitForFunction(() => document.querySelector('#touchResult')?.textContent?.includes('received'));
+      assert.deepEqual(pageErrors, [], 'no uncaught diagnostics page errors');
+      await context.close();
+    } finally {
+      await browser.close();
+    }
+  });
 }
