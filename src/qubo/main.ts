@@ -1033,15 +1033,17 @@ function drawTower(w: number, len: number) {
     flip = !flip;
   }
   ctx.lineWidth = 7;
-  const rainbow = ctx.createLinearGradient(-w / 2, -len, w / 2, 0);
-  ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
-    rainbow.addColorStop(i / (colors.length - 1), color);
-  });
-  ctx.strokeStyle = rainbow;
-  ctx.shadowColor = 'rgba(12, 8, 35, 0.8)';
-  ctx.shadowBlur = 5;
+  if (world.score >= 800) {
+    const rainbow = ctx.createLinearGradient(-w / 2, -len, w / 2, 0);
+    ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
+      rainbow.addColorStop(i / (colors.length - 1), color);
+    });
+    ctx.strokeStyle = rainbow;
+    ctx.shadowColor = 'rgba(12, 8, 35, 0.8)';
+    ctx.shadowBlur = 5;
+  }
   ctx.stroke();
-  ctx.shadowBlur = 0;
+  if (world.score >= 800) ctx.shadowBlur = 0;
 }
 
 // A distinct outline color for each environment, blended with the same visual transition as the backdrop.
