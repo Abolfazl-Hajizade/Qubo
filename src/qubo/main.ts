@@ -229,7 +229,7 @@ function down() {
   if (world.phase === 'rescue') {
     // Preserve a quick second tap until the recovery arc has landed on the same platform.
     // This is input-only; it does not alter the rescue trajectory or physics.
-    rescueLaunchBuffer.queue(performance.now(), RESCUE_INPUT_BUFFER_MS, true);
+    rescueLaunchBuffer.queue(performance.now(), RESCUE_INPUT_BUFFER_MS, { skipRearCornerHop: true });
     return;
   }
   tryLaunch();
