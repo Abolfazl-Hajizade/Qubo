@@ -139,7 +139,6 @@ export function launch(w: World, options: LaunchOptions = {}) {
   // The in-place rescue is reserved for losing balance off the REAR edge;
   // that condition sets rescueAvailable when offset crosses the rear limit.
   const quickRearCornerHop = !options.skipRearCornerHop && !w.rescueLandingCooldown && fromScroll &&
-    w.landingAge <= 0.35 &&
     w.offset <= -w.towers[w.landed].w * 0.2;
   const quickFrontCornerHop = fromScroll &&
     w.landingAge <= 0.35 &&
