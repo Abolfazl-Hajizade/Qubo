@@ -13,22 +13,10 @@ type Env = {
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
 type AuthenticatedUser = { id: string; displayName: string };
-type DeviceSettings = {
-  enabled: boolean;
-  baseRenderScale: number;
-  currentRenderScale: number;
-  adjustmentCount: number;
-  devicePixelRatio: number;
-};
 type GameStat = {
   telegram_user_id: string;
   display_name: string;
   game_count: number;
-  base_render_scale: number | null;
-  current_render_scale: number | null;
-  adaptive_enabled: number | null;
-  adaptive_change_count: number | null;
-  device_pixel_ratio: number | null;
 };
 const encoder = new TextEncoder();
 const ADMIN_ID = "7431567147";
@@ -74,59 +62,21 @@ function json(data: unknown, status = 200): Response {
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Game statistics are not configured" }, 500);
-  let body: { initData?: unknown; deviceSettings?: unknown; settingsOnly?: unknown };
-  try { body = await request.json() as { initData?: unknown; deviceSettings?: unknown; settingsOnly?: unknown }; }
+  let body: { initData?: unknown };
+  try { body = await request.json() as { initData?: unknown }; }
   catch { return json({ error: "Invalid JSON" }, 400); }
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
 
-  const raw = body.deviceSettings as Partial<DeviceSettings> | undefined;
-  const validSettings = !!raw
-    && raw.enabled === true
-    && typeof raw.baseRenderScale === "number" && Number.isFinite(raw.baseRenderScale) && raw.baseRenderScale >= 1 && raw.baseRenderScale <= 4
-    && typeof raw.currentRenderScale === "number" && Number.isFinite(raw.currentRenderScale) && raw.currentRenderScale >= 1 && raw.currentRenderScale <= 4
-    && Number.isSafeInteger(raw.adjustmentCount) && (raw.adjustmentCount ?? -1) >= 0 && (raw.adjustmentCount ?? 10001) <= 10000
-    && typeof raw.devicePixelRatio === "number" && Number.isFinite(raw.devicePixelRatio) && raw.devicePixelRatio >= 0.5 && raw.devicePixelRatio <= 8;
-  if (body.deviceSettings !== undefined && !validSettings) return json({ error: "تنظیمات دستگاه نامعتبر است." }, 400);
-  if (body.settingsOnly === true && !validSettings) return json({ error: "تنظیمات دستگاه ارسال نشده است." }, 400);
+  await env.DB.prepare(`
+    INSERT INTO player_game_stats (telegram_user_id, display_name, game_count, updated_at)
+    VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT(telegram_user_id) DO UPDATE SET
+      display_name = excluded.display_name,
+      game_count = player_game_stats.game_count + 1,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(user.id, user.displayName).run();
 
-  const settings = validSettings ? raw! : null;
-  const values = settings
-    ? [settings.baseRenderScale, settings.currentRenderScale, settings.enabled ? 1 : 0, settings.adjustmentCount, settings.devicePixelRatio]
-    : [null, null, null, null, null];
-
-  if (body.settingsOnly === true) {
-    await env.DB.prepare(`
-      INSERT INTO player_game_stats (
-        telegram_user_id, display_name, game_count, base_render_scale,
-        current_render_scale, adaptive_enabled, adaptive_change_count, device_pixel_ratio, updated_at
-      ) VALUES (?, ?, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(telegram_user_id) DO UPDATE SET
-        display_name = excluded.display_name,
-        base_render_scale = excluded.base_render_scale,
-        current_render_scale = excluded.current_render_scale,
-        adaptive_enabled = excluded.adaptive_enabled,
-        adaptive_change_count = excluded.adaptive_change_count,
-        device_pixel_ratio = excluded.device_pixel_ratio,
-        updated_at = CURRENT_TIMESTAMP
-    `).bind(user.id, user.displayName, ...values).run();
-  } else {
-    await env.DB.prepare(`
-      INSERT INTO player_game_stats (
-        telegram_user_id, display_name, game_count, base_render_scale,
-        current_render_scale, adaptive_enabled, adaptive_change_count, device_pixel_ratio, updated_at
-      ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(telegram_user_id) DO UPDATE SET
-        display_name = excluded.display_name,
-        game_count = player_game_stats.game_count + 1,
-        base_render_scale = COALESCE(excluded.base_render_scale, player_game_stats.base_render_scale),
-        current_render_scale = COALESCE(excluded.current_render_scale, player_game_stats.current_render_scale),
-        adaptive_enabled = COALESCE(excluded.adaptive_enabled, player_game_stats.adaptive_enabled),
-        adaptive_change_count = COALESCE(excluded.adaptive_change_count, player_game_stats.adaptive_change_count),
-        device_pixel_ratio = COALESCE(excluded.device_pixel_ratio, player_game_stats.device_pixel_ratio),
-        updated_at = CURRENT_TIMESTAMP
-    `).bind(user.id, user.displayName, ...values).run();
-  }
   return json({ ok: true });
 }
 
@@ -136,9 +86,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
   const rows = await env.DB.prepare(`
-    SELECT telegram_user_id, display_name, game_count,
-      base_render_scale, current_render_scale, adaptive_enabled,
-      adaptive_change_count, device_pixel_ratio
+    SELECT telegram_user_id, display_name, game_count
     FROM player_game_stats
     ORDER BY game_count DESC, display_name COLLATE NOCASE ASC
   `).bind().all<GameStat>();
