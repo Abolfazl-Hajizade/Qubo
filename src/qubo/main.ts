@@ -2,6 +2,7 @@ import { $, Screens, onVisibility } from '../shared/screens';
 import { createHistory, loadJSON, saveJSON } from '../shared/store';
 import { CUBE, H, W, type World, createWorld, launch, pivotX, step, towerLen } from './engine';
 import { createDeviceAdaptive } from './device-adaptive';
+import { createLaunchInputBuffer } from './launch-input';
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
@@ -17,6 +18,7 @@ const FIXED_DT = 1 / 60;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_PHYSICS_STEPS_PER_FRAME = 6;
 const INPUT_BUFFER_MS = 100; // absorb taps that arrive just before a landing frame
+const RESCUE_INPUT_BUFFER_MS = 700; // hold a second tap until an in-place rescue lands
 // Keep Qubo's displayed numbers and dates English, regardless of the Telegram/WebView locale.
 const numberFormat = new Intl.NumberFormat('en-US', { numberingSystem: 'latn' });
 const dateFormat = new Intl.DateTimeFormat('en-US', {
@@ -30,6 +32,7 @@ let physicsAccumulator = 0;
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
+const rescueLaunchBuffer = createLaunchInputBuffer();
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
@@ -197,6 +200,7 @@ function start() {
   paused = false;
   started = false;
   pendingLaunchUntil = 0;
+  rescueLaunchBuffer.clear();
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
   backdropIndex = backdropForScore(world.score);
@@ -222,11 +226,17 @@ function down() {
     pendingLaunchUntil = performance.now() + INPUT_BUFFER_MS;
     return;
   }
+  if (world.phase === 'rescue') {
+    // Preserve a quick second tap until the recovery arc has landed on the same platform.
+    // This is input-only; it does not alter the rescue trajectory or physics.
+    rescueLaunchBuffer.queue(performance.now(), RESCUE_INPUT_BUFFER_MS, true);
+    return;
+  }
   tryLaunch();
 }
 
-function tryLaunch() {
-  launch(world);
+function tryLaunch(options?: { skipRearCornerHop?: boolean }) {
+  launch(world, options);
   if (world.phase === 'air' || world.phase === 'rescue') {
     pendingLaunchUntil = 0;
     takeoffAgeVisual = 0;
@@ -280,6 +290,10 @@ function loop(now: number) {
       if (pendingLaunchUntil) {
         if (now > pendingLaunchUntil) pendingLaunchUntil = 0;
         else if (world.phase === 'scroll' || (world.phase === 'drop' && world.rescueAvailable)) tryLaunch();
+      }
+      if (rescueLaunchBuffer.isReady(now, world.phase)) {
+        tryLaunch(rescueLaunchBuffer.getLaunchOptions());
+        if (world.phase === 'air' || world.phase === 'rescue') rescueLaunchBuffer.clear();
       }
       if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
       if (landingAgeVisual < 2) landingAgeVisual += FIXED_DT;

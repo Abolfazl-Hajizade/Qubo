@@ -129,13 +129,15 @@ export function createWorld(rng: () => number = Math.random, initialScore = 0): 
 }
 
 /** Throws the cube off the top of the tower, along the lean, plus the speed the tip is swinging at. */
-export function launch(w: World) {
+export interface LaunchOptions { skipRearCornerHop?: boolean }
+
+export function launch(w: World, options: LaunchOptions = {}) {
   const fromScroll = w.phase === 'scroll';
   // A forward jump is always available while the cube is on the landing
   // platform, even if it is still rotating or sliding.
   // The in-place rescue is reserved for losing balance off the REAR edge;
   // that condition sets rescueAvailable when offset crosses the rear limit.
-  const quickRearCornerHop = fromScroll &&
+  const quickRearCornerHop = !options.skipRearCornerHop && fromScroll &&
     w.landingAge <= 0.35 &&
     w.offset <= -w.towers[w.landed].w * 0.2;
   const quickFrontCornerHop = fromScroll &&

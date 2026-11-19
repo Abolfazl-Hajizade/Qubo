@@ -1,0 +1,55 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createLaunchInputBuffer } from '../src/qubo/launch-input.ts';
+import { createWorld, launch } from '../src/qubo/engine.ts';
+
+function landingWorld(offset: number) {
+  const world = createWorld(() => 0.5);
+  world.phase = 'scroll';
+  world.landed = 1;
+  world.offset = offset;
+  world.landingAge = 0.1;
+  world.angle = 12;
+  world.vel = 8;
+  return world;
+}
+
+test('a tap buffered during rescue waits until the same-platform landing', () => {
+  const buffer = createLaunchInputBuffer();
+  buffer.queue(100, 700, { skipRearCornerHop: true });
+  assert.equal(buffer.isReady(200, 'rescue'), false);
+  assert.equal(buffer.isReady(300, 'scroll'), true);
+  assert.deepEqual(buffer.getLaunchOptions(), { skipRearCornerHop: true });
+});
+
+test('a rescue tap is not released while the rescue arc is still in progress', () => {
+  const buffer = createLaunchInputBuffer();
+  buffer.queue(100, 700, { skipRearCornerHop: true });
+  assert.equal(buffer.isReady(250, 'rescue'), false);
+  assert.equal(buffer.isReady(300, 'drop'), false);
+});
+
+test('an expired rescue tap is discarded', () => {
+  const buffer = createLaunchInputBuffer();
+  buffer.queue(100, 700, { skipRearCornerHop: true });
+  assert.equal(buffer.isReady(801, 'scroll'), false);
+  assert.deepEqual(buffer.getLaunchOptions(), {});
+});
+
+test('a normal centred landing still launches normally', () => {
+  const world = landingWorld(0);
+  launch(world);
+  assert.equal(world.phase, 'air');
+});
+
+test('a normal quick rear-edge tap retains the existing rescue behaviour', () => {
+  const world = landingWorld(-10);
+  launch(world);
+  assert.equal(world.phase, 'rescue');
+});
+
+test('a buffered second tap at the rear edge launches forward instead of repeating rescue', () => {
+  const world = landingWorld(-10);
+  launch(world, { skipRearCornerHop: true });
+  assert.equal(world.phase, 'air');
+});
