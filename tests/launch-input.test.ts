@@ -66,7 +66,7 @@ test('the first tap after a rescue landing is a forward launch even at the rear 
   world.cubeAngle = 0;
   world.cubeSpin = 0;
   world.cubeX = pivotX(tower) - CUBE / 2;
-  world.cubeY = H - towerLen(tower) - CUBE / 2 - 1.5;
+  world.cubeY = H - towerLen(tower) - 1.5;
 
   step(world, 1 / 60);
   assert.equal(world.phase, 'scroll');
