@@ -7,7 +7,7 @@ on:
       - 'src/qubo/engine.ts'
       - 'src/qubo/main.ts'
       - 'tests/qubo-physics.test.ts'
-      - 'tests/qubo-browser.test.ts'
+      - 'tests/qubo-browser.spec.ts'
       - '.github/workflows/qubo-physics.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -34,7 +34,6 @@ jobs:
       - name: Start local Vite server
         run: |
           npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/qubo-vite.log 2>&1 &
-          echo $! > /tmp/qubo-vite.pid
           for i in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:4173/qubo/ > /dev/null; then exit 0; fi
             sleep 1
@@ -42,6 +41,6 @@ jobs:
           cat /tmp/qubo-vite.log
           exit 1
       - name: Run browser smoke tests
-        run: node --test tests/qubo-browser.test.ts
+        run: node --test tests/qubo-browser.spec.ts
         env:
           QUBO_TEST_URL: http://127.0.0.1:4173
