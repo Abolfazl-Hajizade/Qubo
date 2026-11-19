@@ -152,24 +152,71 @@ async function collectReport() {
   refreshButton.disabled = false;
 }
 
-openButton.addEventListener('click', () => {
-  dialog.showModal();
+function openDiagnostics() {
+  if (!dialog.open) dialog.showModal();
   void collectReport();
-});
+}
+
+openButton.addEventListener('click', openDiagnostics);
+// The diagnostics remain available to the project owner by adding ?device-diagnostics=1.
+// No public-facing button is needed.
+if (new URLSearchParams(location.search).get('device-diagnostics') === '1') {
+  openDiagnostics();
+}
 $('device-close').addEventListener('click', () => dialog.close());
 refreshButton.addEventListener('click', () => void collectReport());
-copyButton.addEventListener('click', async () => {
-  if (!latestReport) return;
+
+async function copyReport(): Promise<boolean> {
+  if (!latestReport) return false;
+
+  // Clipboard API is unavailable in some Telegram WebViews; try the legacy copy path too.
   try {
-    await navigator.clipboard.writeText(latestReport);
-    copyButton.textContent = 'Copied';
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(latestReport);
+      return true;
+    }
   } catch {
+    // Continue to the compatibility fallback below.
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = latestReport;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  textarea.style.pointerEvents = 'none';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch {
+    copied = false;
+  }
+  textarea.remove();
+  return copied;
+}
+
+copyButton.addEventListener('click', async () => {
+  const originalText = copyButton.textContent;
+  copyButton.disabled = true;
+  const copied = await copyReport();
+  copyButton.textContent = copied
+    ? 'Copied'
+    : 'Copy blocked — report selected; press and hold to copy';
+  if (!copied) {
+    reportElement.focus();
     const range = document.createRange();
     range.selectNodeContents(reportElement);
     const selection = window.getSelection();
     selection?.removeAllRanges();
     selection?.addRange(range);
-    copyButton.textContent = 'Select report and copy';
+  }
+  copyButton.disabled = false;
+  if (copied) {
+    window.setTimeout(() => { copyButton.textContent = originalText; }, 1800);
   }
 });
 touchButton.addEventListener('pointerdown', (event) => {
