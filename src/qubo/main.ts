@@ -14,8 +14,8 @@ const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_FRAME_DELTA = 0.1;
-const INPUT_BUFFER_MS = 100; // absorb taps that arrive just before a landing frame
-const RESCUE_INPUT_BUFFER_MS = 700; // hold a second tap until an in-place rescue lands
+const INPUT_BUFFER_MS = 102; // experimental timing adjustment for variable-timestep physics
+const RESCUE_INPUT_BUFFER_MS = 702; // experimental timing adjustment for variable-timestep physics
 // Keep Qubo's displayed numbers and dates English, regardless of the Telegram/WebView locale.
 const numberFormat = new Intl.NumberFormat('en-US', { numberingSystem: 'latn' });
 const dateFormat = new Intl.DateTimeFormat('en-US', {
