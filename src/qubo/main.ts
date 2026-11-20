@@ -13,9 +13,7 @@ const STATS_KEY = 'qubo.stats';
 const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
-const FIXED_DT = 1 / 60;
 const MAX_FRAME_DELTA = 0.1;
-const MAX_PHYSICS_STEPS_PER_FRAME = 6;
 const INPUT_BUFFER_MS = 100; // absorb taps that arrive just before a landing frame
 const RESCUE_INPUT_BUFFER_MS = 700; // hold a second tap until an in-place rescue lands
 // Keep Qubo's displayed numbers and dates English, regardless of the Telegram/WebView locale.
@@ -27,7 +25,6 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
 let world: World = createWorld();
 let raf = 0;
 let last = 0;
-let physicsAccumulator = 0;
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
@@ -221,12 +218,11 @@ function start() {
   resize();
   cancelAnimationFrame(raf);
   last = performance.now();
-  physicsAccumulator = 0;
   raf = requestAnimationFrame(loop);
 }
 
 function down() {
-  if (paused) { paused = false; setStatus(''); last = performance.now(); physicsAccumulator = 0; return; }
+  if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
   if (!started) { started = true; setStatus(''); last = performance.now(); physicsAccumulator = 0; void recordGameStart(); return; } // the first tap only starts the tower tipping
   if (world.phase === 'air') {
     // A tap in the final moments before touchdown belongs to the landing,
@@ -279,18 +275,16 @@ function setStatus(title: string, hint = '') {
 }
 
 function loop(now: number) {
-  // Simulate gameplay at a fixed 60 Hz so gravity and launch trajectories do
-  // not change with the device's refresh rate or intermittent frame drops.
+  // Experimental variable-timestep physics: advance once per animation frame.
+  // The simulation delta follows the actual frame interval instead of a fixed 60 Hz step.
   const frameDelta = Math.min(MAX_FRAME_DELTA, Math.max(0, (now - last) / 1000));
   last = now;
   if (started && !paused) {
     const was = world.over;
-    physicsAccumulator = Math.min(MAX_FRAME_DELTA, physicsAccumulator + frameDelta);
-    let steps = 0;
-    let simulatedDelta = 0;
-    while (physicsAccumulator >= FIXED_DT && steps < MAX_PHYSICS_STEPS_PER_FRAME && !world.over) {
+    const simulatedDelta = frameDelta;
+    if (frameDelta > 0 && !world.over) {
       const previousPhase = world.phase;
-      step(world, FIXED_DT);
+      step(world, frameDelta);
       if (pendingLaunchUntil) {
         if (now > pendingLaunchUntil) pendingLaunchUntil = 0;
         else if (world.phase === 'scroll' || (world.phase === 'drop' && world.rescueAvailable)) tryLaunch();
@@ -300,11 +294,8 @@ function loop(now: number) {
         if (world.phase === 'air' || world.phase === 'rescue') rescueLaunchBuffer.clear();
       }
       if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
-      if (landingAgeVisual < 2) landingAgeVisual += FIXED_DT;
-      if (takeoffAgeVisual < 1) takeoffAgeVisual += FIXED_DT;
-      physicsAccumulator -= FIXED_DT;
-      simulatedDelta += FIXED_DT;
-      steps++;
+      if (landingAgeVisual < 2) landingAgeVisual += frameDelta;
+      if (takeoffAgeVisual < 1) takeoffAgeVisual += frameDelta;
     }
     setScore();
     const reachedCheckpoint = Math.floor(world.score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
@@ -321,10 +312,8 @@ function loop(now: number) {
     }
     if (backdropTransitionAge < 1) backdropTransitionAge = Math.min(1, backdropTransitionAge + simulatedDelta / 1.1);
     if (world.over && !was) finish();
-  } else {
-    physicsAccumulator = 0;
   }
-  // Render on every animation frame, as before the 60 FPS cap.
+  // Render on every animation frame; physics now advances at the same cadence.
   draw();
   raf = requestAnimationFrame(loop);
 }
