@@ -14,7 +14,7 @@ const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const FIXED_DT = 1 / 60;
-const RENDER_INTERVAL_MS = 1000 / 60;
+const PHYSICS_INTERVAL_MS = 1000 / 60;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_PHYSICS_STEPS_PER_FRAME = 6;
 const INPUT_BUFFER_MS = 100; // absorb taps that arrive just before a landing frame
@@ -29,7 +29,7 @@ let world: World = createWorld();
 let raf = 0;
 let last = 0;
 let physicsAccumulator = 0;
-let lastRender = 0;
+let physicsTimer: ReturnType<typeof setInterval> | 0 = 0;
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
@@ -222,9 +222,10 @@ function start() {
   setStatus('Tap to start', 'Time the tap: throw the cube while the tower leans, before it falls');
   resize();
   cancelAnimationFrame(raf);
+  if (physicsTimer) clearInterval(physicsTimer);
   last = performance.now();
   physicsAccumulator = 0;
-  lastRender = 0;
+  physicsTimer = window.setInterval(physicsLoop, PHYSICS_INTERVAL_MS);
   raf = requestAnimationFrame(loop);
 }
 
@@ -261,9 +262,16 @@ function pause() {
   setStatus('Paused', 'Tap to carry on');
 }
 
-function stopLoop() { cancelAnimationFrame(raf); raf = 0; }
+function stopLoop() {
+  cancelAnimationFrame(raf);
+  raf = 0;
+  if (physicsTimer) clearInterval(physicsTimer);
+  physicsTimer = 0;
+}
 
 function finish() {
+  if (physicsTimer) clearInterval(physicsTimer);
+  physicsTimer = 0;
   const isBest = world.score > best;
   if (isBest) { best = world.score; saveJSON(BEST_KEY, best); }
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
@@ -281,7 +289,8 @@ function setStatus(title: string, hint = '') {
   $('status').innerHTML = title ? `${title}${hint ? `<small>${hint}</small>` : ''}` : '';
 }
 
-function loop(now: number) {
+function physicsLoop() {
+  const now = performance.now();
   // Simulate gameplay at a fixed 60 Hz so gravity and launch trajectories do
   // not change with the device's refresh rate or intermittent frame drops.
   const frameDelta = Math.min(MAX_FRAME_DELTA, Math.max(0, (now - last) / 1000));
@@ -327,12 +336,11 @@ function loop(now: number) {
   } else {
     physicsAccumulator = 0;
   }
-  // Keep rendering at 60 FPS even on high-refresh displays; the RAF loop still
-  // runs as often as the browser allows so input and fixed-step physics stay responsive.
-  if (now - lastRender >= RENDER_INTERVAL_MS - 0.5) {
-    draw();
-    lastRender = now;
-  }
+}
+
+// Rendering has its own display-synchronized RAF loop; it never advances game physics.
+function loop() {
+  draw();
   raf = requestAnimationFrame(loop);
 }
 
