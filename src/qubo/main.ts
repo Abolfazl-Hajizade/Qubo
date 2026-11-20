@@ -609,7 +609,7 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
     });
     const data = await response.json() as { error?: string };
     if (!response.ok) throw new Error(data.error || 'حذف پیام ناموفق بود.');
-    await refreshChat(false);
+    await refreshChat();
   } catch (error) {
     $('chat-status').textContent = error instanceof Error ? error.message : 'حذف پیام ناموفق بود.';
     button.disabled = false;
@@ -640,7 +640,7 @@ async function sendChatMessage(event: SubmitEvent) {
     }
     if (!response.ok) throw new Error(data.error || 'ارسال پیام ناموفق بود.');
     input.value = '';
-    await refreshChat(false);
+    await refreshChat();
     input.focus();
   } catch (error) {
     $('chat-status').textContent = error instanceof Error ? error.message : 'ارسال پیام ناموفق بود.';
