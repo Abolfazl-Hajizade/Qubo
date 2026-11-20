@@ -266,6 +266,7 @@ function backdropForScore(score: number) {
 function start() {
   if (endDialog.open) endDialog.close();
   world = createWorld(Math.random, checkpoint);
+  syncRenderSnapshots();
   paused = false;
   started = false;
   pendingLaunchUntil = 0;
