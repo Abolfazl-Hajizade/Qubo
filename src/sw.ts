@@ -32,7 +32,7 @@ for (const { url, revision } of manifest) {
 
 // A file whose name has no hash may be stale in the HTTP cache, so check it with the server.
 const download = (url: string, key: string, priority: RequestPriority) =>
-  fetch(url, { cache: url === key ? 'default' : 'no-cache', priority });
+  fetch(url, { cache: url === key ? 'default' : 'no-cache', priority, redirect: 'follow' });
 
 self.addEventListener('install', (event) => {
   // Versions before lazy loading precached every game: move what's still current into the games cache
@@ -42,22 +42,31 @@ self.addEventListener('install', (event) => {
     for (const key of keys.values()) {
       if (await cache.match(key)) continue;
       const old = await caches.match(key);
-      if (old) await cache.put(key, old);
+      // Never migrate a redirect into the runtime cache.
+      if (old && !old.redirected && old.status >= 200 && old.status < 300) await cache.put(key, old);
     }
   })());
 });
 
 self.addEventListener('activate', (event) => {
-  // Drop files from older versions.
+  // Drop obsolete entries and any redirect responses cached by older worker versions.
   event.waitUntil((async () => {
     const cache = await caches.open(GAMES_CACHE);
     const current = new Set(keys.values());
-    for (const req of await cache.keys()) if (!current.has(req.url)) await cache.delete(req);
+    for (const req of await cache.keys()) {
+      const response = await cache.match(req);
+      if (!current.has(req.url) || !response || response.redirected || response.status < 200 || response.status >= 300) {
+        await cache.delete(req);
+      }
+    }
   })());
 });
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Let document navigations follow the browser's normal redirect handling. Returning a cached
+  // redirected Response for a navigation request can fail in Chromium/WebView2 with ERR_FAILED.
+  if (event.request.mode === 'navigate') return;
   const url = new URL(event.request.url);
   url.search = url.hash = '';
   if (url.pathname.endsWith('/')) url.pathname += 'index.html';
@@ -66,9 +75,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(GAMES_CACHE);
     const hit = await cache.match(key);
-    if (hit) return hit;
+    if (hit) {
+      if (!hit.redirected && hit.status >= 200 && hit.status < 300) return hit;
+      await cache.delete(key);
+    }
     const res = await download(url.href, key, 'high');
-    if (res.ok) event.waitUntil(cache.put(key, res.clone()));
+    // Cache only final successful responses, never redirects or HTTP errors.
+    if (res.ok && !res.redirected) event.waitUntil(cache.put(key, res.clone()));
     return res;
   })());
 });
@@ -86,7 +99,7 @@ async function drain() {
     if (!key || (await cache.match(key))) continue;
     try {
       const res = await download(url, key, 'low');
-      if (res.ok) await cache.put(key, res);
+      if (res.ok && !res.redirected) await cache.put(key, res);
     } catch {
       // Offline: the next page load asks again.
       queue = [];
