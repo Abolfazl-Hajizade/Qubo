@@ -110,6 +110,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   if (!body) return json({ error: "Invalid JSON" }, 400);
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  await saveTelegramUser(env, user);
   const access = await checkEligibility(user, env);
   if (!access.eligible) return json({ eligible: false, best_score: access.bestScore, required_score: MIN_SCORE }, 403);
   if (typeof body.message !== "string") return json({ error: "متن پیام نامعتبر است." }, 400);
