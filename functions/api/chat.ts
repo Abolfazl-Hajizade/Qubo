@@ -12,7 +12,7 @@ type Env = {
 };
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
-type AuthenticatedUser = { id: string; displayName: string };
+type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
 type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number };
 const encoder = new TextEncoder();
 const MIN_SCORE = 29;
@@ -50,8 +50,19 @@ async function authenticate(initData: string, botToken: string): Promise<Authent
     if (!Number.isSafeInteger(user.id) || user.id <= 0) return null;
     const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
       || (user.username ? `@${user.username}` : `Player ${user.id}`);
-    return { id: String(user.id), displayName: displayName.slice(0, 80) };
+    return { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: user.first_name ?? null, lastName: user.last_name ?? null };
   } catch { return null; }
+}
+async function saveTelegramUser(env: Env, user: AuthenticatedUser): Promise<void> {
+  await env.DB.prepare(`
+    INSERT INTO telegram_users (telegram_user_id, username, first_name, last_name, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(telegram_user_id) DO UPDATE SET
+      username = COALESCE(excluded.username, telegram_users.username),
+      first_name = COALESCE(excluded.first_name, telegram_users.first_name),
+      last_name = COALESCE(excluded.last_name, telegram_users.last_name),
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(user.id, user.username, user.firstName, user.lastName).run();
 }
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -81,6 +92,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Chat is not configured" }, 500);
   const user = await getUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  await saveTelegramUser(env, user);
   const access = await checkEligibility(user, env);
   if (!access.eligible) return json({ eligible: false, best_score: access.bestScore, required_score: MIN_SCORE }, 403);
   const rows = await env.DB.prepare(`
@@ -126,6 +138,7 @@ export async function onRequestDelete({ request, env }: { request: Request; env:
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Chat is not configured" }, 500);
   const user = await getUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  await saveTelegramUser(env, user);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
   const rawId = new URL(request.url).searchParams.get("id");
   if (!rawId || !/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) <= 0) {
