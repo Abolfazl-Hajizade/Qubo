@@ -281,6 +281,18 @@ dialog.dialog:not([open]) { display: none; }
   background: #284d70;
 }
 .chat-message.is-own .chat-message-top strong { color: #d2e7ff; }
+.chat-message-actions { display: flex; justify-content: flex-end; margin-top: 7px; }
+.chat-delete-btn {
+  border: 1px solid rgba(255, 125, 125, .45);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: rgba(130, 35, 45, .28);
+  color: #ffb6b6;
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+}
+.chat-delete-btn:disabled { opacity: .5; }
 .chat-message-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .chat-message-top strong { color: #9bc7ff; font-size: .9rem; }
 .chat-message-top time { color: #9baac0; font-size: .72rem; }
