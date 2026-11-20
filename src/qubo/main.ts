@@ -538,7 +538,7 @@ async function refreshChat(initial: boolean) {
     const response = await fetch('/api/chat', { headers: { 'x-telegram-init-data': initData } });
     const data = await response.json() as {
       error?: string; eligible?: boolean; best_score?: number;
-      messages?: ChatMessage[];
+      messages?: ChatMessage[]; is_admin?: boolean;
     };
     if (response.status === 403 && data.eligible === false) {
       $('chat-content').hidden = true;
@@ -550,7 +550,7 @@ async function refreshChat(initial: boolean) {
     if (!response.ok) throw new Error(data.error || 'ارتباط با چت برقرار نشد.');
     $('chat-locked').hidden = true;
     $('chat-content').hidden = false;
-    renderChatMessages(data.messages ?? [], initial);
+    renderChatMessages(data.messages ?? [], data.is_admin === true);
     $('chat-status').textContent = 'پیام‌ها هر ۲ ثانیه به‌روزرسانی می‌شوند';
     startChatPolling();
   } catch (error) {
@@ -561,9 +561,9 @@ async function refreshChat(initial: boolean) {
   }
 }
 
-function renderChatMessages(messages: ChatMessage[], initial: boolean) {
+function renderChatMessages(messages: ChatMessage[], isAdmin: boolean) {
   const list = $('chat-messages');
-  const wasNearBottom = initial || list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+  const previousScrollTop = list.scrollTop;
   list.replaceChildren();
   for (const message of messages) {
     const item = document.createElement('li');
@@ -580,9 +580,40 @@ function renderChatMessages(messages: ChatMessage[], initial: boolean) {
     const body = document.createElement('p');
     body.textContent = message.message;
     item.append(top, body);
+    if (isAdmin) {
+      const actions = document.createElement('div');
+      actions.className = 'chat-message-actions';
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'chat-delete-btn';
+      remove.textContent = 'حذف پیام';
+      remove.setAttribute('aria-label', `حذف پیام ${message.display_name}`);
+      remove.addEventListener('click', () => { void deleteChatMessage(message.id, remove); });
+      actions.append(remove);
+      item.append(actions);
+    }
     list.append(item);
   }
-  if (wasNearBottom) list.scrollTop = list.scrollHeight;
+  list.scrollTop = previousScrollTop;
+}
+
+async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
+  const initData = telegramWebApp?.initData;
+  if (!initData || !Number.isSafeInteger(messageId) || messageId <= 0) return;
+  if (!window.confirm('این پیام برای همه حذف شود؟')) return;
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/chat?id=${encodeURIComponent(String(messageId))}`, {
+      method: 'DELETE',
+      headers: { 'x-telegram-init-data': initData },
+    });
+    const data = await response.json() as { error?: string };
+    if (!response.ok) throw new Error(data.error || 'حذف پیام ناموفق بود.');
+    await refreshChat(false);
+  } catch (error) {
+    $('chat-status').textContent = error instanceof Error ? error.message : 'حذف پیام ناموفق بود.';
+    button.disabled = false;
+  }
 }
 
 async function sendChatMessage(event: SubmitEvent) {
