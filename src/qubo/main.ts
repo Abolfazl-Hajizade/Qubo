@@ -57,6 +57,16 @@ type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => voi
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
+
+// Apply the same no-Service-Worker policy used on Telegram mobile to Telegram Desktop too.
+// Desktop's WebView user agent is not always branded, but Mini App launch data is in the URL fragment.
+const hasTelegramLaunchData = new URLSearchParams(location.hash.slice(1)).has('tgWebAppData');
+const isTelegramWebView = /Telegram/i.test(navigator.userAgent) || !!telegramWebApp?.initData || hasTelegramLaunchData;
+if (isTelegramWebView && 'serviceWorker' in navigator) {
+  void navigator.serviceWorker.getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+    .catch(() => { /* service workers may be unavailable in embedded browsers */ });
+}
 resetSaberLocalHistory();
 void syncCheckpoint();
 
