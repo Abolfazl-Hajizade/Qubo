@@ -30,65 +30,6 @@ let raf = 0;
 let last = 0;
 let physicsAccumulator = 0;
 let lastRender = 0;
-
-interface RenderSnapshot {
-  phase: World['phase'];
-  angle: number;
-  cam: number;
-  cubeX: number;
-  cubeY: number;
-  cubeAngle: number;
-  towers: Array<{ x: number; top: number }>;
-  fallen: Array<{ pivot: number; angle: number }>;
-}
-
-function captureRenderSnapshot(): RenderSnapshot {
-  return {
-    phase: world.phase,
-    angle: world.angle,
-    cam: world.cam,
-    cubeX: world.cubeX,
-    cubeY: world.cubeY,
-    cubeAngle: world.cubeAngle,
-    towers: world.towers.map((tower) => ({ x: tower.x, top: tower.top })),
-    fallen: world.fallen.map((tower) => ({ pivot: tower.pivot, angle: tower.angle })),
-  };
-}
-
-let previousRenderState = captureRenderSnapshot();
-let currentRenderState = previousRenderState;
-
-function syncRenderSnapshots() {
-  currentRenderState = captureRenderSnapshot();
-  previousRenderState = currentRenderState;
-}
-
-function getInterpolatedRenderState(): RenderSnapshot {
-  const previous = previousRenderState;
-  const current = currentRenderState;
-  // Never blend across phase changes or structural changes such as tower removal/addition.
-  if (previous.phase !== current.phase || previous.towers.length !== current.towers.length
-    || previous.fallen.length !== current.fallen.length) return current;
-
-  const alpha = Math.max(0, Math.min(1, physicsAccumulator / FIXED_DT));
-  const mix = (from: number, to: number) => from + (to - from) * alpha;
-  return {
-    ...current,
-    angle: mix(previous.angle, current.angle),
-    cam: mix(previous.cam, current.cam),
-    cubeX: mix(previous.cubeX, current.cubeX),
-    cubeY: mix(previous.cubeY, current.cubeY),
-    cubeAngle: mix(previous.cubeAngle, current.cubeAngle),
-    towers: current.towers.map((tower, index) => ({
-      x: mix(previous.towers[index].x, tower.x),
-      top: mix(previous.towers[index].top, tower.top),
-    })),
-    fallen: current.fallen.map((tower, index) => ({
-      pivot: mix(previous.fallen[index].pivot, tower.pivot),
-      angle: mix(previous.fallen[index].angle, tower.angle),
-    })),
-  };
-}
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
@@ -266,7 +207,6 @@ function backdropForScore(score: number) {
 function start() {
   if (endDialog.open) endDialog.close();
   world = createWorld(Math.random, checkpoint);
-  syncRenderSnapshots();
   paused = false;
   started = false;
   pendingLaunchUntil = 0;
@@ -308,7 +248,6 @@ function down() {
 
 function tryLaunch(options?: { skipRearCornerHop?: boolean }) {
   launch(world, options);
-  syncRenderSnapshots();
   if (world.phase === 'air' || world.phase === 'rescue') {
     pendingLaunchUntil = 0;
     takeoffAgeVisual = 0;
@@ -354,10 +293,7 @@ function loop(now: number) {
     let simulatedDelta = 0;
     while (physicsAccumulator >= FIXED_DT && steps < MAX_PHYSICS_STEPS_PER_FRAME && !world.over) {
       const previousPhase = world.phase;
-      previousRenderState = currentRenderState;
       step(world, FIXED_DT);
-      currentRenderState = captureRenderSnapshot();
-      if (previousPhase !== world.phase) previousRenderState = currentRenderState;
       if (pendingLaunchUntil) {
         if (now > pendingLaunchUntil) pendingLaunchUntil = 0;
         else if (world.phase === 'scroll' || (world.phase === 'drop' && world.rescueAvailable)) tryLaunch();
@@ -775,9 +711,8 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   drawWeatherBackground();
 
-  const renderState = getInterpolatedRenderState();
   ctx.save();
-  ctx.translate(-renderState.cam, 0);
+  ctx.translate(-world.cam, 0);
   ctx.lineWidth = 5;
   ctx.lineJoin = 'round';
   ctx.strokeStyle = '#080d12';
@@ -785,9 +720,7 @@ function draw() {
   ctx.shadowBlur = 3;
   ctx.fillStyle = p.sheet;
   // The tower the cube stands on tips over from the middle of its base; the next one stands still.
-  world.towers.forEach((sourceTower, i) => {
-    const position = renderState.towers[i];
-    const t = { ...sourceTower, x: position.x, top: position.top };
+  world.towers.forEach((t, i) => {
     // Keep every generated tower rendered in every phase. Hiding distant towers
     // during recovery hops made the front columns flicker as the phase changed.
     if (i === 0 && world.phase !== 'wait') return; // the previous tower continues out of frame in world.fallen
@@ -804,10 +737,8 @@ function draw() {
 
   for (const f of world.fallen) {
     ctx.save();
-    const fallenIndex = world.fallen.indexOf(f);
-    const position = renderState.fallen[fallenIndex];
-    ctx.translate(position?.pivot ?? f.pivot, H);
-    ctx.rotate(rad(position?.angle ?? f.angle));
+    ctx.translate(f.pivot, H);
+    ctx.rotate(rad(f.angle));
     drawTower(f.w, f.len);
     ctx.restore();
   }
@@ -824,7 +755,7 @@ function draw() {
     : 0;
   const scaleX = 1 + impact * 0.17 - takeoff * 0.07 - rising * 0.035;
   const scaleY = 1 - impact * 0.2 + takeoff * 0.12 + rising * 0.09;
-  drawCube(renderState.cubeX, renderState.cubeY, renderState.cubeAngle, isSupported ? renderState.angle : 0, scaleX, scaleY);
+  drawCube(world.cubeX, world.cubeY, world.cubeAngle, isSupported ? world.angle : 0, scaleX, scaleY);
   ctx.restore();
 
   // A single understated ground line remains beneath the towers.
