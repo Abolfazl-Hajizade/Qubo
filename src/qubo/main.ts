@@ -494,7 +494,7 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
   }
 }
 
-type ChatMessage = { id: number; display_name: string; message: string; created_at: string };
+type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number };
 let chatPollTimer: number | undefined;
 let chatLoading = false;
 
@@ -567,7 +567,7 @@ function renderChatMessages(messages: ChatMessage[], initial: boolean) {
   list.replaceChildren();
   for (const message of messages) {
     const item = document.createElement('li');
-    item.className = 'chat-message';
+    item.className = message.is_own ? 'chat-message is-own' : 'chat-message';
     const top = document.createElement('div');
     top.className = 'chat-message-top';
     const name = document.createElement('strong');
