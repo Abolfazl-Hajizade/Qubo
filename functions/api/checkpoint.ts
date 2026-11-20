@@ -10,8 +10,8 @@ type Env = {
   };
 };
 
-type TelegramUser = { id: number };
-type AuthenticatedUser = { id: string };
+type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
+type AuthenticatedUser = { id: string; username: string | null; firstName: string | null; lastName: string | null };
 
 const encoder = new TextEncoder();
 
@@ -48,12 +48,23 @@ async function authenticate(initData: string, botToken: string): Promise<Authent
 
   try {
     const user = JSON.parse(userValue) as TelegramUser;
-    return Number.isSafeInteger(user.id) && user.id > 0 ? { id: String(user.id) } : null;
+    return Number.isSafeInteger(user.id) && user.id > 0 ? { id: String(user.id), username: user.username ?? null, firstName: user.first_name ?? null, lastName: user.last_name ?? null } : null;
   } catch {
     return null;
   }
 }
 
+async function saveTelegramUser(env: Env, user: AuthenticatedUser): Promise<void> {
+  await env.DB.prepare(`
+    INSERT INTO telegram_users (telegram_user_id, username, first_name, last_name, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(telegram_user_id) DO UPDATE SET
+      username = COALESCE(excluded.username, telegram_users.username),
+      first_name = COALESCE(excluded.first_name, telegram_users.first_name),
+      last_name = COALESCE(excluded.last_name, telegram_users.last_name),
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(user.id, user.username, user.firstName, user.lastName).run();
+}
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
@@ -73,6 +84,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Checkpoint sync is not configured" }, 500);
   const user = await getAuthenticatedUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  await saveTelegramUser(env, user);
   const row = await env.DB.prepare(
     "SELECT checkpoint FROM player_checkpoints WHERE telegram_user_id = ?"
   ).bind(user.id).first<{ checkpoint: number }>();
@@ -89,6 +101,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   }
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  await saveTelegramUser(env, user);
 
   const checkpoint = body.checkpoint;
   if (typeof checkpoint !== "number" || !Number.isSafeInteger(checkpoint)
