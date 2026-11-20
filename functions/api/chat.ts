@@ -128,7 +128,7 @@ export async function onRequestDelete({ request, env }: { request: Request; env:
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
   const rawId = new URL(request.url).searchParams.get("id");
-  if (!rawId || !/^\\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) <= 0) {
+  if (!rawId || !/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) <= 0) {
     return json({ error: "شناسه پیام نامعتبر است." }, 400);
   }
   const result = await env.DB.prepare("DELETE FROM chat_messages WHERE id = ?")
