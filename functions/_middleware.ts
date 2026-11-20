@@ -20,3 +20,5 @@ export async function onRequest({ request, next }: { request: Request; next: () 
   }
   return next();
 }
+
+// Rebuild trigger after restoring the Cloudflare Pages project.
