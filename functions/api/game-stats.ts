@@ -12,7 +12,7 @@ type Env = {
 };
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
-type AuthenticatedUser = { id: string; displayName: string };
+type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
 type GameStat = {
   telegram_user_id: string;
   display_name: string;
@@ -52,8 +52,19 @@ async function authenticate(initData: string, botToken: string): Promise<Authent
     if (!Number.isSafeInteger(user.id) || user.id <= 0) return null;
     const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
       || (user.username ? `@${user.username}` : `Player ${user.id}`);
-    return { id: String(user.id), displayName: displayName.slice(0, 80) };
+    return { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: user.first_name ?? null, lastName: user.last_name ?? null };
   } catch { return null; }
+}
+async function saveTelegramUser(env: Env, user: AuthenticatedUser): Promise<void> {
+  await env.DB.prepare(`
+    INSERT INTO telegram_users (telegram_user_id, username, first_name, last_name, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(telegram_user_id) DO UPDATE SET
+      username = COALESCE(excluded.username, telegram_users.username),
+      first_name = COALESCE(excluded.first_name, telegram_users.first_name),
+      last_name = COALESCE(excluded.last_name, telegram_users.last_name),
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(user.id, user.username, user.firstName, user.lastName).run();
 }
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -68,6 +79,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   catch { return json({ error: "Invalid JSON" }, 400); }
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  await saveTelegramUser(env, user);
 
   await env.DB.prepare(`
     INSERT INTO player_game_stats (telegram_user_id, display_name, game_count, updated_at)
@@ -86,6 +98,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const user = await authenticate(request.headers.get("x-telegram-init-data") ?? "", env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
+  await saveTelegramUser(env, user);
   const rows = await env.DB.prepare(`
     SELECT
       stats.telegram_user_id,
