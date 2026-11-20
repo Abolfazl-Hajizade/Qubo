@@ -28,9 +28,16 @@ try {
   }, { once: true });
 } catch { /* storage unavailable */ }
 
+const telegramWebApp = (window as Window & { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp;
+// Telegram Desktop's embedded WebView may not identify itself in the user agent.
+// The signed Mini App launch data is a more reliable signal and is present in the URL fragment.
+const hasTelegramLaunchData = new URLSearchParams(location.hash.slice(1)).has('tgWebAppData');
+const isTelegramWebView = /Telegram/i.test(navigator.userAgent) || !!telegramWebApp?.initData || hasTelegramLaunchData;
+
 if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
-  // Telegram's in-app browser can retain stale service-worker caches; disable them there.
-  if (/Telegram/i.test(navigator.userAgent)) {
+  // Match the mobile Telegram policy on both mobile and desktop: don't let stale PWA caches
+  // interfere with repeated Mini App launches.
+  if (isTelegramWebView) {
     void navigator.serviceWorker.getRegistrations()
       .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
       .catch(() => { /* service workers may be unavailable in embedded browsers */ });
