@@ -266,7 +266,21 @@ dialog.dialog:not([open]) { display: none; }
 .chat-content { height: calc(100dvh - 82px - env(safe-area-inset-top)); display: flex; flex-direction: column; padding: 12px 14px max(10px, env(safe-area-inset-bottom)); }
 .chat-content[hidden], .chat-locked[hidden] { display: none; }
 .chat-messages { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 4px 0 12px; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
-.chat-message { padding: 11px 13px; border-radius: 14px; background: #222c3d; overflow-wrap: anywhere; }
+.chat-message {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: min(82%, 520px);
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: #222c3d;
+  overflow-wrap: anywhere;
+}
+.chat-message.is-own {
+  align-self: flex-end;
+  background: #284d70;
+}
+.chat-message.is-own .chat-message-top strong { color: #d2e7ff; }
 .chat-message-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .chat-message-top strong { color: #9bc7ff; font-size: .9rem; }
 .chat-message-top time { color: #9baac0; font-size: .72rem; }
