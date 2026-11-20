@@ -506,14 +506,14 @@ function openChat() {
   $('chat-content').hidden = true;
   $('chat-status').textContent = 'در حال اتصال به چت...';
   // Contact the server only while the chat dialog is open.
-  void refreshChat(true);
+  void refreshChat();
 }
 
 function startChatPolling() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
   if (!dialog.open || chatPollTimer !== undefined) return;
   chatPollTimer = window.setInterval(() => {
-    if (dialog.open) void refreshChat(false);
+    if (dialog.open) void refreshChat();
     else stopChatPolling();
   }, 2000);
 }
@@ -523,7 +523,7 @@ function stopChatPolling() {
   chatPollTimer = undefined;
 }
 
-async function refreshChat(initial: boolean) {
+async function refreshChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
   if (!dialog.open || chatLoading) return;
   const initData = telegramWebApp?.initData;
