@@ -385,3 +385,87 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score b { 
 
 /* Keep the diagnostics private: no public-facing entry button. */
 #device-check-btn { display: none !important; }
+
+
+/* Matrix-inspired global chat: subtle animated code rain behind the UI. */
+.chat-dialog {
+  position: relative;
+  isolation: isolate;
+  background: #020604;
+}
+.chat-dialog::before {
+  content: "01001011 00110101 10100110 01001101 11001010 00101101 10110010 01010101 01101001 10010110 00110100 11001011 01011010 00100111 10100101 01110010 01001101 10011010 00110101 01101001 11000100 00101110 10101001 01010011";
+  position: absolute;
+  z-index: 0;
+  inset: 82px 0 0;
+  overflow: hidden;
+  padding: 12px 8px;
+  color: #00ff68;
+  opacity: .17;
+  font: 600 12px/2.1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .42em;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  pointer-events: none;
+  animation: matrix-chat-rain 22s linear infinite;
+  text-shadow: 0 0 7px rgba(0, 255, 104, .55);
+}
+.chat-header,
+.chat-content,
+.chat-locked {
+  position: relative;
+  z-index: 1;
+}
+.chat-header {
+  background: rgba(0, 5, 2, .96);
+  border-bottom-color: rgba(0, 255, 104, .28);
+}
+.chat-content {
+  background: transparent;
+}
+.chat-messages {
+  background: rgba(0, 4, 2, .16);
+}
+.chat-message,
+.chat-message.is-own {
+  background: rgba(0, 0, 0, .88);
+  border: 1px solid rgba(0, 255, 104, .24);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .28), inset 0 0 12px rgba(0, 255, 104, .035);
+}
+.chat-message.is-own {
+  border-color: rgba(0, 255, 104, .48);
+}
+.chat-message-top strong,
+.chat-message.is-own .chat-message-top strong {
+  color: #71ff9c;
+}
+.chat-message p { color: #f0fff4; }
+.chat-message-top time,
+.chat-status,
+.chat-footnote { color: #8fb99c; }
+.chat-form {
+  background: rgba(0, 0, 0, .94);
+  border-color: rgba(0, 255, 104, .38);
+  box-shadow: 0 0 14px rgba(0, 255, 104, .07);
+}
+.chat-form input { color: #f0fff4; caret-color: #00ff68; }
+.chat-form input::placeholder { color: #8fb99c; }
+.chat-send-btn {
+  background: #087a36;
+  color: #fff;
+}
+.chat-send-btn:active { background: #0a9b45; }
+.chat-header .icon-btn {
+  background: #07130b;
+  border: 1px solid rgba(0, 255, 104, .28);
+}
+.chat-online { color: #65ff91; }
+.chat-heading span { color: #91b99b; }
+.chat-locked strong { color: #71ff9c; }
+@keyframes matrix-chat-rain {
+  from { transform: translateY(-8%); }
+  to { transform: translateY(12%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-dialog::before { animation: none; }
+}
