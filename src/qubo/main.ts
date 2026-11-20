@@ -223,7 +223,7 @@ function start() {
 
 function down() {
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
-  if (!started) { started = true; setStatus(''); last = performance.now(); physicsAccumulator = 0; void recordGameStart(); return; } // the first tap only starts the tower tipping
+  if (!started) { started = true; setStatus(''); last = performance.now(); void recordGameStart(); return; } // the first tap only starts the tower tipping
   if (world.phase === 'air') {
     // A tap in the final moments before touchdown belongs to the landing,
     // even if this device dispatches it just before the collision frame.
