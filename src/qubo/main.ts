@@ -30,6 +30,14 @@ let raf = 0;
 let last = 0;
 let physicsAccumulator = 0;
 let lastRender = 0;
+const PERF_DIAGNOSTICS = new URLSearchParams(location.search).has('perf');
+let perfWindowStart = 0;
+let perfStepTotal = 0;
+let perfStepMax = 0;
+let perfStepCount = 0;
+let perfDrawTotal = 0;
+let perfDrawMax = 0;
+let perfDrawCount = 0;
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
@@ -293,7 +301,14 @@ function loop(now: number) {
     let simulatedDelta = 0;
     while (physicsAccumulator >= FIXED_DT && steps < MAX_PHYSICS_STEPS_PER_FRAME && !world.over) {
       const previousPhase = world.phase;
+      const stepStartedAt = PERF_DIAGNOSTICS ? performance.now() : 0;
       step(world, FIXED_DT);
+      if (PERF_DIAGNOSTICS) {
+        const elapsed = performance.now() - stepStartedAt;
+        perfStepTotal += elapsed;
+        perfStepMax = Math.max(perfStepMax, elapsed);
+        perfStepCount++;
+      }
       if (pendingLaunchUntil) {
         if (now > pendingLaunchUntil) pendingLaunchUntil = 0;
         else if (world.phase === 'scroll' || (world.phase === 'drop' && world.rescueAvailable)) tryLaunch();
@@ -330,8 +345,31 @@ function loop(now: number) {
   // Keep rendering at 60 FPS even on high-refresh displays; the RAF loop still
   // runs as often as the browser allows so input and fixed-step physics stay responsive.
   if (now - lastRender >= RENDER_INTERVAL_MS - 0.5) {
+    const drawStartedAt = PERF_DIAGNOSTICS ? performance.now() : 0;
     draw();
+    if (PERF_DIAGNOSTICS) {
+      const elapsed = performance.now() - drawStartedAt;
+      perfDrawTotal += elapsed;
+      perfDrawMax = Math.max(perfDrawMax, elapsed);
+      perfDrawCount++;
+    }
     lastRender = now;
+  }
+  if (PERF_DIAGNOSTICS) {
+    if (!perfWindowStart) perfWindowStart = now;
+    if (now - perfWindowStart >= 5000) {
+      console.info('[Qubo perf]', {
+        stepAvgMs: perfStepCount ? +(perfStepTotal / perfStepCount).toFixed(3) : 0,
+        stepMaxMs: +perfStepMax.toFixed(3),
+        drawAvgMs: perfDrawCount ? +(perfDrawTotal / perfDrawCount).toFixed(3) : 0,
+        drawMaxMs: +perfDrawMax.toFixed(3),
+        steps: perfStepCount,
+        draws: perfDrawCount,
+      });
+      perfWindowStart = now;
+      perfStepTotal = perfStepMax = perfStepCount = 0;
+      perfDrawTotal = perfDrawMax = perfDrawCount = 0;
+    }
   }
   raf = requestAnimationFrame(loop);
 }
@@ -702,6 +740,17 @@ function resize() {
   draw();
 }
 
+function isTowerInView(pivot: number, width: number, length: number, angle: number) {
+  // Conservative horizontal bounds of the rotated tower rectangle, plus a
+  // small margin for its outline and shadow. Off-screen towers stay in the
+  // physics world; they are only skipped by the Canvas renderer.
+  const a = rad(angle);
+  const horizontalRadius = Math.abs(Math.cos(a)) * width / 2 + Math.abs(Math.sin(a)) * length;
+  const margin = 16;
+  return pivot + horizontalRadius >= world.cam - margin
+    && pivot - horizontalRadius <= world.cam + W + margin;
+}
+
 function draw() {
   if (!canvas.width) return;
   const p = palette;
@@ -721,21 +770,23 @@ function draw() {
   ctx.fillStyle = p.sheet;
   // The tower the cube stands on tips over from the middle of its base; the next one stands still.
   world.towers.forEach((t, i) => {
-    // Keep every generated tower rendered in every phase. Hiding distant towers
-    // during recovery hops made the front columns flicker as the phase changed.
     if (i === 0 && world.phase !== 'wait') return; // the previous tower continues out of frame in world.fallen
-    ctx.save();
-    ctx.translate(pivotX(t), H);
-    if (i === 0 && world.phase === 'wait') ctx.rotate(rad(world.angle));
-    else if ((world.phase === 'scroll' || world.phase === 'rescue' || (world.phase === 'drop' && (world.rescueAvailable || world.rescueInPlace))) && i === world.landed) ctx.rotate(rad(world.angle));
+    const towerAngle = (i === 0 && world.phase === 'wait')
+      || ((world.phase === 'scroll' || world.phase === 'rescue' || (world.phase === 'drop' && (world.rescueAvailable || world.rescueInPlace))) && i === world.landed)
+      ? world.angle
+      : 0;
     const len = towerLen(t);
-    // Keep the tower whole: the advancing camera pulls it diagonally out
-    // through the rear edge instead of erasing it vertically from its base.
+    const pivot = pivotX(t);
+    if (!isTowerInView(pivot, t.w, len, towerAngle)) return;
+    ctx.save();
+    ctx.translate(pivot, H);
+    if (towerAngle) ctx.rotate(rad(towerAngle));
     drawTower(t.w, len);
     ctx.restore();
   });
 
   for (const f of world.fallen) {
+    if (!isTowerInView(f.pivot, f.w, f.len, f.angle)) continue;
     ctx.save();
     ctx.translate(f.pivot, H);
     ctx.rotate(rad(f.angle));
