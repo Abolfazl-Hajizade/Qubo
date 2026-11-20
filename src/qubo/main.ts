@@ -474,6 +474,8 @@ async function loadLeaderboard() {
   void loadPrivateGameStats(initData, me);
 }
 
+const PRIVATE_GAME_COUNTS_KEY = 'qubo.private-game-counts.v1';
+
 async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
   try {
     const response = await fetch('/api/game-stats', {
@@ -482,8 +484,25 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
     // The endpoint is admin-only; ordinary players simply won't see this private section.
     if (response.status === 403 || !response.ok) return;
     const data = await response.json() as {
-      players?: Array<{ display_name: string; game_count: number }>;
+      players?: Array<{ telegram_user_id: string; display_name: string; game_count: number }>;
     };
+
+    // Remember the last counts viewed on this device. A count turns green only
+    // when it is higher than the value from the previous successful table visit.
+    let previousCounts: Record<string, number> = {};
+    try {
+      const saved = localStorage.getItem(PRIVATE_GAME_COUNTS_KEY);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          previousCounts = parsed as Record<string, number>;
+        }
+      }
+    } catch {
+      // If local storage is unavailable, show the table normally in black.
+    }
+
+    const nextCounts: Record<string, number> = {};
     const section = document.createElement('section');
     section.id = 'records-private-games';
     const heading = document.createElement('h2');
@@ -493,12 +512,32 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
     list.className = 'records-list';
     for (const player of data.players ?? []) {
       const item = document.createElement('li');
-      item.textContent = `${player.display_name} — ${numberFormat.format(player.game_count)} games`;
+      const playerId = String(player.telegram_user_id);
+      const count = Number(player.game_count);
+      nextCounts[playerId] = count;
+
+      const label = document.createElement('span');
+      label.textContent = `${player.display_name} — `;
+      const number = document.createElement('strong');
+      number.textContent = numberFormat.format(count);
+      number.style.color = Number.isFinite(previousCounts[playerId])
+        && count > previousCounts[playerId] ? '#168a3a' : '#000';
+      number.style.fontWeight = 'inherit';
+      const suffix = document.createTextNode(' games');
+      item.append(label, number, suffix);
       list.append(item);
     }
     section.append(heading, list);
     document.getElementById('records-private-games')?.remove();
     anchor.insertAdjacentElement('afterend', section);
+
+    // Save only after a successful response and completed render. The next visit
+    // will be black unless that player's game count has increased in the meantime.
+    try {
+      localStorage.setItem(PRIVATE_GAME_COUNTS_KEY, JSON.stringify(nextCounts));
+    } catch {
+      // Storage may be disabled or full; the table remains usable.
+    }
   } catch {
     // Private statistics are optional and never affect the public leaderboard.
   }
