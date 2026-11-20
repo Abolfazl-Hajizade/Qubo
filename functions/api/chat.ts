@@ -16,6 +16,8 @@ type AuthenticatedUser = { id: string; displayName: string };
 type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number };
 const encoder = new TextEncoder();
 const MIN_SCORE = 29;
+const ADMIN_ID = "7431567147";
+
 const MAX_MESSAGE_LENGTH = 500;
 
 function hex(bytes: ArrayBuffer): string {
@@ -87,7 +89,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
       CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
     FROM chat_messages ORDER BY id DESC LIMIT 100
   `).bind(user.id).all<ChatRow>();
-  return json({ eligible: true, best_score: access.bestScore, messages: rows.results.reverse() });
+  return json({ eligible: true, best_score: access.bestScore, is_admin: user.id === ADMIN_ID, messages: rows.results.reverse() });
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
@@ -116,5 +118,20 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     DELETE FROM chat_messages
     WHERE id NOT IN (SELECT id FROM chat_messages ORDER BY id DESC LIMIT 100)
   `).bind().run();
+  return json({ ok: true });
+}
+
+
+export async function onRequestDelete({ request, env }: { request: Request; env: Env }): Promise<Response> {
+  if (!env.BOT_TOKEN || !env.DB) return json({ error: "Chat is not configured" }, 500);
+  const user = await getUser(request, env);
+  if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
+  const rawId = new URL(request.url).searchParams.get("id");
+  if (!rawId || !/^\\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) <= 0) {
+    return json({ error: "شناسه پیام نامعتبر است." }, 400);
+  }
+  const result = await env.DB.prepare("DELETE FROM chat_messages WHERE id = ?")
+    .bind(Number(rawId)).run();
   return json({ ok: true });
 }
