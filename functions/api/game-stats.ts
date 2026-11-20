@@ -17,6 +17,7 @@ type GameStat = {
   telegram_user_id: string;
   display_name: string;
   game_count: number;
+  previous_game_count: number | null;
 };
 const encoder = new TextEncoder();
 const ADMIN_ID = "7431567147";
@@ -86,9 +87,36 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
   const rows = await env.DB.prepare(`
-    SELECT telegram_user_id, display_name, game_count
-    FROM player_game_stats
-    ORDER BY game_count DESC, display_name COLLATE NOCASE ASC
+    SELECT
+      stats.telegram_user_id,
+      stats.display_name,
+      stats.game_count,
+      seen.game_count AS previous_game_count
+    FROM player_game_stats AS stats
+    LEFT JOIN admin_game_stats_seen AS seen
+      ON seen.telegram_user_id = stats.telegram_user_id
+    ORDER BY stats.game_count DESC, stats.display_name COLLATE NOCASE ASC
   `).bind().all<GameStat>();
-  return json({ players: rows.results });
+
+  const players = rows.results.map((row) => ({
+    telegram_user_id: row.telegram_user_id,
+    display_name: row.display_name,
+    game_count: Number(row.game_count),
+    increased: row.previous_game_count !== null
+      && Number(row.game_count) > Number(row.previous_game_count),
+  }));
+
+  // This is a shared admin-wide acknowledgement, not device-local state.
+  // The first successful table visit after a count increase shows it in green.
+  for (const player of players) {
+    await env.DB.prepare(`
+      INSERT INTO admin_game_stats_seen (telegram_user_id, game_count, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(telegram_user_id) DO UPDATE SET
+        game_count = excluded.game_count,
+        updated_at = CURRENT_TIMESTAMP
+    `).bind(player.telegram_user_id, player.game_count).run();
+  }
+
+  return json({ players });
 }
