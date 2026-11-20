@@ -21,6 +21,9 @@ type TelegramUser = {
 type AuthenticatedUser = {
   id: string;
   displayName: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
 };
 
 const encoder = new TextEncoder();
@@ -69,12 +72,23 @@ async function authenticate(initData: string, botToken: string): Promise<{ user:
     if (!Number.isSafeInteger(user.id) || user.id <= 0) return { user: null, reason: "invalid_user_id" };
     const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
       || (user.username ? `@${user.username}` : `Player ${user.id}`);
-    return { user: { id: String(user.id), displayName: displayName.slice(0, 80) } };
+    return { user: { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: user.first_name ?? null, lastName: user.last_name ?? null } };
   } catch {
     return { user: null, reason: "invalid_user_json" };
   }
 }
 
+async function saveTelegramUser(env: Env, user: AuthenticatedUser): Promise<void> {
+  await env.DB.prepare(`
+    INSERT INTO telegram_users (telegram_user_id, username, first_name, last_name, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(telegram_user_id) DO UPDATE SET
+      username = COALESCE(excluded.username, telegram_users.username),
+      first_name = COALESCE(excluded.first_name, telegram_users.first_name),
+      last_name = COALESCE(excluded.last_name, telegram_users.last_name),
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(user.id, user.username, user.firstName, user.lastName).run();
+}
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
@@ -102,6 +116,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const auth = await getUser(request, env);
   if (!auth.user) return json({ error: `اعتبار تلگرام تأیید نشد. کد خطا: ${auth.reason ?? "unknown"}` }, 401);
   const user = auth.user;
+  await saveTelegramUser(env, user);
+  await saveTelegramUser(env, user);
 
   const entries = await env.DB.prepare(`
     WITH ranked AS (
