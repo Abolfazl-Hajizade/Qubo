@@ -196,6 +196,7 @@ function renderHistory() {
 
 // Give the 30–60 world a gradual night → dawn → daylight progression.
 function backdropForScore(score: number) {
+  if (new URLSearchParams(window.location.search).get('previewWorld') === '25') return 25;
   if (score >= 800) return 28;
   const worldIndex = Math.floor(score / 30) % 26;
   if (score >= 30 && score < 40) return 26;
@@ -843,7 +844,7 @@ function drawBackdrop(index: number, time: number) {
     ['#101e40', '#3e6598', '#b5d9f4'], // consciousness
     ['#25334a', '#778ba0', '#e9c994'], // freedom
     ['#193b58', '#746a83', '#d8c6a1'], // balance
-    ['#211b46', '#67539a', '#f0c78d'], // inner power
+    ['#211b46', '#67539a', '#c9b5e8'], // inner power — purple
   ];
   const colors = index === 26 ? ['#071426', '#101f3c', '#263b59']
     : index === 27 ? ['#26395f', '#f0a77d', '#f8d9a0']
