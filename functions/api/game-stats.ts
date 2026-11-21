@@ -90,7 +90,16 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const user = await authenticate(request.headers.get("x-telegram-init-data") ?? "", env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
-  if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
+  const isAdmin = user.id === ADMIN_ID;
+  if (!isAdmin) {
+    const scoreRow = await env.DB.prepare(
+      "SELECT best_score FROM leaderboard WHERE telegram_user_id = ? LIMIT 1"
+    ).bind(user.id).first<{ best_score: number }>();
+    const bestScore = Number(scoreRow?.best_score ?? 0);
+    if (bestScore < 100) {
+      return json({ eligible: false, required_score: 100, best_score: bestScore }, 403);
+    }
+  }
   await saveTelegramUser(env, user);
   const rows = await env.DB.prepare(`
     SELECT
@@ -108,21 +117,22 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     telegram_user_id: row.telegram_user_id,
     display_name: row.display_name,
     game_count: Number(row.game_count),
-    increased: row.previous_game_count !== null
+    increased: isAdmin && row.previous_game_count !== null
       && Number(row.game_count) > Number(row.previous_game_count),
   }));
 
-  // This is a shared admin-wide acknowledgement, not device-local state.
-  // The first successful table visit after a count increase shows it in green.
-  for (const player of players) {
-    await env.DB.prepare(`
-      INSERT INTO admin_game_stats_seen (telegram_user_id, game_count, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(telegram_user_id) DO UPDATE SET
-        game_count = excluded.game_count,
-        updated_at = CURRENT_TIMESTAMP
-    `).bind(player.telegram_user_id, player.game_count).run();
+  // Only the admin may acknowledge count changes; eligible regular players always see red.
+  if (isAdmin) {
+    for (const player of players) {
+      await env.DB.prepare(`
+        INSERT INTO admin_game_stats_seen (telegram_user_id, game_count, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(telegram_user_id) DO UPDATE SET
+          game_count = excluded.game_count,
+          updated_at = CURRENT_TIMESTAMP
+      `).bind(player.telegram_user_id, player.game_count).run();
+    }
   }
 
-  return json({ players });
+  return json({ players, isAdmin });
 }
