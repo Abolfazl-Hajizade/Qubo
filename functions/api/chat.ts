@@ -84,17 +84,6 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const user = await getUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
-  await saveTelegramUser(env, user);
-  const access = await checkEligibility(user, env);
-  if (!access.eligible) {
-    return json({
-      eligible: false,
-      best_score: access.bestScore,
-      required_score: MIN_SCORE,
-      error: "برای مشاهده و ارسال پیام در چت جهانی، امتیاز شما باید حداقل ۳۵ باشد.",
-    }, 403);
-  }
-
   const url = new URL(request.url);
   if (url.searchParams.has("unread_after")) {
     const rawSince = url.searchParams.get("unread_after") ?? "0";
@@ -112,6 +101,17 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
       latest_id: unread?.latest_id ?? 0,
       unread_count: unread?.unread_count ?? 0,
     });
+  }
+
+  await saveTelegramUser(env, user);
+  const access = await checkEligibility(user, env);
+  if (!access.eligible) {
+    return json({
+      eligible: false,
+      best_score: access.bestScore,
+      required_score: MIN_SCORE,
+      error: "برای مشاهده و ارسال پیام در چت جهانی، امتیاز شما باید حداقل ۳۵ باشد.",
+    }, 403);
   }
 
   const rows = await env.DB.prepare(`
