@@ -753,3 +753,31 @@ body:has(#records:not([hidden])) {
     padding-right: 16px;
   }
 }
+
+
+/* Compact private game-count rows: keep each count beside its player. */
+#records #records-private-games .records-private-list li {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  min-height: 38px;
+  padding: 7px 10px;
+}
+#records #records-private-games .records-private-list li::before {
+  content: none;
+  display: none;
+}
+#records #records-private-games .records-private-player {
+  color: #dfffea;
+  overflow-wrap: anywhere;
+}
+#records #records-private-games .records-private-count {
+  flex: 0 0 auto;
+  color: #ff5252;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+#records #records-private-games .records-private-count.is-increased {
+  color: #00ff72;
+}
