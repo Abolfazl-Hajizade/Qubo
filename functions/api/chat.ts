@@ -6,7 +6,7 @@ type TelegramUser = { id: number; first_name?: string; last_name?: string; usern
 type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
 type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number };
 const encoder = new TextEncoder();
-const MIN_SCORE = 29;
+const MIN_SCORE = 35;
 const ADMIN_ID = "7431567147";
 
 const MAX_MESSAGE_LENGTH = 500;
@@ -85,14 +85,16 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   await saveTelegramUser(env, user);
-  if (user.id !== ADMIN_ID) {
+  const access = await checkEligibility(user, env);
+  if (!access.eligible) {
     return json({
-      hidden: true,
-      message: "چت جهانی فعلاً مخفی است؛ پیام‌ها و اطلاعات در دیتابیس ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.",
-    });
+      eligible: false,
+      best_score: access.bestScore,
+      required_score: MIN_SCORE,
+      error: "برای مشاهده و ارسال پیام در چت جهانی، امتیاز شما باید حداقل ۳۵ باشد.",
+    }, 403);
   }
 
-  const access = await checkEligibility(user, env);
   const rows = await env.DB.prepare(`
     SELECT id, display_name, message, created_at,
       CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
