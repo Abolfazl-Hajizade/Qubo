@@ -389,20 +389,10 @@ async function syncCheckpoint(): Promise<boolean> {
     const remote = Number.isSafeInteger(data.checkpoint) && (data.checkpoint ?? -1) >= 0
       ? Math.floor((data.checkpoint ?? 0) / CHECKPOINT_STEP) * CHECKPOINT_STEP
       : 0;
-    // An existing server checkpoint is authoritative, including an intentional reset to zero.
-    // If no server row exists, preserve offline progress and upload it as before.
-    if (data.hasCheckpoint) {
-      if (checkpoint !== remote) {
-        checkpoint = remote;
-        saveJSON(PROGRESS_KEY, checkpoint);
-      }
-    } else {
-      const merged = Math.max(checkpoint, remote);
-      if (merged > checkpoint) {
-        checkpoint = merged;
-        saveJSON(PROGRESS_KEY, checkpoint);
-      }
-      if (merged > remote) await saveRemoteCheckpoint(merged);
+    // The server is authoritative. Unverified local-only progress is never uploaded as a checkpoint.
+    if (checkpoint !== remote) {
+      checkpoint = remote;
+      saveJSON(PROGRESS_KEY, checkpoint);
     }
     checkpointSyncReady = true;
     // Restore the account's verified best score after the temporary test run.
