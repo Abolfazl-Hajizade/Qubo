@@ -668,3 +668,88 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score b { 
 @media (prefers-reduced-motion: reduce) {
   #records::before, .records-signal-dot { animation: none; }
 }
+
+
+/* Full-bleed layout and compact leaderboard alignment for World Records. */
+html:has(#records:not([hidden])),
+body:has(#records:not([hidden])) {
+  min-height: 100%;
+  background: #010402 !important;
+}
+body:has(#records:not([hidden])) {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(0,255,105,.11), transparent 45%),
+    linear-gradient(180deg, #020805 0%, #050d08 48%, #010402 100%) !important;
+  background-attachment: fixed;
+}
+#app:has(#records:not([hidden])) {
+  min-height: 100dvh;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  justify-content: stretch;
+}
+#records.screen {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0 0 max(20px, env(safe-area-inset-bottom));
+  background: transparent;
+}
+#records .topbar {
+  width: 100%;
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
+}
+#records .home-inner {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+}
+#records .records-hero {
+  margin: 0 0 12px;
+  padding: 18px 14px 15px;
+  border-radius: 12px;
+}
+#records .records-title { margin: 8px 0 5px; }
+#records .records-description { margin: 8px auto 12px; }
+#records .records-board {
+  width: 100%;
+  border-radius: 12px;
+}
+#records .records-board-head,
+#records .records-list li {
+  grid-template-columns: 46px minmax(0, 1fr) 78px;
+  gap: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+#records .records-board-head {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  letter-spacing: .055em;
+  font-size: .61rem;
+}
+#records .records-list li {
+  min-height: 46px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  font-size: .8rem;
+}
+#records .records-list li::before { font-size: .76rem; }
+#records .records-me {
+  margin: 12px 0 18px;
+  padding: 10px 12px;
+}
+@media (min-width: 700px) {
+  #records .home-inner { padding-top: 22px; }
+  #records .records-board-head,
+  #records .records-list li {
+    grid-template-columns: 58px minmax(0, 1fr) 110px;
+    gap: 8px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
