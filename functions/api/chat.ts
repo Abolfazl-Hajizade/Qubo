@@ -93,15 +93,10 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const user = await getUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   await saveTelegramUser(env, user);
-  const access = await checkEligibility(user, env);
-  if (!access.eligible) return json({ eligible: false, best_score: access.bestScore, required_score: MIN_SCORE }, 403);
-  const rows = await env.DB.prepare(`
-    SELECT id, display_name, message,
-      strftime('%Y-%m-%dT%H:%M:%fZ', created_at) AS created_at,
-      CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
-    FROM chat_messages ORDER BY id DESC LIMIT 100
-  `).bind(user.id).all<ChatRow>();
-  return json({ eligible: true, best_score: access.bestScore, is_admin: user.id === ADMIN_ID, messages: rows.results.reverse() });
+  return json({
+    hidden: true,
+    message: "چت جهانی فعلاً مخفی است؛ پیام‌ها و اطلاعات در دیتابیس ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.",
+  });
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
