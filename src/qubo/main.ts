@@ -440,10 +440,10 @@ async function loadLeaderboard() {
   $('records-me').textContent = '';
   const initData = telegramWebApp?.initData;
   if (!initData) {
-    $('records-status').textContent = 'رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.';
+    $('records-status').textContent = 'Global records are not available yet. Player scores are being saved for a future release.';
     return;
   }
-  $('records-status').textContent = 'در حال دریافت رکوردها...';
+  $('records-status').textContent = 'Connecting to the global network...';
   try {
     const response = await fetch('/api/leaderboard', {
       headers: { 'x-telegram-init-data': initData },
@@ -455,28 +455,35 @@ async function loadLeaderboard() {
       me?: { rank: number; best_score: number } | null;
       error?: string;
     };
-    if (!response.ok) throw new Error(data.error || 'دریافت رکوردها ناموفق بود.');
+    if (!response.ok) throw new Error(data.error || 'Unable to load global records.');
     if (data.hidden) {
       $('records-status').textContent = data.message
-        || 'رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.';
+        || 'Global records are not available yet. Player scores are being saved for a future release.';
       return;
     }
     const entries = data.entries ?? [];
     if (!entries.length) {
-      $('records-status').textContent = 'هنوز رکوردی ثبت نشده است.';
+      $('records-status').textContent = 'No records have been registered yet.';
     } else {
-      $('records-status').textContent = 'رکوردهای برتر';
+      $('records-status').textContent = 'TOP PLAYERS';
       for (const entry of entries) {
         const item = document.createElement('li');
-        item.textContent = `${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
+        item.dataset.rank = String(entry.rank);
+        const player = document.createElement('span');
+        player.className = 'records-player';
+        player.textContent = entry.display_name;
+        const score = document.createElement('strong');
+        score.className = 'records-score';
+        score.textContent = numberFormat.format(entry.best_score);
+        item.append(player, score);
         if (data.me && entry.rank === data.me.rank) item.classList.add('is-me');
         list.append(item);
       }
     }
     if (data.me) $('records-me').textContent =
-      `رتبه Saber: #${data.me.rank} · بهترین رکورد: ${numberFormat.format(data.me.best_score)}`;
+      `YOUR RANK: #${data.me.rank} · BEST SCORE: ${numberFormat.format(data.me.best_score)}`;
   } catch (error) {
-    $('records-status').textContent = error instanceof Error ? error.message : 'دریافت رکوردها ناموفق بود.';
+    $('records-status').textContent = error instanceof Error ? error.message : 'Unable to load global records.';
   }
   // The endpoint is admin-only; regular players never receive or see this private panel.
   void loadPrivateGameStats(initData, $('records-me'));
@@ -502,7 +509,7 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
     section.id = 'records-private-games';
     const heading = document.createElement('h2');
     heading.className = 'section-label';
-    heading.textContent = 'Private · Games played';
+    heading.textContent = 'PRIVATE // GAMES PLAYED';
     const list = document.createElement('ol');
     list.className = 'records-list';
     for (const player of data.players ?? []) {
