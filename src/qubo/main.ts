@@ -521,7 +521,8 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
       const number = document.createElement('strong');
       number.className = 'records-private-count';
       number.textContent = numberFormat.format(count);
-      number.classList.toggle('is-increased', player.increased);
+      // Only the admin sees green for an increased count; every other eligible player sees red.
+      number.classList.toggle('is-increased', isChatAdmin() && player.increased);
       item.append(label, number);
       list.append(item);
     }
