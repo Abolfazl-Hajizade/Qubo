@@ -826,7 +826,7 @@ function drawBackdrop(index: number, time: number) {
     ['#26395f', '#f0a77d', '#f8d9a0'], // golden sunset (stage 150)
     ['#152b49', '#7199bd', '#e1efff'], // snow
     ['#351b2a', '#a84332', '#f29a50'], // volcano
-    ['#171b49', '#654c91', '#e7a8cf'], // meditation
+    ['#d68c72', '#e8b49a', '#f3d5ae'], // Tehran at golden hour
     ['#100f35', '#34316f', '#e04d9c'], // cyberpunk
     ['#080d2b', '#29265d', '#66518f'], // cosmic
     ['#17152f', '#554b85', '#b9a4d8'], // spirituality
@@ -1128,17 +1128,33 @@ function drawBackdrop(index: number, time: number) {
     ctx.strokeStyle='#ff8b3d';ctx.lineWidth=7;ctx.shadowColor='#ff542b';ctx.shadowBlur=18;ctx.beginPath();ctx.moveTo(174,218);ctx.quadraticCurveTo(160,285,118,355);ctx.moveTo(204,225);ctx.quadraticCurveTo(232,290,260,370);ctx.stroke();ctx.shadowBlur=0;
     ctx.fillStyle='#ffb45e';for(let i=0;i<28;i++){const x=(i*47+Math.sin(time*1.3+i)*15)%W;const y=160+((i*61-time*(12+i%4)*5+1800)%230);ctx.globalAlpha=.45+(i%4)*.13;ctx.beginPath();ctx.arc(x,y,1+i%3,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
   } else if (index === 8) {
-    // Serene meditation sanctuary with a symbolic seated silhouette and seven chakra lights.
-    const halo=ctx.createRadialGradient(180,190,8,180,190,155);halo.addColorStop(0,'rgba(255,220,246,0.48)');halo.addColorStop(1,'rgba(255,220,246,0)');
-    ctx.fillStyle=halo;ctx.fillRect(0,20,W,360);ctx.strokeStyle='rgba(246,220,255,0.42)';ctx.lineWidth=2;
-    for(let ring=0;ring<4;ring++){ctx.beginPath();ctx.arc(180,190,62+ring*22+Math.sin(time+ring)*2,0,Math.PI*2);ctx.stroke();}
-    ctx.fillStyle='#282344';ctx.beginPath();ctx.arc(180,151,18,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.moveTo(165,174);ctx.quadraticCurveTo(145,218,153,255);ctx.quadraticCurveTo(180,274,207,255);ctx.quadraticCurveTo(215,218,195,174);ctx.closePath();ctx.fill();
-    ctx.beginPath();ctx.ellipse(180,274,62,17,0,0,Math.PI*2);ctx.fill();
-    const chakra=['#ff5268','#ff9a45','#f6d65b','#70d58a','#55d8d8','#659bff','#c18aff'];
-    for(let i=0;i<chakra.length;i++){ctx.save();ctx.shadowColor=chakra[i];ctx.shadowBlur=15;ctx.fillStyle=chakra[i];ctx.beginPath();ctx.arc(180,252-i*18,5.5,0,Math.PI*2);ctx.fill();ctx.restore();}
-    ctx.fillStyle='rgba(255,226,246,0.8)';for(let i=0;i<24;i++){const x=(i*67+time*(i%2?3:-2)+W*3)%W;const y=65+(i*43)%260;ctx.beginPath();ctx.arc(x,y,1.2+(i%3)*.5,0,Math.PI*2);ctx.fill();}
-    ctx.fillStyle='#49385f';ctx.fillRect(0,385,W,35);
+    // Tehran at golden hour: Alborz foothills, Milad Tower, Azadi Tower and a dense city skyline.
+    const haze=ctx.createRadialGradient(180,205,12,180,205,220);
+    haze.addColorStop(0,'rgba(255,218,166,0.32)');haze.addColorStop(1,'rgba(255,190,145,0)');
+    ctx.fillStyle=haze;ctx.fillRect(0,70,W,H-70);
+    // Alborz mountain range in the distance.
+    ctx.fillStyle='#887b83';ctx.beginPath();ctx.moveTo(0,282);
+    ctx.lineTo(34,220);ctx.lineTo(55,244);ctx.lineTo(91,178);ctx.lineTo(119,225);
+    ctx.lineTo(151,190);ctx.lineTo(184,242);ctx.lineTo(224,183);ctx.lineTo(251,222);
+    ctx.lineTo(286,170);ctx.lineTo(316,226);ctx.lineTo(342,198);ctx.lineTo(360,232);
+    ctx.lineTo(360,350);ctx.lineTo(0,350);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(255,231,215,0.7)';ctx.beginPath();ctx.moveTo(77,203);ctx.lineTo(91,178);ctx.lineTo(105,203);ctx.lineTo(96,198);ctx.lineTo(90,188);ctx.lineTo(84,199);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#b17d75';ctx.beginPath();ctx.moveTo(0,275);ctx.lineTo(50,242);ctx.lineTo(94,266);ctx.lineTo(145,230);ctx.lineTo(195,267);ctx.lineTo(248,228);ctx.lineTo(302,263);ctx.lineTo(360,235);ctx.lineTo(360,370);ctx.lineTo(0,370);ctx.closePath();ctx.fill();
+    // Distant apartment blocks and warm windows.
+    for(let i=0;i<22;i++){const x=i*17-5;const h=34+((i*29)%65);ctx.fillStyle=i%3?'#665d68':'#79636a';ctx.fillRect(x,350-h,14,h+30);
+      ctx.fillStyle='rgba(255,219,154,0.72)';for(let wy=360-h;wy<375;wy+=12)if((i+wy)%3!==0)ctx.fillRect(x+4,wy,3,5);}
+    // Milad Tower, with its distinctive mast and broad observation pod.
+    ctx.save();ctx.strokeStyle='#514b5b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(272,351);ctx.lineTo(276,150);ctx.stroke();
+    ctx.fillStyle='#514b5b';ctx.beginPath();ctx.moveTo(263,224);ctx.lineTo(289,224);ctx.lineTo(284,235);ctx.lineTo(268,235);ctx.closePath();ctx.fill();
+    ctx.fillRect(271,236,10,5);ctx.beginPath();ctx.moveTo(272,150);ctx.lineTo(276,139);ctx.lineTo(279,150);ctx.fill();ctx.restore();
+    // Azadi Tower silhouette in the foreground.
+    ctx.fillStyle='#e4d0b2';ctx.beginPath();ctx.moveTo(48,370);ctx.lineTo(57,315);ctx.quadraticCurveTo(72,298,87,315);ctx.lineTo(96,370);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#8b6c70';ctx.beginPath();ctx.moveTo(61,321);ctx.quadraticCurveTo(72,306,83,321);ctx.lineTo(80,333);ctx.lineTo(64,333);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#d9c2a7';ctx.fillRect(69,333,7,37);
+    // City foreground and a few moving traffic lights.
+    ctx.fillStyle='#403d50';ctx.fillRect(0,370,W,50);
+    for(let i=0;i<28;i++){const x=(i*41+time*(i%2?5:-3)+W*4)%W;ctx.globalAlpha=.5+.3*Math.sin(time*2+i);ctx.fillStyle=i%2?'#ffd58c':'#ff9b78';ctx.fillRect(x,393+(i%3)*7,3,1.5);}
+    ctx.globalAlpha=1;
   } else if (index === 9) {
     // Cyberpunk skyline with neon architecture and animated light trails.
     for(let i=0;i<13;i++){const x=i*30-5,height=95+((i*43)%155);ctx.fillStyle=i%2?'#171a46':'#24204f';ctx.fillRect(x,360-height,26,height+60);ctx.fillStyle=i%3?'rgba(73,224,255,0.78)':'rgba(255,82,184,0.8)';for(let y=375-height;y<395;y+=18){if((i+y)%3)ctx.fillRect(x+6,y,3,7);}}
