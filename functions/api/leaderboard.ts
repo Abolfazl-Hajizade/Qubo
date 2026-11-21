@@ -119,26 +119,10 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   await saveTelegramUser(env, user);
   await saveTelegramUser(env, user);
 
-  const entries = await env.DB.prepare(`
-    WITH ranked AS (
-      SELECT telegram_user_id, display_name, best_score,
-        ROW_NUMBER() OVER (ORDER BY best_score DESC, updated_at ASC, telegram_user_id ASC) AS rank
-      FROM leaderboard
-    )
-    SELECT telegram_user_id, display_name, best_score, rank
-    FROM ranked ORDER BY rank LIMIT 50
-  `).bind().all<LeaderboardRow>();
-
-  const me = await env.DB.prepare(`
-    WITH ranked AS (
-      SELECT telegram_user_id, best_score,
-        ROW_NUMBER() OVER (ORDER BY best_score DESC, updated_at ASC, telegram_user_id ASC) AS rank
-      FROM leaderboard
-    )
-    SELECT rank, best_score FROM ranked WHERE telegram_user_id = ?
-  `).bind(user.id).first<{ rank: number; best_score: number }>();
-
-  return json({ entries: entries.results, me });
+  return json({
+    hidden: true,
+    message: "رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.",
+  });
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
