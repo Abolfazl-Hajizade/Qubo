@@ -418,50 +418,11 @@ async function submitScore(score: number) {
 }
 
 async function loadLeaderboard() {
-  // Keep the private statistics panel unique across repeated visits to Records.
   document.getElementById('records-private-games')?.remove();
-  const status = $('records-status');
-  const list = $('records-list');
-  const me = $('records-me');
-  list.replaceChildren();
-  me.textContent = '';
-
-  const initData = telegramWebApp?.initData;
-  if (!initData) {
-    status.textContent = 'Open the game from the Telegram bot to view the global leaderboard.';
-    return;
-  }
-
-  status.textContent = 'Loading leaderboard...';
-  try {
-    const response = await fetch('/api/leaderboard', {
-      headers: { 'x-telegram-init-data': initData },
-    });
-    const data = await response.json() as {
-      error?: string;
-      entries?: LeaderboardEntry[];
-      me?: { rank: number; best_score: number } | null;
-    };
-    if (!response.ok) throw new Error(data.error || 'Could not load leaderboard');
-    const entries = data.entries ?? [];
-    if (!entries.length) {
-      status.textContent = 'No scores yet. Be the first!';
-    } else {
-      status.textContent = 'Top 50 players';
-      for (const entry of entries) {
-        const item = document.createElement('li');
-        item.textContent = `${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
-        if (entry.telegram_user_id && data.me && entry.rank === data.me.rank) item.classList.add('is-me');
-        list.append(item);
-      }
-    }
-    me.textContent = data.me
-      ? `Your rank: #${data.me.rank}  |  Best: ${numberFormat.format(data.me.best_score)}`
-      : 'You have not submitted a score yet.';
-  } catch (error) {
-    status.textContent = error instanceof Error ? error.message : 'Error loading leaderboard';
-  }
-  void loadPrivateGameStats(initData, me);
+  $('records-list').replaceChildren();
+  $('records-me').textContent = '';
+  $('records-status').textContent =
+    'رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات و امتیازهای بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.';
 }
 
 async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
@@ -540,40 +501,18 @@ function stopChatPolling() {
 
 async function refreshChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
-  if (!dialog.open || chatLoading) return;
-  const initData = telegramWebApp?.initData;
-  if (!initData) {
-    $('chat-content').hidden = true;
-    $('chat-locked').hidden = false;
-    $('chat-required-score').textContent = 'لطفاً بازی را از طریق ربات تلگرام باز کنید.';
-    return;
-  }
-  chatLoading = true;
-  try {
-    const response = await fetch('/api/chat', { headers: { 'x-telegram-init-data': initData } });
-    const data = await response.json() as {
-      error?: string; eligible?: boolean; best_score?: number;
-      messages?: ChatMessage[]; is_admin?: boolean;
-    };
-    if (response.status === 403 && data.eligible === false) {
-      $('chat-content').hidden = true;
-      $('chat-locked').hidden = false;
-      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۹`;
-      stopChatPolling();
-      return;
-    }
-    if (!response.ok) throw new Error(data.error || 'ارتباط با چت برقرار نشد.');
-    $('chat-locked').hidden = true;
-    $('chat-content').hidden = false;
-    renderChatMessages(data.messages ?? [], data.is_admin === true);
-    $('chat-status').textContent = 'پیام‌ها هر ۲ ثانیه به‌روزرسانی می‌شوند';
-    startChatPolling();
-  } catch (error) {
-    $('chat-status').textContent = error instanceof Error ? error.message : 'خطا در دریافت پیام‌ها';
-    startChatPolling();
-  } finally {
-    chatLoading = false;
-  }
+  if (!dialog.open) return;
+  $('chat-content').hidden = true;
+  $('chat-locked').hidden = false;
+  const heading = $('chat-locked').querySelector('h3');
+  const message = $('chat-locked').querySelector('p');
+  const note = $('chat-locked').querySelector('strong');
+  if (heading) heading.textContent = 'چت جهانی فعلاً مخفی است';
+  if (message) message.textContent =
+    'پیام‌ها و اطلاعات چت فعلاً برای کاربران نمایش داده نمی‌شوند.';
+  if (note) note.textContent = 'اطلاعات ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.';
+  $('chat-required-score').textContent = '';
+  stopChatPolling();
 }
 
 function renderChatMessages(messages: ChatMessage[], isAdmin: boolean) {
