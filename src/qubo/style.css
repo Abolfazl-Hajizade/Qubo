@@ -781,3 +781,10 @@ body:has(#records:not([hidden])) {
 #records #records-private-games .records-private-count.is-increased {
   color: #00ff72;
 }
+
+
+/* Stage 180 (snow world): keep the page area outside the canvas in the same winter palette. */
+body:has(#game:not([hidden]))[data-qubo-backdrop="6"] {
+  background-color: #152b49;
+  background-image: linear-gradient(180deg, #152b49 0%, #7199bd 62%, #e1efff 100%);
+}
