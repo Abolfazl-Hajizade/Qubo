@@ -95,6 +95,25 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     }, 403);
   }
 
+  const url = new URL(request.url);
+  if (url.searchParams.has("unread_after")) {
+    const rawSince = url.searchParams.get("unread_after") ?? "0";
+    if (!/^\\d+$/.test(rawSince) || !Number.isSafeInteger(Number(rawSince))) {
+      return json({ error: "شناسه پیام نامعتبر است." }, 400);
+    }
+    const since = Number(rawSince);
+    const unread = await env.DB.prepare(`
+      SELECT COALESCE(MAX(id), 0) AS latest_id,
+        COALESCE(SUM(CASE WHEN id > ? AND telegram_user_id <> ? THEN 1 ELSE 0 END), 0) AS unread_count
+      FROM chat_messages
+    `).bind(since, user.id).first<{ latest_id: number; unread_count: number }>();
+    return json({
+      eligible: true,
+      latest_id: unread?.latest_id ?? 0,
+      unread_count: unread?.unread_count ?? 0,
+    });
+  }
+
   const rows = await env.DB.prepare(`
     SELECT id, display_name, message, created_at,
       CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
