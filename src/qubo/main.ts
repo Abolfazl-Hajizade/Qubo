@@ -533,6 +533,16 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
 }
 
 type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number };
+const CHAT_ADMIN_ID = '7431567147';
+function isChatAdmin() {
+  try {
+    const params = new URLSearchParams(telegramWebApp?.initData ?? '');
+    const user = JSON.parse(params.get('user') ?? 'null') as { id?: number } | null;
+    return String(user?.id ?? '') === CHAT_ADMIN_ID;
+  } catch {
+    return false;
+  }
+}
 let chatPollTimer: number | undefined;
 let chatLoading = false;
 
@@ -621,9 +631,39 @@ function renderChatMessages(messages: ChatMessage[]) {
     const body = document.createElement('p');
     body.textContent = message.message;
     item.append(top, body);
+    if (isChatAdmin()) {
+      const actions = document.createElement('div');
+      actions.className = 'chat-message-actions';
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'chat-delete-btn';
+      remove.textContent = 'حذف پیام';
+      remove.addEventListener('click', () => { void deleteChatMessage(message.id, remove); });
+      actions.append(remove);
+      item.append(actions);
+    }
     list.append(item);
   }
   list.scrollTop = previousScrollTop;
+}
+
+async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
+  const initData = telegramWebApp?.initData;
+  if (!initData || !isChatAdmin() || !Number.isSafeInteger(messageId) || messageId <= 0) return;
+  if (!window.confirm('این پیام برای همه حذف شود؟')) return;
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/chat?id=${encodeURIComponent(String(messageId))}`, {
+      method: 'DELETE',
+      headers: { 'x-telegram-init-data': initData },
+    });
+    const data = await response.json() as { error?: string };
+    if (!response.ok) throw new Error(data.error || 'حذف پیام ناموفق بود.');
+    await refreshChat();
+  } catch (error) {
+    button.disabled = false;
+    $('chat-status').textContent = error instanceof Error ? error.message : 'حذف پیام ناموفق بود.';
+  }
 }
 
 function showChatHidden(message: string) {
