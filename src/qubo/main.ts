@@ -28,6 +28,7 @@ let last = 0;
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
+let checkpointSyncQueue: Promise<boolean> = Promise.resolve(true);
 const rescueLaunchBuffer = createLaunchInputBuffer();
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
@@ -262,7 +263,7 @@ function finish() {
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
   saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
   history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
-  if (world.score > 0) void submitScore(world.score);
+  if (world.score > 0) void submitScoreAfterCheckpoints(world.score);
   $('best').textContent = String(best);
   $('end-summary').textContent = `${numberFormat.format(world.score)} ${world.score === 1 ? 'tower' : 'towers'} crossed`
     + (isBest && world.score > 0 ? '. A new best!' : `. Your best is ${numberFormat.format(best)}.`);
@@ -332,18 +333,35 @@ async function recordGameStart() {
   }
 }
 
-async function saveRemoteCheckpoint(value: number) {
+function saveRemoteCheckpoint(value: number): Promise<boolean> {
   const initData = telegramWebApp?.initData;
-  if (!initData) return;
-  try {
-    await fetch('/api/checkpoint', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initData, checkpoint: value }),
-    });
-  } catch {
-    // A failed sync must never interrupt the game; the local checkpoint remains saved.
-  }
+  if (!initData) return Promise.resolve(true);
+  // Serialize milestone writes so 60 can never reach the server before 30.
+  checkpointSyncQueue = checkpointSyncQueue.then(async (previousOk) => {
+    if (!previousOk) return false;
+    try {
+      const response = await fetch('/api/checkpoint', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ initData, checkpoint: value }),
+      });
+      if (!response.ok) {
+        if (response.status === 403) setStatus('Account blocked', 'This account cannot submit game progress.');
+        return false;
+      }
+      const data = await response.json() as { ok?: boolean; checkpoint?: number };
+      return data.ok === true && (data.checkpoint ?? value) >= value;
+    } catch {
+      // Do not send later milestones or a score after a failed checkpoint sync.
+      return false;
+    }
+  });
+  return checkpointSyncQueue;
+}
+
+async function submitScoreAfterCheckpoints(score: number) {
+  if (!await checkpointSyncQueue) return;
+  await submitScore(score);
 }
 
 async function syncCheckpoint() {
