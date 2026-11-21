@@ -454,6 +454,51 @@ async function loadLeaderboard() {
   } catch (error) {
     $('records-status').textContent = error instanceof Error ? error.message : 'دریافت رکوردها ناموفق بود.';
   }
+  // The endpoint is admin-only; regular players never receive or see this private panel.
+  void loadPrivateGameStats(initData, $('records-me'));
+}
+
+async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
+  document.getElementById('records-private-games')?.remove();
+  try {
+    const response = await fetch('/api/game-stats', {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    if (response.status === 403 || !response.ok) return;
+    const data = await response.json() as {
+      players?: Array<{
+        telegram_user_id: string;
+        display_name: string;
+        game_count: number;
+        increased: boolean;
+      }>;
+    };
+
+    const section = document.createElement('section');
+    section.id = 'records-private-games';
+    const heading = document.createElement('h2');
+    heading.className = 'section-label';
+    heading.textContent = 'Private · Games played';
+    const list = document.createElement('ol');
+    list.className = 'records-list';
+    for (const player of data.players ?? []) {
+      const item = document.createElement('li');
+      const count = Number(player.game_count);
+      const label = document.createElement('span');
+      label.textContent = `${player.display_name} — `;
+      const number = document.createElement('strong');
+      number.textContent = numberFormat.format(count);
+      number.style.color = player.increased ? '#168a3a' : '#000';
+      number.style.fontWeight = 'inherit';
+      const suffix = document.createTextNode(' games');
+      item.append(label, number, suffix);
+      list.append(item);
+    }
+    section.append(heading, list);
+    anchor.insertAdjacentElement('afterend', section);
+  } catch {
+    // Private statistics are optional and never affect the leaderboard.
+  }
 }
 
 let chatPollTimer: number | undefined;
