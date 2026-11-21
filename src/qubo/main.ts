@@ -111,8 +111,13 @@ $('guide-back-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDi
 $('leaderboard-btn').addEventListener('click', () => screens.records());
 $('chat-btn').addEventListener('click', openChat);
 $('chat-close-btn').addEventListener('click', () => ($('chat-dialog') as HTMLDialogElement).close());
-$('chat-dialog').addEventListener('close', stopChatPolling);
+$('chat-dialog').addEventListener('close', () => {
+  stopChatPolling();
+  void refreshChatUnread();
+});
 $('chat-form').addEventListener('submit', sendChatMessage);
+startUnreadChatPolling();
+window.addEventListener('pageshow', () => { void refreshChatUnread(); });
 
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
@@ -545,7 +550,65 @@ function isChatAdmin() {
   }
 }
 let chatPollTimer: number | undefined;
+let unreadPollTimer: number | undefined;
 let chatLoading = false;
+const CHAT_LAST_READ_KEY = 'qubo.global-chat.last-read';
+
+function getLastReadChatId(): number | null {
+  try {
+    const raw = localStorage.getItem(CHAT_LAST_READ_KEY);
+    if (raw === null) return null;
+    const value = Number(raw);
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  } catch { return null; }
+}
+
+function setLastReadChatId(id: number) {
+  if (!Number.isSafeInteger(id) || id < 0) return;
+  try { localStorage.setItem(CHAT_LAST_READ_KEY, String(id)); } catch { /* Storage may be unavailable. */ }
+}
+
+function updateChatUnreadBadge(count: number) {
+  const badge = $('chat-unread-badge');
+  badge.hidden = count <= 0;
+  badge.textContent = count > 99 ? '99+' : String(count);
+  badge.setAttribute('aria-label', count > 0 ? `${count} پیام خوانده‌نشده` : 'پیام جدیدی نیست');
+}
+
+async function refreshChatUnread() {
+  const dialog = $('chat-dialog') as HTMLDialogElement;
+  const initData = telegramWebApp?.initData;
+  if (!initData || dialog.open || !screens.is('home')) return;
+  try {
+    const lastRead = getLastReadChatId();
+    const response = await fetch(`/api/chat?unread_after=${encodeURIComponent(String(lastRead ?? 0))}`, {
+      headers: { 'x-telegram-init-data': initData },
+    });
+    const data = await response.json() as { latest_id?: number; unread_count?: number; eligible?: boolean };
+    if (!response.ok || !Number.isSafeInteger(data.latest_id)) return;
+    // On a player's first visit, establish a baseline instead of showing the entire chat history as new.
+    if (lastRead === null) {
+      setLastReadChatId(data.latest_id!);
+      updateChatUnreadBadge(0);
+      return;
+    }
+    updateChatUnreadBadge(data.unread_count ?? 0);
+  } catch {
+    // The badge is best-effort; a temporary network issue must not interrupt the game.
+  }
+}
+
+function startUnreadChatPolling() {
+  if (unreadPollTimer !== undefined) window.clearInterval(unreadPollTimer);
+  void refreshChatUnread();
+  unreadPollTimer = window.setInterval(() => { void refreshChatUnread(); }, 3_000);
+}
+
+function markChatMessagesRead(messages: ChatMessage[]) {
+  const latestId = messages.reduce((latest, message) => Math.max(latest, message.id), getLastReadChatId() ?? 0);
+  setLastReadChatId(latestId);
+  updateChatUnreadBadge(0);
+}
 
 function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
@@ -601,6 +664,7 @@ async function refreshChat() {
     form.hidden = false;
     form.style.display = '';
     renderChatMessages(data.messages ?? []);
+    markChatMessagesRead(data.messages ?? []);
     $('chat-status').textContent = 'چت هر ۲ ثانیه به‌روزرسانی می‌شود.';
     stopChatPolling();
     chatPollTimer = window.setInterval(() => { void refreshChat(); }, 2_000);
