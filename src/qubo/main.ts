@@ -1231,7 +1231,7 @@ function drawTower(w: number, len: number) {
 }
 
 // A distinct outline color for each environment, blended with the same visual transition as the backdrop.
-const cubeOutlineColors = ["#70d7ff","#ffd166","#8ee6a1","#55d9e8","#f4b56b","#8bb8ff","#d8efff","#ff784e","#e69cff","#55eaff","#b99aff","#ff9fcf","#c7a7ff","#f1d6a4","#ff8fb4","#b6c9ff","#79f1e1","#79ffad","#e5a8ff","#c8d9ff","#ffe1a0","#83e5c4","#a6dfff","#d6e1f0","#f5e9c8","#ffd18a"];
+const cubeOutlineColors = ["#70d7ff","#ffd166","#8ee6a1","#55d9e8","#f4b56b","#8bb8ff","#d8efff","#ff784e","#ffd27a","#55eaff","#b99aff","#ff9fcf","#c7a7ff","#f1d6a4","#ff8fb4","#b6c9ff","#79f1e1","#79ffad","#e5a8ff","#c8d9ff","#ffe1a0","#83e5c4","#a6dfff","#d6e1f0","#f5e9c8","#ffd18a"];
 function currentCubeOutlineColor() {
   if (world.score >= 800) return '#ff8fcf';
   const original = [190, 205, 216];
