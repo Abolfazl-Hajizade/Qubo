@@ -912,41 +912,45 @@ function drawBackdrop(index: number, time: number) {
     ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
     ctx.fill();
   } else if (index === 27) {
-    // Early dawn: the horizon begins to glow as the last cool night tones fade.
-    const sunrise = ctx.createRadialGradient(180, 258, 8, 180, 258, 205);
-    sunrise.addColorStop(0, 'rgba(255, 239, 190, 0.92)');
-    sunrise.addColorStop(0.28, 'rgba(255, 190, 137, 0.48)');
-    sunrise.addColorStop(1, 'rgba(255, 170, 130, 0)');
-    ctx.fillStyle = sunrise;
-    ctx.fillRect(0, 80, W, 300);
+    // Golden sunset scene, matching the world-28 gallery preview.
+    const sun = ctx.createRadialGradient(180, 215, 5, 180, 215, 105);
+    sun.addColorStop(0, 'rgba(255, 239, 190, .95)');
+    sun.addColorStop(.35, 'rgba(255, 190, 139, .5)');
+    sun.addColorStop(1, 'rgba(255, 165, 120, 0)');
+    ctx.fillStyle = sun;
+    ctx.fillRect(55, 90, 250, 250);
 
-    ctx.save();
-    ctx.shadowColor = 'rgba(255, 231, 185, 0.72)';
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = '#fff0c6';
+    ctx.fillStyle = '#b66f70';
     ctx.beginPath();
-    ctx.arc(180, 258, 23, 0, Math.PI * 2);
+    ctx.moveTo(0, 300);
+    ctx.lineTo(55, 265);
+    ctx.lineTo(115, 285);
+    ctx.lineTo(180, 245);
+    ctx.lineTo(245, 282);
+    ctx.lineTo(305, 255);
+    ctx.lineTo(360, 290);
+    ctx.lineTo(360, 420);
+    ctx.lineTo(0, 420);
     ctx.fill();
-    ctx.restore();
 
-    // Soft clouds catch the first warm light.
-    for (let i = 0; i < 5; i++) {
-      const x = (i * 91 + 22) % (W + 70) - 25;
-      const y = 145 + (i % 3) * 34;
-      ctx.fillStyle = i % 2 ? 'rgba(255, 221, 194, 0.28)' : 'rgba(255, 239, 218, 0.34)';
-      ctx.beginPath();
-      ctx.ellipse(x, y, 38 + (i % 2) * 12, 7 + (i % 3), 0, 0, Math.PI * 2);
-      ctx.fill();
+    ctx.fillStyle = '#76556a';
+    ctx.beginPath();
+    ctx.moveTo(0, 340);
+    ctx.lineTo(80, 305);
+    ctx.lineTo(145, 335);
+    ctx.lineTo(220, 292);
+    ctx.lineTo(290, 330);
+    ctx.lineTo(360, 300);
+    ctx.lineTo(360, 420);
+    ctx.lineTo(0, 420);
+    ctx.fill();
+
+    ctx.fillStyle = '#4b465d';
+    ctx.fillRect(0, 370, 360, 50);
+    for (let x = 0; x < 360; x += 18) {
+      ctx.fillStyle = 'rgba(255, 232, 190, .18)';
+      ctx.fillRect(x, 375 + (x % 3) * 5, 8, 2);
     }
-
-    // Distant hills silhouette, softened by the sunrise.
-    ctx.fillStyle = 'rgba(91, 104, 133, 0.24)';
-    ctx.beginPath();
-    ctx.moveTo(0, 345);
-    ctx.quadraticCurveTo(75, 309, 150, 344);
-    ctx.quadraticCurveTo(240, 313, W, 346);
-    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-    ctx.fill();
   } else if (index === 28) {
     // Fixed enchanted bioluminescent mushroom grove for the endless 800+ world.
     const haze = ctx.createRadialGradient(180, 230, 18, 180, 230, 245);
