@@ -31,6 +31,8 @@ export async function onRequestPost({
     return new Response("Invalid JSON", { status: 400 });
   }
 
+  const gameUrl = "https://qubo-c0i.pages.dev/qubo/index.html";
+
   if (update.inline_query) {
     const inlineResponse = await fetch(
       `https://api.telegram.org/bot${env.BOT_TOKEN}/answerInlineQuery`,
@@ -43,10 +45,20 @@ export async function onRequestPost({
             {
               type: "article",
               id: "qubo-game",
-              title: "🎮 Qubo",
-              description: "بازی Qubo فعلاً غیرفعال است",
+              title: "🎮 Play Qubo",
+              description: "بازی Qubo را در چت بفرست",
               input_message_content: {
-                message_text: "بازی Qubo فعلاً در دسترس نیست.",
+                message_text: "🎮 بیا Qubo بازی کنیم!",
+              },
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: "▶️ Play Qubo",
+                      web_app: { url: gameUrl },
+                    },
+                  ],
+                ],
               },
             },
           ],
@@ -78,7 +90,23 @@ export async function onRequestPost({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        text: "بازی Qubo فعلاً موقتاً غیرفعال است. لطفاً بعداً دوباره مراجعه کن.",
+        text: "به بازی Qubo خوش اومدی! برای شروع روی دکمه زیر بزن 👇",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "🎮 شروع بازی Qubo",
+                web_app: { url: gameUrl },
+              },
+            ],
+            [
+              {
+                text: "▶️ play Qubo",
+                web_app: { url: gameUrl },
+              },
+            ],
+          ],
+        },
       }),
     },
   );
