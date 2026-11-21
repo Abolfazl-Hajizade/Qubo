@@ -801,6 +801,13 @@ function draw() {
 /** Twenty-six animated worlds, changing every thirty points with a soft crossfade. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
+  // Preview-only visual override: ?previewWorld=28 renders the endless grove without changing score or physics.
+  const previewWorld = new URLSearchParams(window.location.search).get('previewWorld');
+  if (previewWorld === '28') {
+    document.body.dataset.quboBackdrop = '28';
+    drawBackdrop(28, time);
+    return;
+  }
   // Keep the page area behind the score/header in sync with the active canvas world.
   document.body.dataset.quboBackdrop = String(backdropIndex);
   if (backdropTransitionAge >= 1) {
