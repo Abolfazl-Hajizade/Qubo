@@ -105,15 +105,15 @@ type LeaderboardRow = {
 export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Leaderboard is not configured" }, 500);
   const auth = await getUser(request, env);
-  if (!auth.user) return json({ error: `اعتبار تلگرام تأیید نشد. کد خطا: ${auth.reason ?? "unknown"}` }, 401);
+  if (!auth.user) return json({ error: `Telegram authentication failed. Error: ${auth.reason ?? "unknown"}` }, 401);
   const user = auth.user;
-  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "This account is blocked from the game." }, 403);
   await saveTelegramUser(env, user);
 
   if (user.id !== "7431567147") {
     return json({
       hidden: true,
-      message: "رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات و امتیازهای بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.",
+      message: "Global records are not available yet. Player data and scores are being saved for a future release.",
     });
   }
 
