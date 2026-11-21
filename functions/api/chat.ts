@@ -1,15 +1,6 @@
-type Env = {
-  BOT_TOKEN?: string;
-  DB: {
-    prepare(query: string): {
-      bind(...values: unknown[]): {
-        first<T = Record<string, unknown>>(): Promise<T | null>;
-        all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
-        run(): Promise<unknown>;
-      };
-    };
-  };
-};
+import { isBanned, type D1Like } from "../_shared/bans";
+
+type Env = { BOT_TOKEN?: string; DB: D1Like };
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
 type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
@@ -92,6 +83,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Chat is not configured" }, 500);
   const user = await getUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   await saveTelegramUser(env, user);
   if (user.id !== ADMIN_ID) {
     return json({
@@ -123,6 +115,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   if (!body) return json({ error: "Invalid JSON" }, 400);
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   await saveTelegramUser(env, user);
   const access = await checkEligibility(user, env);
   if (!access.eligible) return json({ eligible: false, best_score: access.bestScore, required_score: MIN_SCORE }, 403);
@@ -152,6 +145,7 @@ export async function onRequestDelete({ request, env }: { request: Request; env:
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Chat is not configured" }, 500);
   const user = await getUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   await saveTelegramUser(env, user);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
   const rawId = new URL(request.url).searchParams.get("id");
