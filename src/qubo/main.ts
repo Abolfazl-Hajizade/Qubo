@@ -801,11 +801,11 @@ function draw() {
 /** Twenty-six animated worlds, changing every thirty points with a soft crossfade. */
 function drawWeatherBackground() {
   const time = performance.now() / 1000;
-  // Preview-only visual override: ?previewWorld=28 renders the endless grove without changing score or physics.
+  // Preview-only visual override: ?previewWorld=28 shows the 28th regular backdrop without changing score or physics.
   const previewWorld = new URLSearchParams(window.location.search).get('previewWorld');
   if (previewWorld === '28') {
-    document.body.dataset.quboBackdrop = '28';
-    drawBackdrop(28, time);
+    document.body.dataset.quboBackdrop = '27';
+    drawBackdrop(27, time);
     return;
   }
   // Keep the page area behind the score/header in sync with the active canvas world.
@@ -1180,7 +1180,7 @@ function drawClouds(time: number, color: string) {
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
 function isEndlessWorldVisual() {
-  return world.score >= 800 || new URLSearchParams(window.location.search).get('previewWorld') === '28';
+  return world.score >= 800;
 }
 
 function drawTower(w: number, len: number) {
