@@ -1,15 +1,6 @@
-type Env = {
-  BOT_TOKEN?: string;
-  DB: {
-    prepare(query: string): {
-      bind(...values: unknown[]): {
-        first<T = Record<string, unknown>>(): Promise<T | null>;
-        all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
-        run(): Promise<unknown>;
-      };
-    };
-  };
-};
+import { isBanned, banAndDeleteUser, type D1Like } from "../_shared/bans";
+
+type Env = { BOT_TOKEN?: string; DB: D1Like };
 
 type TelegramUser = {
   id: number;
@@ -116,6 +107,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const auth = await getUser(request, env);
   if (!auth.user) return json({ error: `اعتبار تلگرام تأیید نشد. کد خطا: ${auth.reason ?? "unknown"}` }, 401);
   const user = auth.user;
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   await saveTelegramUser(env, user);
 
   if (user.id !== "7431567147") {
@@ -156,6 +148,23 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   if (!Number.isSafeInteger(score) || typeof score !== "number" || score < 1 || score > 100_000) {
     return json({ error: "امتیاز نامعتبر است." }, 400);
   }
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
+  const [checkpointRow, bestRow] = await Promise.all([
+    env.DB.prepare("SELECT checkpoint FROM player_checkpoints WHERE telegram_user_id = ?")
+      .bind(user.id).first<{ checkpoint: number }>(),
+    env.DB.prepare("SELECT best_score FROM leaderboard WHERE telegram_user_id = ?")
+      .bind(user.id).first<{ best_score: number }>(),
+  ]);
+  const checkpoint = Math.max(
+    checkpointRow ? Number(checkpointRow.checkpoint) : 0,
+    bestRow ? Math.floor(Number(bestRow.best_score) / 30) * 30 : 0,
+  );
+  const scoreCheckpoint = Math.floor(score / 30) * 30;
+  if (scoreCheckpoint !== checkpoint) {
+    await banAndDeleteUser(env.DB, user.id, "score_checkpoint_mismatch:" + score + "->" + checkpoint);
+    return json({ banned: true, error: "امتیاز با checkpoint ثبت‌شده مطابقت نداشت؛ حساب مسدود شد." }, 403);
+  }
+  await saveTelegramUser(env, user);
 
   await env.DB.prepare(`
     INSERT INTO leaderboard (telegram_user_id, display_name, best_score, updated_at)
