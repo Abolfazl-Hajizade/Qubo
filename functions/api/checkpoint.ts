@@ -117,11 +117,11 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   }
 
   const current = await currentCheckpoint(env, user.id);
-  if (checkpoint <= current) {
+  if (checkpoint === current) {
     await saveTelegramUser(env, user);
     return json({ ok: true, duplicate: true, checkpoint: current });
   }
-  if (checkpoint !== current + CHECKPOINT_STEP) {
+  if (checkpoint < current || checkpoint !== current + CHECKPOINT_STEP) {
     await banAndDeleteUser(env.DB, user.id, `checkpoint_sequence:${current}->${checkpoint}`);
     return json({ banned: true, error: "ترتیب checkpoint نامعتبر بود؛ حساب مسدود شد." }, 403);
   }
