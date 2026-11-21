@@ -469,3 +469,202 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="28"] #game .topbar .score b { 
 @media (prefers-reduced-motion: reduce) {
   .chat-dialog::before { animation: none; }
 }
+
+
+/* Matrix terminal styling — isolated to the World Records screen. */
+#records {
+  --matrix: #00ff72;
+  --matrix-dim: #77c99a;
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 255, 105, .13), transparent 42%),
+    linear-gradient(180deg, #020805 0%, #050d08 48%, #010402 100%);
+  color: #e3ffec;
+}
+#records::before {
+  content: "01001010 10110100 00101101 11001010 01101001 10010110 00110101 01001101 10110010 00101011 11001001 01100101 10011010 00110100 01011101 10100110 00101110 11010010 01001011 10110101";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  padding: 16px 8px;
+  overflow: hidden;
+  color: var(--matrix);
+  opacity: .105;
+  font: 600 11px/2.35 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .38em;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  pointer-events: none;
+  text-shadow: 0 0 8px rgba(0,255,114,.55);
+  animation: records-code-drift 28s linear infinite;
+}
+#records .topbar {
+  background: rgba(1, 8, 4, .88);
+  color: #e3ffec;
+  border-bottom: 1px solid rgba(0,255,114,.2);
+  backdrop-filter: blur(14px);
+}
+#records .topbar .meta span { color: #78b98e; }
+#records .topbar .icon-btn {
+  color: var(--matrix);
+  background: rgba(0, 20, 9, .9);
+  border: 1px solid rgba(0,255,114,.3);
+  box-shadow: 0 0 14px rgba(0,255,114,.08);
+}
+#records .home-inner {
+  width: min(100% - 32px, 620px);
+  margin-inline: auto;
+  padding-top: 22px;
+}
+.records-hero {
+  position: relative;
+  padding: 24px 18px 20px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(0,255,114,.24);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(0,24,10,.88), rgba(2,12,7,.72));
+  box-shadow: 0 0 32px rgba(0,255,114,.08), inset 0 0 28px rgba(0,255,114,.035);
+  text-align: center;
+}
+.records-kicker {
+  color: #72d99a;
+  font: 700 .68rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .2em;
+}
+.records-title {
+  margin: 12px 0 8px;
+  color: #effff4;
+  font: 900 clamp(2rem, 9vw, 3.1rem)/.98 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: -.075em;
+  text-shadow: 0 0 18px rgba(0,255,114,.22);
+}
+.records-title span { color: var(--matrix); }
+.records-description {
+  max-width: 360px;
+  margin: 12px auto 16px;
+  color: #a4c9b0;
+  font-size: .88rem;
+  line-height: 1.6;
+}
+.records-signal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: #7be49f;
+  font: 700 .65rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .09em;
+}
+.records-signal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--matrix);
+  box-shadow: 0 0 10px var(--matrix);
+  animation: records-pulse 1.5s ease-in-out infinite;
+}
+.records-signal-divider { color: #386e4b; }
+.records-board {
+  overflow: hidden;
+  border: 1px solid rgba(0,255,114,.24);
+  border-radius: 16px;
+  background: rgba(0,8,4,.86);
+  box-shadow: 0 10px 32px rgba(0,0,0,.3), 0 0 24px rgba(0,255,114,.045);
+}
+.records-board-head {
+  display: grid;
+  grid-template-columns: 58px minmax(0,1fr) 94px;
+  gap: 8px;
+  padding: 13px 14px;
+  color: #69c98c;
+  background: rgba(0,255,114,.07);
+  border-bottom: 1px solid rgba(0,255,114,.2);
+  font: 700 .64rem/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .1em;
+}
+.records-board-head span:last-child { text-align: right; }
+#records-status {
+  margin: 0;
+  padding: 18px 14px;
+  color: #91bda0;
+  text-align: center;
+  font: 500 .82rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+#records .records-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#records .records-list li {
+  display: grid;
+  grid-template-columns: 58px minmax(0,1fr) 94px;
+  align-items: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid rgba(100,180,125,.12);
+  border-radius: 0;
+  background: transparent;
+  color: #dcf5e4;
+  box-shadow: none;
+  font: 600 .84rem/1.35 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+#records .records-list li::before {
+  content: "#" attr(data-rank);
+  color: #65c987;
+  font-weight: 800;
+}
+#records .records-list li .records-player {
+  overflow: hidden;
+  color: #dfffea;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#records .records-list li .records-score {
+  color: var(--matrix);
+  text-align: right;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(0,255,114,.2);
+}
+#records .records-list li:nth-child(1) {
+  background: linear-gradient(90deg, rgba(0,255,114,.12), rgba(0,255,114,.025));
+}
+#records .records-list li:nth-child(1)::before { color: #b6ffd0; text-shadow: 0 0 10px var(--matrix); }
+#records .records-list li.is-me {
+  background: rgba(0,255,114,.1);
+  box-shadow: inset 3px 0 0 var(--matrix);
+}
+#records .records-me {
+  margin: 16px 0 24px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0,255,114,.32);
+  border-radius: 12px;
+  background: rgba(0,25,10,.86);
+  color: #a6ffbd;
+  font: 700 .82rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,255,114,.06);
+}
+#records #records-private-games {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid rgba(0,255,114,.2);
+  border-radius: 14px;
+  background: rgba(0,10,4,.8);
+}
+#records #records-private-games .section-label {
+  color: #8cebaa;
+  font: 700 .85rem ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+@keyframes records-code-drift { from { transform: translateY(-2%); } to { transform: translateY(3%); } }
+@keyframes records-pulse { 50% { opacity: .35; box-shadow: 0 0 3px var(--matrix); } }
+@media (prefers-reduced-motion: reduce) {
+  #records::before, .records-signal-dot { animation: none; }
+}
