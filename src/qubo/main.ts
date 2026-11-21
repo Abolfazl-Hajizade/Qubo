@@ -511,18 +511,18 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
     heading.className = 'section-label';
     heading.textContent = 'PRIVATE // GAMES PLAYED';
     const list = document.createElement('ol');
-    list.className = 'records-list';
+    list.className = 'records-list records-private-list';
     for (const player of data.players ?? []) {
       const item = document.createElement('li');
       const count = Number(player.game_count);
       const label = document.createElement('span');
-      label.textContent = `${player.display_name} — `;
+      label.className = 'records-private-player';
+      label.textContent = player.display_name;
       const number = document.createElement('strong');
+      number.className = 'records-private-count';
       number.textContent = numberFormat.format(count);
-      number.style.color = player.increased ? '#168a3a' : '#000';
-      number.style.fontWeight = 'inherit';
-      const suffix = document.createTextNode(' games');
-      item.append(label, number, suffix);
+      number.classList.toggle('is-increased', player.increased);
+      item.append(label, number);
       list.append(item);
     }
     section.append(heading, list);
