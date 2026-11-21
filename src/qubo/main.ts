@@ -632,9 +632,9 @@ function showChatHidden(message: string) {
   const heading = $('chat-locked').querySelector('h3');
   const description = $('chat-locked').querySelector('p');
   const note = $('chat-locked').querySelector('strong');
-  if (heading) heading.textContent = 'چت جهانی فعلاً مخفی است';
+  if (heading) heading.textContent = 'دسترسی محدود به چت جهانی';
   if (description) description.textContent = message;
-  if (note) note.textContent = 'اطلاعات ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.';
+  if (note) note.textContent = 'برای مشاهده و ارسال پیام، امتیاز ۳۵ یا بالاتر لازم است.';
   $('chat-required-score').textContent = '';
   stopChatPolling();
 }
