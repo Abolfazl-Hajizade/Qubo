@@ -783,8 +783,116 @@ body:has(#records:not([hidden])) {
 }
 
 
-/* Stage 180 (snow world): keep the page area outside the canvas in the same winter palette. */
+/* Keep every active game's outer page backdrop on the exact Canvas palette. */
+body:has(#game:not([hidden]))[data-qubo-backdrop="0"] {
+  background-color: #101923;
+  background-image: linear-gradient(180deg, #101923 0%, #27333d 62%, #46515a 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="1"] {
+  background-color: #70c8f4;
+  background-image: linear-gradient(180deg, #70c8f4 0%, #d8f1ff 62%, #f5d98b 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="2"] {
+  background-color: #174c49;
+  background-image: linear-gradient(180deg, #174c49 0%, #68a77a 62%, #b5c88b 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="3"] {
+  background-color: #087da8;
+  background-image: linear-gradient(180deg, #087da8 0%, #61c5d2 62%, #d4f0d8 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="4"] {
+  background-color: #e99b52;
+  background-image: linear-gradient(180deg, #e99b52 0%, #f5d18a 62%, #b96e42 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="5"] {
+  background-color: #344b70;
+  background-image: linear-gradient(180deg, #344b70 0%, #839bb7 62%, #d5b98e 100%);
+}
 body:has(#game:not([hidden]))[data-qubo-backdrop="6"] {
   background-color: #152b49;
   background-image: linear-gradient(180deg, #152b49 0%, #7199bd 62%, #e1efff 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="7"] {
+  background-color: #351b2a;
+  background-image: linear-gradient(180deg, #351b2a 0%, #a84332 62%, #f29a50 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="8"] {
+  background-color: #171b49;
+  background-image: linear-gradient(180deg, #171b49 0%, #654c91 62%, #e7a8cf 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="9"] {
+  background-color: #100f35;
+  background-image: linear-gradient(180deg, #100f35 0%, #34316f 62%, #e04d9c 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="10"] {
+  background-color: #080d2b;
+  background-image: linear-gradient(180deg, #080d2b 0%, #29265d 62%, #66518f 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="11"] {
+  background-color: #17152f;
+  background-image: linear-gradient(180deg, #17152f 0%, #554b85 62%, #b9a4d8 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="12"] {
+  background-color: #17152f;
+  background-image: linear-gradient(180deg, #17152f 0%, #554b85 62%, #b9a4d8 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="13"] {
+  background-color: #72634e;
+  background-image: linear-gradient(180deg, #72634e 0%, #b7a184 62%, #e1cba6 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="14"] {
+  background-color: #381b3b;
+  background-image: linear-gradient(180deg, #381b3b 0%, #a34c78 62%, #f2a5b8 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="15"] {
+  background-color: #10172d;
+  background-image: linear-gradient(180deg, #10172d 0%, #343958 62%, #8b8cab 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="16"] {
+  background-color: #071d3d;
+  background-image: linear-gradient(180deg, #071d3d 0%, #126d9b 62%, #a3eaff 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="17"] {
+  background-color: #031d19;
+  background-image: linear-gradient(180deg, #031d19 0%, #07543e 62%, #1ab56b 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="18"] {
+  background-color: #080d2b;
+  background-image: linear-gradient(180deg, #080d2b 0%, #383b83 62%, #d2a8f2 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="19"] {
+  background-color: #333052;
+  background-image: linear-gradient(180deg, #333052 0%, #777ba7 62%, #d8d9f4 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="20"] {
+  background-color: #111b38;
+  background-image: linear-gradient(180deg, #111b38 0%, #45466e 62%, #d7b77e 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="21"] {
+  background-color: #164c45;
+  background-image: linear-gradient(180deg, #164c45 0%, #4f9b80 62%, #b2d8a1 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="22"] {
+  background-color: #101e40;
+  background-image: linear-gradient(180deg, #101e40 0%, #3e6598 62%, #b5d9f4 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="23"] {
+  background-color: #25334a;
+  background-image: linear-gradient(180deg, #25334a 0%, #778ba0 62%, #e9c994 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="24"] {
+  background-color: #193b58;
+  background-image: linear-gradient(180deg, #193b58 0%, #746a83 62%, #d8c6a1 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="25"] {
+  background-color: #211b46;
+  background-image: linear-gradient(180deg, #211b46 0%, #67539a 62%, #f0c78d 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="26"] {
+  background-color: #071426;
+  background-image: linear-gradient(180deg, #071426 0%, #101f3c 62%, #263b59 100%);
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
+  background-color: #26395f;
+  background-image: linear-gradient(180deg, #26395f 0%, #f0a77d 62%, #f8d9a0 100%);
 }
