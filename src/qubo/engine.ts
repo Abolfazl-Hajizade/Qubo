@@ -143,7 +143,7 @@ export function launch(w: World, options: LaunchOptions = {}) {
   const quickRearCornerHop = !options.skipRearCornerHop && !w.rescueLandingCooldown && fromScroll &&
     w.offset <= -w.towers[w.landed].w * 0.4;
   const quickFrontCornerHop = fromScroll &&
-    w.landingAge <= 0.35 &&
+    w.landingAge <= 0.7 &&
     w.offset >= w.towers[w.landed].w * 0.2;
   const inPlace = (w.phase === 'drop' && w.rescueAvailable) || quickRearCornerHop;
   const rescue = inPlace;
