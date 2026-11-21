@@ -437,18 +437,18 @@ async function loadLeaderboard() {
         || 'رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.';
       return;
     }
-    for (const entry of data.entries ?? []) {
-      const item = document.createElement('li');
-      const name = document.createElement('span');
-      name.textContent = `${entry.rank}. ${entry.display_name}`;
-      const score = document.createElement('strong');
-      score.textContent = numberFormat.format(entry.best_score);
-      item.append(name, score);
-      list.append(item);
+    const entries = data.entries ?? [];
+    if (!entries.length) {
+      $('records-status').textContent = 'هنوز رکوردی ثبت نشده است.';
+    } else {
+      $('records-status').textContent = 'رکوردهای برتر';
+      for (const entry of entries) {
+        const item = document.createElement('li');
+        item.textContent = `${entry.display_name} — ${numberFormat.format(entry.best_score)}`;
+        if (data.me && entry.rank === data.me.rank) item.classList.add('is-me');
+        list.append(item);
+      }
     }
-    $('records-status').textContent = (data.entries?.length ?? 0)
-      ? 'رکوردهای جهانی'
-      : 'هنوز رکوردی ثبت نشده است.';
     if (data.me) $('records-me').textContent =
       `رتبه Saber: #${data.me.rank} · بهترین رکورد: ${numberFormat.format(data.me.best_score)}`;
   } catch (error) {
@@ -501,7 +501,9 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
   }
 }
 
+type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number };
 let chatPollTimer: number | undefined;
+let chatLoading = false;
 
 function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
@@ -521,12 +523,13 @@ function stopChatPolling() {
 
 async function refreshChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
-  if (!dialog.open) return;
+  if (!dialog.open || chatLoading) return;
   const initData = telegramWebApp?.initData;
   if (!initData) {
     showChatHidden('چت جهانی فعلاً مخفی است؛ پیام‌ها و اطلاعات در دیتابیس ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.');
     return;
   }
+  chatLoading = true;
   try {
     const response = await fetch('/api/chat', {
       headers: { 'x-telegram-init-data': initData },
@@ -537,7 +540,7 @@ async function refreshChat() {
       eligible?: boolean;
       best_score?: number;
       required_score?: number;
-      messages?: Array<{ id: number; display_name: string; message: string; created_at: string; is_own: number }>;
+      messages?: ChatMessage[];
       error?: string;
     };
     if (!response.ok) throw new Error(data.error || 'دریافت چت ناموفق بود.');
@@ -549,31 +552,41 @@ async function refreshChat() {
     $('chat-content').hidden = false;
     const form = $('chat-form') as HTMLFormElement;
     form.hidden = true; // Saber has read-only access to the chat.
-    const messages = $('chat-messages');
-    messages.replaceChildren();
-    for (const entry of data.messages ?? []) {
-      const item = document.createElement('li');
-      const author = document.createElement('strong');
-      author.textContent = entry.display_name;
-      const body = document.createElement('span');
-      body.textContent = entry.message;
-      const time = document.createElement('time');
-      time.dateTime = entry.created_at;
-      const parsed = new Date(entry.created_at.replace(' ', 'T') + (entry.created_at.endsWith('Z') ? '' : 'Z'));
-      time.textContent = Number.isNaN(parsed.getTime()) ? entry.created_at : dateFormat.format(parsed);
-      item.append(author, body, time);
-      messages.append(item);
-    }
-    $('chat-status').textContent = data.eligible === false
-      ? `دسترسی مشاهده برای Saber فعال است · امتیاز فعلی: ${numberFormat.format(data.best_score ?? 0)}`
-      : 'نمایش فقط برای Saber فعال است.';
+    renderChatMessages(data.messages ?? []);
+    $('chat-status').textContent = 'نمایش زندهٔ چت برای Saber فعال است.';
     stopChatPolling();
     chatPollTimer = window.setInterval(() => { void refreshChat(); }, 10_000);
   } catch (error) {
     $('chat-content').hidden = false;
     $('chat-locked').hidden = true;
     $('chat-status').textContent = error instanceof Error ? error.message : 'دریافت چت ناموفق بود.';
+  } finally {
+    chatLoading = false;
   }
+}
+
+function renderChatMessages(messages: ChatMessage[]) {
+  const list = $('chat-messages');
+  const previousScrollTop = list.scrollTop;
+  list.replaceChildren();
+  for (const message of messages) {
+    const item = document.createElement('li');
+    item.className = message.is_own ? 'chat-message is-own' : 'chat-message';
+    const top = document.createElement('div');
+    top.className = 'chat-message-top';
+    const name = document.createElement('strong');
+    name.textContent = message.display_name;
+    const time = document.createElement('time');
+    const parsed = new Date(message.created_at);
+    time.textContent = Number.isNaN(parsed.getTime())
+      ? '' : new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(parsed);
+    top.append(name, time);
+    const body = document.createElement('p');
+    body.textContent = message.message;
+    item.append(top, body);
+    list.append(item);
+  }
+  list.scrollTop = previousScrollTop;
 }
 
 function showChatHidden(message: string) {
