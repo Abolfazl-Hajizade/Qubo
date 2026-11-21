@@ -1,4 +1,4 @@
-import { isBanned, type D1Like } from "../_shared/bans";
+import { banAndDeleteUser, isBanned, type D1Like } from "../_shared/bans";
 
 type Env = { BOT_TOKEN?: string; DB: D1Like };
 
@@ -118,9 +118,12 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
-  await saveTelegramUser(env, user);
   const access = await checkEligibility(user, env);
-  if (!access.eligible) return json({ eligible: false, best_score: access.bestScore, required_score: MIN_SCORE }, 403);
+  if (!access.eligible) {
+    await banAndDeleteUser(env.DB, user.id, "Attempted to send a global chat message with a score below 35");
+    return json({ banned: true, error: "به دلیل تلاش برای ارسال پیام در چت با امتیاز کمتر از ۳۵، حساب شما مسدود شد." }, 403);
+  }
+  await saveTelegramUser(env, user);
   if (typeof body.message !== "string") return json({ error: "متن پیام نامعتبر است." }, 400);
   const message = body.message.trim();
   if (!message || message.length > MAX_MESSAGE_LENGTH) return json({ error: "پیام باید بین ۱ تا ۵۰۰ کاراکتر باشد." }, 400);
