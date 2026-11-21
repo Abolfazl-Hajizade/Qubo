@@ -1179,6 +1179,10 @@ function drawClouds(time: number, color: string) {
 }
 
 /** A lattice tower standing up from the origin: crossed braces in each square bay. */
+function isEndlessWorldVisual() {
+  return world.score >= 800 || new URLSearchParams(window.location.search).get('previewWorld') === '28';
+}
+
 function drawTower(w: number, len: number) {
   ctx.beginPath();
   ctx.rect(-w / 2, -len, w, len + 40);
@@ -1190,7 +1194,7 @@ function drawTower(w: number, len: number) {
     flip = !flip;
   }
   ctx.lineWidth = 7;
-  if (world.score >= 800) {
+  if (isEndlessWorldVisual()) {
     ctx.strokeStyle = '#050505';
     ctx.shadowBlur = 0;
   }
@@ -1200,7 +1204,7 @@ function drawTower(w: number, len: number) {
 // A distinct outline color for each environment, blended with the same visual transition as the backdrop.
 const cubeOutlineColors = ["#70d7ff","#ffd166","#8ee6a1","#55d9e8","#f4b56b","#8bb8ff","#d8efff","#ff784e","#e69cff","#55eaff","#b99aff","#ff9fcf","#c7a7ff","#f1d6a4","#ff8fb4","#b6c9ff","#79f1e1","#79ffad","#e5a8ff","#c8d9ff","#ffe1a0","#83e5c4","#a6dfff","#d6e1f0","#f5e9c8","#ffd18a"];
 function currentCubeOutlineColor() {
-  if (world.score >= 800) return '#ff8fcf';
+  if (isEndlessWorldVisual()) return '#ff8fcf';
   const original = [190, 205, 216];
   const colorAt = (index: number) => index === 0
     ? original
@@ -1229,7 +1233,7 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   ctx.rotate(rad(tilt));
   // Scale around the cube centre; keep all physics coordinates independent from this effect.
   ctx.scale(scaleX, scaleY);
-  const endlessWorld = world.score >= 800;
+  const endlessWorld = isEndlessWorldVisual();
   if (endlessWorld) {
     const rainbowCube = ctx.createLinearGradient(-CUBE / 2, -CUBE / 2, CUBE / 2, CUBE / 2);
     ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
