@@ -87,7 +87,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const url = new URL(request.url);
   if (url.searchParams.has("unread_after")) {
     const rawSince = url.searchParams.get("unread_after") ?? "0";
-    if (!/^\\d+$/.test(rawSince) || !Number.isSafeInteger(Number(rawSince))) {
+    if (!/^\d+$/.test(rawSince) || !Number.isSafeInteger(Number(rawSince))) {
       return json({ error: "شناسه پیام نامعتبر است." }, 400);
     }
     const since = Number(rawSince);
