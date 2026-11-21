@@ -117,12 +117,25 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!auth.user) return json({ error: `اعتبار تلگرام تأیید نشد. کد خطا: ${auth.reason ?? "unknown"}` }, 401);
   const user = auth.user;
   await saveTelegramUser(env, user);
-  await saveTelegramUser(env, user);
 
-  return json({
-    hidden: true,
-    message: "رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.",
-  });
+  if (user.id !== "7431567147") {
+    return json({
+      hidden: true,
+      message: "رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات و امتیازهای بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.",
+    });
+  }
+
+  const rows = await env.DB.prepare(
+    "SELECT telegram_user_id, display_name, best_score FROM leaderboard ORDER BY best_score DESC, updated_at ASC LIMIT 100"
+  ).bind().all<{ telegram_user_id: string; display_name: string; best_score: number }>();
+  const entries = (rows.results ?? []).map((row, index) => ({
+    rank: index + 1,
+    telegram_user_id: row.telegram_user_id,
+    display_name: row.display_name,
+    best_score: Number(row.best_score) || 0,
+  }));
+  const me = entries.find((entry) => entry.telegram_user_id === user.id) ?? null;
+  return json({ hidden: false, entries, me });
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
