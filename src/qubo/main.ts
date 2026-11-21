@@ -823,7 +823,7 @@ function drawBackdrop(index: number, time: number) {
     ['#174c49', '#68a77a', '#b5c88b'], // forest
     ['#087da8', '#61c5d2', '#d4f0d8'], // sea
     ['#e99b52', '#f5d18a', '#b96e42'], // desert
-    ['#344b70', '#839bb7', '#d5b98e'], // city
+    ['#26395f', '#f0a77d', '#f8d9a0'], // golden sunset (stage 150)
     ['#152b49', '#7199bd', '#e1efff'], // snow
     ['#351b2a', '#a84332', '#f29a50'], // volcano
     ['#171b49', '#654c91', '#e7a8cf'], // meditation
@@ -1070,21 +1070,45 @@ function drawBackdrop(index: number, time: number) {
       ctx.fillRect(x, y, 2, 2);
     }
   } else if (index === 5) {
-    // Big city: distant skyline, lit windows and a few slow-moving clouds.
-    drawClouds(time * 0.45, 'rgba(240,245,255,0.35)');
-    for (let i = 0; i < 12; i++) {
-      const x = i * 34 - 8;
-      const height = 75 + ((i * 47) % 105);
-      ctx.fillStyle = i % 2 ? '#53677f' : '#40566f';
-      ctx.fillRect(x, 365 - height, 30, height + 55);
-      ctx.fillStyle = 'rgba(255,225,150,0.72)';
-      for (let wy = 380 - height; wy < 405; wy += 17) {
-        for (let wx = x + 7; wx < x + 27; wx += 12) {
-          if ((i + wx + wy) % 3 !== 0) ctx.fillRect(wx, wy, 4, 6);
-        }
-      }
+    // Golden sunset: keep the stage-150 scene identical to the gallery's world 28.
+    const sun = ctx.createRadialGradient(180, 215, 5, 180, 215, 105);
+    sun.addColorStop(0, 'rgba(255, 239, 190, .95)');
+    sun.addColorStop(.35, 'rgba(255, 190, 139, .5)');
+    sun.addColorStop(1, 'rgba(255, 165, 120, 0)');
+    ctx.fillStyle = sun;
+    ctx.fillRect(55, 90, 250, 250);
+
+    ctx.fillStyle = '#b66f70';
+    ctx.beginPath();
+    ctx.moveTo(0, 300);
+    ctx.lineTo(55, 265);
+    ctx.lineTo(115, 285);
+    ctx.lineTo(180, 245);
+    ctx.lineTo(245, 282);
+    ctx.lineTo(305, 255);
+    ctx.lineTo(360, 290);
+    ctx.lineTo(360, 420);
+    ctx.lineTo(0, 420);
+    ctx.fill();
+
+    ctx.fillStyle = '#76556a';
+    ctx.beginPath();
+    ctx.moveTo(0, 340);
+    ctx.lineTo(80, 305);
+    ctx.lineTo(145, 335);
+    ctx.lineTo(220, 292);
+    ctx.lineTo(290, 330);
+    ctx.lineTo(360, 300);
+    ctx.lineTo(360, 420);
+    ctx.lineTo(0, 420);
+    ctx.fill();
+
+    ctx.fillStyle = '#4b465d';
+    ctx.fillRect(0, 370, 360, 50);
+    for (let x = 0; x < 360; x += 18) {
+      ctx.fillStyle = 'rgba(255, 232, 190, .18)';
+      ctx.fillRect(x, 375 + (x % 3) * 5, 8, 2);
     }
-    ctx.fillStyle = '#34485e'; ctx.fillRect(0, 405, W, 15);
   } else if (index === 6) {
     // Snowy mountains: layered alpine peaks and gently falling snow.
     ctx.fillStyle = 'rgba(255,255,255,0.72)'; ctx.beginPath(); ctx.arc(278,72,22,0,Math.PI*2); ctx.fill();
