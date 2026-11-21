@@ -58,6 +58,7 @@ telegramWebApp?.expand?.();
 let checkpointSyncReady = !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
 let waitingForCheckpointSync = false;
+let checkpointSyncFailed = false;
 
 // Apply the same no-Service-Worker policy used on Telegram mobile to Telegram Desktop too.
 // Desktop's WebView user agent is not always branded, but Mini App launch data is in the URL fragment.
@@ -204,11 +205,11 @@ function backdropForScore(score: number) {
 }
 
 function start() {
-  if (telegramWebApp?.initData && !checkpointSyncReady) {
+  if (telegramWebApp?.initData && !checkpointSyncReady && !checkpointSyncFailed) {
     if (!waitingForCheckpointSync) {
       waitingForCheckpointSync = true;
       setStatus('Syncing progress...', 'Checking your saved checkpoint before starting');
-      void checkpointInitialization.then(() => { waitingForCheckpointSync = false; start(); });
+      void checkpointInitialization.then((ok) => { waitingForCheckpointSync = false; checkpointSyncFailed = !ok; start(); });
     }
     return;
   }
