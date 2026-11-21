@@ -223,3 +223,5 @@ Expert uses the bank's "diabolical" puzzles with ratings up to 7.0. Harder ones 
 ## Qubo deployment
 
 The Qubo game and its leaderboard are built from the `master` branch and published through Cloudflare Pages.
+
+<!-- Trigger production rebuild after configuring the Pages BOT_TOKEN secret. -->
