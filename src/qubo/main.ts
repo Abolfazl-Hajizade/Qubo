@@ -600,9 +600,9 @@ async function refreshChat() {
     form.hidden = false;
     form.style.display = '';
     renderChatMessages(data.messages ?? []);
-    $('chat-status').textContent = 'چت جهانی فعال است؛ فقط بازیکنان با امتیاز ۳۵ یا بالاتر دسترسی دارند.';
+    $('chat-status').textContent = 'چت هر ۲ ثانیه به‌روزرسانی می‌شود.';
     stopChatPolling();
-    chatPollTimer = window.setInterval(() => { void refreshChat(); }, 10_000);
+    chatPollTimer = window.setInterval(() => { void refreshChat(); }, 2_000);
   } catch (error) {
     $('chat-content').hidden = false;
     $('chat-locked').hidden = true;
