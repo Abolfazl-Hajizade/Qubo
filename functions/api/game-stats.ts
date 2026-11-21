@@ -1,15 +1,6 @@
-type Env = {
-  BOT_TOKEN?: string;
-  DB: {
-    prepare(query: string): {
-      bind(...values: unknown[]): {
-        first<T = Record<string, unknown>>(): Promise<T | null>;
-        all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
-        run(): Promise<unknown>;
-      };
-    };
-  };
-};
+import { isBanned, type D1Like } from "../_shared/bans";
+
+type Env = { BOT_TOKEN?: string; DB: D1Like };
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
 type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
@@ -79,6 +70,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   catch { return json({ error: "Invalid JSON" }, 400); }
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   await saveTelegramUser(env, user);
 
   await env.DB.prepare(`
@@ -97,6 +89,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Game statistics are not configured" }, 500);
   const user = await authenticate(request.headers.get("x-telegram-init-data") ?? "", env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   if (user.id !== ADMIN_ID) return json({ error: "Forbidden" }, 403);
   await saveTelegramUser(env, user);
   const rows = await env.DB.prepare(`
