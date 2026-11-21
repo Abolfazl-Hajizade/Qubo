@@ -318,14 +318,6 @@ function loop(now: number) {
   raf = requestAnimationFrame(loop);
 }
 
-interface LeaderboardEntry {
-  rank: number;
-  display_name: string;
-  best_score: number;
-  telegram_user_id: string;
-}
-
-
 async function recordGameStart() {
   const initData = telegramWebApp?.initData;
   if (!initData) return;
@@ -425,54 +417,7 @@ async function loadLeaderboard() {
     'رکوردهای جهانی فعلاً نمایش داده نمی‌شوند؛ اطلاعات و امتیازهای بازیکنان ذخیره می‌شود و بعداً قابل مشاهده خواهد بود.';
 }
 
-async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
-  try {
-    const response = await fetch('/api/game-stats', {
-      headers: { 'x-telegram-init-data': initData },
-    });
-    // The endpoint is admin-only; ordinary players simply won't see this private section.
-    if (response.status === 403 || !response.ok) return;
-    const data = await response.json() as {
-      players?: Array<{
-        telegram_user_id: string;
-        display_name: string;
-        game_count: number;
-        increased: boolean;
-      }>;
-    };
-
-    const section = document.createElement('section');
-    section.id = 'records-private-games';
-    const heading = document.createElement('h2');
-    heading.className = 'section-label';
-    heading.textContent = 'Private · Games played';
-    const list = document.createElement('ol');
-    list.className = 'records-list';
-    for (const player of data.players ?? []) {
-      const item = document.createElement('li');
-      const count = Number(player.game_count);
-
-      const label = document.createElement('span');
-      label.textContent = `${player.display_name} — `;
-      const number = document.createElement('strong');
-      number.textContent = numberFormat.format(count);
-      number.style.color = player.increased ? '#168a3a' : '#000';
-      number.style.fontWeight = 'inherit';
-      const suffix = document.createTextNode(' games');
-      item.append(label, number, suffix);
-      list.append(item);
-    }
-    section.append(heading, list);
-    document.getElementById('records-private-games')?.remove();
-    anchor.insertAdjacentElement('afterend', section);
-  } catch {
-    // Private statistics are optional and never affect the public leaderboard.
-  }
-}
-
-type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number };
 let chatPollTimer: number | undefined;
-let chatLoading = false;
 
 function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
@@ -483,15 +428,6 @@ function openChat() {
   $('chat-status').textContent = 'در حال اتصال به چت...';
   // Contact the server only while the chat dialog is open.
   void refreshChat();
-}
-
-function startChatPolling() {
-  const dialog = $('chat-dialog') as HTMLDialogElement;
-  if (!dialog.open || chatPollTimer !== undefined) return;
-  chatPollTimer = window.setInterval(() => {
-    if (dialog.open) void refreshChat();
-    else stopChatPolling();
-  }, 2000);
 }
 
 function stopChatPolling() {
@@ -513,61 +449,6 @@ async function refreshChat() {
   if (note) note.textContent = 'اطلاعات ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.';
   $('chat-required-score').textContent = '';
   stopChatPolling();
-}
-
-function renderChatMessages(messages: ChatMessage[], isAdmin: boolean) {
-  const list = $('chat-messages');
-  const previousScrollTop = list.scrollTop;
-  list.replaceChildren();
-  for (const message of messages) {
-    const item = document.createElement('li');
-    item.className = message.is_own ? 'chat-message is-own' : 'chat-message';
-    const top = document.createElement('div');
-    top.className = 'chat-message-top';
-    const name = document.createElement('strong');
-    name.textContent = message.display_name;
-    const time = document.createElement('time');
-    const parsed = new Date(message.created_at);
-    time.textContent = Number.isNaN(parsed.getTime())
-      ? '' : new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(parsed);
-    top.append(name, time);
-    const body = document.createElement('p');
-    body.textContent = message.message;
-    item.append(top, body);
-    if (isAdmin) {
-      const actions = document.createElement('div');
-      actions.className = 'chat-message-actions';
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'chat-delete-btn';
-      remove.textContent = 'حذف پیام';
-      remove.setAttribute('aria-label', `حذف پیام ${message.display_name}`);
-      remove.addEventListener('click', () => { void deleteChatMessage(message.id, remove); });
-      actions.append(remove);
-      item.append(actions);
-    }
-    list.append(item);
-  }
-  list.scrollTop = previousScrollTop;
-}
-
-async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
-  const initData = telegramWebApp?.initData;
-  if (!initData || !Number.isSafeInteger(messageId) || messageId <= 0) return;
-  if (!window.confirm('این پیام برای همه حذف شود؟')) return;
-  button.disabled = true;
-  try {
-    const response = await fetch(`/api/chat?id=${encodeURIComponent(String(messageId))}`, {
-      method: 'DELETE',
-      headers: { 'x-telegram-init-data': initData },
-    });
-    const data = await response.json() as { error?: string };
-    if (!response.ok) throw new Error(data.error || 'حذف پیام ناموفق بود.');
-    await refreshChat();
-  } catch (error) {
-    $('chat-status').textContent = error instanceof Error ? error.message : 'حذف پیام ناموفق بود.';
-    button.disabled = false;
-  }
 }
 
 async function sendChatMessage(event: SubmitEvent) {
