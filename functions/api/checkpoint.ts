@@ -1,19 +1,15 @@
+import { isBanned, banAndDeleteUser, type D1Like } from "../_shared/bans";
+
 type Env = {
   BOT_TOKEN?: string;
-  DB: {
-    prepare(query: string): {
-      bind(...values: unknown[]): {
-        first<T = Record<string, unknown>>(): Promise<T | null>;
-        run(): Promise<unknown>;
-      };
-    };
-  };
+  DB: D1Like;
 };
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
 type AuthenticatedUser = { id: string; username: string | null; firstName: string | null; lastName: string | null };
 
 const encoder = new TextEncoder();
+const CHECKPOINT_STEP = 30;
 
 function hex(bytes: ArrayBuffer): string {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -80,15 +76,26 @@ async function getAuthenticatedUser(request: Request, env: Env): Promise<Authent
   return authenticate(initData, env.BOT_TOKEN);
 }
 
+async function currentCheckpoint(env: Env, userId: string): Promise<number> {
+  const [saved, score] = await Promise.all([
+    env.DB.prepare("SELECT checkpoint FROM player_checkpoints WHERE telegram_user_id = ?")
+      .bind(userId).first<{ checkpoint: number }>(),
+    env.DB.prepare("SELECT best_score FROM leaderboard WHERE telegram_user_id = ?")
+      .bind(userId).first<{ best_score: number }>(),
+  ]);
+  const checkpointFromScore = score ? Math.floor(Number(score.best_score) / CHECKPOINT_STEP) * CHECKPOINT_STEP : 0;
+  return Math.max(saved ? Number(saved.checkpoint) : 0, checkpointFromScore);
+}
+
 export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
   if (!env.BOT_TOKEN || !env.DB) return json({ error: "Checkpoint sync is not configured" }, 500);
   const user = await getAuthenticatedUser(request, env);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
+
+  const checkpoint = await currentCheckpoint(env, user.id);
   await saveTelegramUser(env, user);
-  const row = await env.DB.prepare(
-    "SELECT checkpoint FROM player_checkpoints WHERE telegram_user_id = ?"
-  ).bind(user.id).first<{ checkpoint: number }>();
-  return json({ checkpoint: row?.checkpoint ?? 0, hasCheckpoint: row !== null });
+  return json({ checkpoint, hasCheckpoint: true });
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
@@ -101,24 +108,34 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   }
   const user = await authenticate(String(body.initData ?? ""), env.BOT_TOKEN);
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
-  await saveTelegramUser(env, user);
+  if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
 
   const checkpoint = body.checkpoint;
   if (typeof checkpoint !== "number" || !Number.isSafeInteger(checkpoint)
-      || checkpoint < 0 || checkpoint > 100_000 || checkpoint % 30 !== 0) {
+      || checkpoint < 0 || checkpoint > 100_000 || checkpoint % CHECKPOINT_STEP !== 0) {
     return json({ error: "Checkpoint نامعتبر است." }, 400);
+  }
+
+  const current = await currentCheckpoint(env, user.id);
+  if (checkpoint <= current) {
+    await saveTelegramUser(env, user);
+    return json({ ok: true, duplicate: true, checkpoint: current });
+  }
+  if (checkpoint !== current + CHECKPOINT_STEP) {
+    await banAndDeleteUser(env.DB, user.id, `checkpoint_sequence:${current}->${checkpoint}`);
+    return json({ banned: true, error: "ترتیب checkpoint نامعتبر بود؛ حساب مسدود شد." }, 403);
   }
 
   await env.DB.prepare(`
     INSERT INTO player_checkpoints (telegram_user_id, checkpoint, updated_at)
     VALUES (?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(telegram_user_id) DO UPDATE SET
-      checkpoint = MAX(player_checkpoints.checkpoint, excluded.checkpoint),
-      updated_at = CASE
-        WHEN excluded.checkpoint > player_checkpoints.checkpoint THEN CURRENT_TIMESTAMP
-        ELSE player_checkpoints.updated_at
-      END
+      checkpoint = excluded.checkpoint,
+      updated_at = CURRENT_TIMESTAMP
   `).bind(user.id, checkpoint).run();
 
-  return json({ ok: true });
+  const confirmed = await currentCheckpoint(env, user.id);
+  if (confirmed < checkpoint) return json({ error: "Checkpoint ذخیره نشد؛ دوباره همگام‌سازی کن." }, 503);
+  await saveTelegramUser(env, user);
+  return json({ ok: true, checkpoint: confirmed });
 }
