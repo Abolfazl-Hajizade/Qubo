@@ -28,6 +28,7 @@ let last = 0;
 let paused = false;
 let started = false;
 let pendingLaunchUntil = 0;
+let checkpointSyncQueue: Promise<boolean> = Promise.resolve(true);
 const rescueLaunchBuffer = createLaunchInputBuffer();
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
@@ -54,6 +55,10 @@ type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => voi
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
+let checkpointSyncReady = !telegramWebApp?.initData;
+let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
+let waitingForCheckpointSync = false;
+let checkpointSyncFailed = false;
 
 // Apply the same no-Service-Worker policy used on Telegram mobile to Telegram Desktop too.
 // Desktop's WebView user agent is not always branded, but Mini App launch data is in the URL fragment.
@@ -65,7 +70,7 @@ if (isTelegramWebView && 'serviceWorker' in navigator) {
     .catch(() => { /* service workers may be unavailable in embedded browsers */ });
 }
 resetSaberLocalHistory();
-void syncCheckpoint();
+checkpointInitialization = syncCheckpoint();
 
 function resetSaberLocalHistory() {
   // One-time local cleanup for Saber only; Telegram's signed initData identifies the account.
@@ -200,6 +205,14 @@ function backdropForScore(score: number) {
 }
 
 function start() {
+  if (telegramWebApp?.initData && !checkpointSyncReady && !checkpointSyncFailed) {
+    if (!waitingForCheckpointSync) {
+      waitingForCheckpointSync = true;
+      setStatus('Syncing progress...', 'Checking your saved checkpoint before starting');
+      void checkpointInitialization.then((ok) => { waitingForCheckpointSync = false; checkpointSyncFailed = !ok; start(); });
+    }
+    return;
+  }
   if (endDialog.open) endDialog.close();
   world = createWorld(Math.random, checkpoint);
   paused = false;
@@ -262,7 +275,7 @@ function finish() {
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
   saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
   history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
-  if (world.score > 0) void submitScore(world.score);
+  if (world.score > 0) void submitScoreAfterCheckpoints(world.score);
   $('best').textContent = String(best);
   $('end-summary').textContent = `${numberFormat.format(world.score)} ${world.score === 1 ? 'tower' : 'towers'} crossed`
     + (isBest && world.score > 0 ? '. A new best!' : `. Your best is ${numberFormat.format(best)}.`);
@@ -332,47 +345,56 @@ async function recordGameStart() {
   }
 }
 
-async function saveRemoteCheckpoint(value: number) {
+function saveRemoteCheckpoint(value: number): Promise<boolean> {
   const initData = telegramWebApp?.initData;
-  if (!initData) return;
-  try {
-    await fetch('/api/checkpoint', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initData, checkpoint: value }),
-    });
-  } catch {
-    // A failed sync must never interrupt the game; the local checkpoint remains saved.
-  }
+  if (!initData) return Promise.resolve(true);
+  if (!checkpointSyncReady) return Promise.resolve(false);
+  // Serialize milestone writes so 60 can never reach the server before 30.
+  checkpointSyncQueue = checkpointSyncQueue.then(async (previousOk) => {
+    if (!previousOk) return false;
+    try {
+      const response = await fetch('/api/checkpoint', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ initData, checkpoint: value }),
+      });
+      if (!response.ok) {
+        if (response.status === 403) setStatus('Account blocked', 'This account cannot submit game progress.');
+        return false;
+      }
+      const data = await response.json() as { ok?: boolean; checkpoint?: number };
+      return data.ok === true && (data.checkpoint ?? value) >= value;
+    } catch {
+      // Do not send later milestones or a score after a failed checkpoint sync.
+      return false;
+    }
+  });
+  return checkpointSyncQueue;
 }
 
-async function syncCheckpoint() {
+async function submitScoreAfterCheckpoints(score: number) {
+  if ((telegramWebApp?.initData && !checkpointSyncReady) || !await checkpointSyncQueue) return;
+  await submitScore(score);
+}
+
+async function syncCheckpoint(): Promise<boolean> {
   const initData = telegramWebApp?.initData;
-  if (!initData) return;
+  if (!initData) return true;
   try {
     const response = await fetch('/api/checkpoint', {
       headers: { 'x-telegram-init-data': initData },
     });
-    if (!response.ok) return;
+    if (!response.ok) return false;
     const data = await response.json() as { checkpoint?: number; hasCheckpoint?: boolean };
     const remote = Number.isSafeInteger(data.checkpoint) && (data.checkpoint ?? -1) >= 0
       ? Math.floor((data.checkpoint ?? 0) / CHECKPOINT_STEP) * CHECKPOINT_STEP
       : 0;
-    // An existing server checkpoint is authoritative, including an intentional reset to zero.
-    // If no server row exists, preserve offline progress and upload it as before.
-    if (data.hasCheckpoint) {
-      if (checkpoint !== remote) {
-        checkpoint = remote;
-        saveJSON(PROGRESS_KEY, checkpoint);
-      }
-    } else {
-      const merged = Math.max(checkpoint, remote);
-      if (merged > checkpoint) {
-        checkpoint = merged;
-        saveJSON(PROGRESS_KEY, checkpoint);
-      }
-      if (merged > remote) await saveRemoteCheckpoint(merged);
+    // The server is authoritative. Unverified local-only progress is never uploaded as a checkpoint.
+    if (checkpoint !== remote) {
+      checkpoint = remote;
+      saveJSON(PROGRESS_KEY, checkpoint);
     }
+    checkpointSyncReady = true;
     // Restore the account's verified best score after the temporary test run.
     const boardResponse = await fetch('/api/leaderboard', {
       headers: { 'x-telegram-init-data': initData },
@@ -390,8 +412,10 @@ async function syncCheckpoint() {
         renderHome();
       }
     }
+    return true;
   } catch {
-    // Keep playing offline; a later launch will retry the account sync.
+    // Keep playing offline, but never submit progress that could be mistaken for a sequence violation.
+    return false;
   }
 }
 

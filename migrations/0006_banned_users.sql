@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS banned_users (
+  telegram_user_id TEXT PRIMARY KEY,
+  reason TEXT NOT NULL,
+  banned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
