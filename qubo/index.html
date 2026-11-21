@@ -65,8 +65,17 @@
           <span class="icon-btn" aria-hidden="true"></span>
         </header>
         <div class="home-inner">
-          <h2 class="section-label">🏆 Global Leaderboard</h2>
-          <p id="records-status" class="muted" aria-live="polite">Loading records...</p>
+          <div class="records-hero">
+            <span class="records-kicker">QUBO NETWORK // LIVE DATA</span>
+            <h1 class="records-title">WORLD <span>RECORDS</span></h1>
+            <p class="records-description">The global arena. One leaderboard. The highest scores survive.</p>
+            <div class="records-signal"><span class="records-signal-dot"></span> SYSTEM ONLINE <span class="records-signal-divider">/</span> TOP 100 PLAYERS</div>
+          </div>
+          <section class="records-board" aria-label="Global leaderboard">
+            <div class="records-board-head"><span>RANK</span><span>PLAYER</span><span>BEST SCORE</span></div>
+            <p id="records-status" class="muted" aria-live="polite">Connecting to the global network...</p>
+            <ol id="records-list" class="records-list"></ol>
+          </section>
           <ol id="records-list" class="records-list"></ol>
           <p id="records-me" class="records-me"></p>
         </div>
