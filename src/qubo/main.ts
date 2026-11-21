@@ -574,6 +574,11 @@ async function refreshChat() {
       messages?: ChatMessage[];
       error?: string;
     };
+    if (response.status === 403 && data.eligible === false) {
+      showChatHidden(`برای مشاهده و ارسال پیام در چت جهانی، حداقل امتیاز لازم ۳۵ است. امتیاز فعلی شما: ${numberFormat.format(data.best_score ?? 0)}`);
+      $('chat-required-score').textContent = `امتیاز لازم: ۳۵ · امتیاز فعلی: ${numberFormat.format(data.best_score ?? 0)}`;
+      return;
+    }
     if (!response.ok) throw new Error(data.error || 'دریافت چت ناموفق بود.');
     if (data.hidden) {
       showChatHidden(data.message || 'چت جهانی فعلاً مخفی است؛ اطلاعات بعداً قابل مشاهده خواهد بود.');
@@ -582,10 +587,10 @@ async function refreshChat() {
     $('chat-locked').hidden = true;
     $('chat-content').hidden = false;
     const form = $('chat-form') as HTMLFormElement;
-    form.hidden = true;
-    form.style.display = 'none'; // Keep the chat read-only for Saber even when author CSS sets display:flex.
+    form.hidden = false;
+    form.style.display = '';
     renderChatMessages(data.messages ?? []);
-    $('chat-status').textContent = 'نمایش زندهٔ چت برای Saber فعال است.';
+    $('chat-status').textContent = 'چت جهانی فعال است؛ فقط بازیکنان با امتیاز ۳۵ یا بالاتر دسترسی دارند.';
     stopChatPolling();
     chatPollTimer = window.setInterval(() => { void refreshChat(); }, 10_000);
   } catch (error) {
@@ -627,9 +632,9 @@ function showChatHidden(message: string) {
   const heading = $('chat-locked').querySelector('h3');
   const description = $('chat-locked').querySelector('p');
   const note = $('chat-locked').querySelector('strong');
-  if (heading) heading.textContent = 'چت جهانی فعلاً مخفی است';
+  if (heading) heading.textContent = 'دسترسی محدود به چت جهانی';
   if (description) description.textContent = message;
-  if (note) note.textContent = 'اطلاعات ذخیره می‌شوند و بعداً قابل مشاهده خواهند بود.';
+  if (note) note.textContent = 'برای مشاهده و ارسال پیام، امتیاز ۳۵ یا بالاتر لازم است.';
   $('chat-required-score').textContent = '';
   stopChatPolling();
 }
@@ -652,7 +657,7 @@ async function sendChatMessage(event: SubmitEvent) {
     if (response.status === 403 && data.eligible === false) {
       $('chat-content').hidden = true;
       $('chat-locked').hidden = false;
-      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۲۹`;
+      $('chat-required-score').textContent = `امتیاز جهانی فعلی شما: ${numberFormat.format(data.best_score ?? 0)} · امتیاز لازم: ۳۵`;
       stopChatPolling();
       return;
     }

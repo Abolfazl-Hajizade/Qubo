@@ -110,13 +110,6 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "This account is blocked from the game." }, 403);
   await saveTelegramUser(env, user);
 
-  if (user.id !== "7431567147") {
-    return json({
-      hidden: true,
-      message: "Global records are not available yet. Player data and scores are being saved for a future release.",
-    });
-  }
-
   const rows = await env.DB.prepare(
     "SELECT telegram_user_id, display_name, best_score FROM leaderboard ORDER BY best_score DESC, updated_at ASC LIMIT 100"
   ).bind().all<{ telegram_user_id: string; display_name: string; best_score: number }>();
