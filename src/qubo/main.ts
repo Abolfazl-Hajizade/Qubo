@@ -551,7 +551,8 @@ async function refreshChat() {
     $('chat-locked').hidden = true;
     $('chat-content').hidden = false;
     const form = $('chat-form') as HTMLFormElement;
-    form.hidden = true; // Saber has read-only access to the chat.
+    form.hidden = true;
+    form.style.display = 'none'; // Keep the chat read-only for Saber even when author CSS sets display:flex.
     renderChatMessages(data.messages ?? []);
     $('chat-status').textContent = 'نمایش زندهٔ چت برای Saber فعال است.';
     stopChatPolling();
