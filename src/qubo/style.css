@@ -886,7 +886,7 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="24"] {
 }
 body:has(#game:not([hidden]))[data-qubo-backdrop="25"] {
   background-color: #211b46;
-  background-image: linear-gradient(180deg, #211b46 0%, #67539a 62%, #f0c78d 100%);
+  background-image: linear-gradient(180deg, #211b46 0%, #67539a 62%, #c9b5e8 100%);
 }
 body:has(#game:not([hidden]))[data-qubo-backdrop="26"] {
   background-color: #071426;
