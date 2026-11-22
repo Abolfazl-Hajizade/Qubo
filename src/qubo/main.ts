@@ -561,7 +561,8 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
   }
 }
 
-type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number };
+type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number; reply_to_id?: number | null; reply_to_display_name?: string | null; reply_to_message?: string | null };
+let chatReplyTarget: ChatMessage | null = null;
 function getChatLocalStorageKeys() {
   try {
     const params = new URLSearchParams(telegramWebApp?.initData ?? '');
@@ -815,7 +816,7 @@ async function refreshChat() {
     form.style.display = '';
     const chatMessages = syncLocalChatHistory(data.messages ?? [], data.deleted_ids ?? []);
     const chatMessageSignature = JSON.stringify(chatMessages.map(({ id, message, display_name, is_own, created_at }) => (
-      [id, message, display_name, is_own, created_at]
+      [id, message, display_name, is_own, created_at, reply_to_id, reply_to_display_name, reply_to_message]
     )));
     const messageList = $('chat-messages');
     if (messageList.dataset.renderedMessages !== chatMessageSignature) {
@@ -835,6 +836,25 @@ async function refreshChat() {
   } finally {
     chatLoading = false;
   }
+}
+
+function setChatReplyTarget(message: ChatMessage | null) {
+  chatReplyTarget = message;
+  const preview = $('chat-reply-preview');
+  preview.replaceChildren();
+  preview.hidden = !message;
+  if (!message) return;
+  const label = document.createElement('span');
+  label.className = 'chat-reply-preview-text';
+  label.textContent = `Replying to ${message.display_name}: ${message.message}`;
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'chat-reply-cancel';
+  cancel.textContent = '×';
+  cancel.setAttribute('aria-label', 'Cancel reply');
+  cancel.addEventListener('click', () => setChatReplyTarget(null));
+  preview.append(label, cancel);
+  ($('chat-input') as HTMLInputElement).focus();
 }
 
 function renderChatMessages(messages: ChatMessage[]) {
@@ -869,9 +889,28 @@ function renderChatMessages(messages: ChatMessage[]) {
     // Hide the sender name on the current user's own messages; keep names for everyone else.
     if (message.is_own) top.classList.add('chat-message-top-own');
     else top.append(name);
+    if (message.reply_to_message && message.reply_to_display_name) {
+      const quote = document.createElement('button');
+      quote.type = 'button';
+      quote.className = 'chat-reply-quote';
+      quote.textContent = `↪ ${message.reply_to_display_name}: ${message.reply_to_message}`;
+      quote.addEventListener('click', () => {
+        if (message.reply_to_id === null || message.reply_to_id === undefined) return;
+        const original = list.querySelector<HTMLElement>(`[data-message-id="${message.reply_to_id}"]`);
+        original?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      item.append(quote);
+    }
     const body = document.createElement('p');
     body.textContent = message.message;
     item.append(top, body);
+    const reply = document.createElement('button');
+    reply.type = 'button';
+    reply.className = 'chat-reply-btn';
+    reply.textContent = 'Reply';
+    reply.addEventListener('click', () => setChatReplyTarget(message));
+    item.append(reply);
+    item.dataset.messageId = String(message.id);
     if (isChatAdmin()) {
       const actions = document.createElement('div');
       actions.className = 'chat-message-actions';
@@ -958,6 +997,7 @@ async function sendChatMessage(event: SubmitEvent) {
   const input = $('chat-input') as HTMLInputElement;
   const message = input.value.trim();
   const initData = telegramWebApp?.initData;
+  const replyTarget = chatReplyTarget;
   if (!message || !initData) return;
   const button = $('chat-send-btn') as HTMLButtonElement;
   button.disabled = true;
@@ -965,7 +1005,7 @@ async function sendChatMessage(event: SubmitEvent) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initData, message }),
+      body: JSON.stringify({ initData, message, ...(replyTarget ? { replyToId: replyTarget.id } : {}) }),
     });
     const data = await response.json() as { error?: string; eligible?: boolean; best_score?: number };
     if (response.status === 403 && data.eligible === false) {
@@ -977,6 +1017,7 @@ async function sendChatMessage(event: SubmitEvent) {
     }
     if (!response.ok) throw new Error(data.error || 'ارسال پیام ناموفق بود.');
     input.value = '';
+    setChatReplyTarget(null);
     await refreshChat();
     input.focus();
   } catch (error) {
