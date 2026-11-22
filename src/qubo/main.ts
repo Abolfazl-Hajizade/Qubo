@@ -51,7 +51,7 @@ const endDialog = $<HTMLDialogElement>('end-dialog');
 
 const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory, renderRecords: loadLeaderboard });
 
-type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => void };
+type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void };
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
@@ -112,6 +112,7 @@ $('leaderboard-btn').addEventListener('click', () => screens.records());
 $('chat-btn').addEventListener('click', openChat);
 $('chat-close-btn').addEventListener('click', () => ($('chat-dialog') as HTMLDialogElement).close());
 $('chat-dialog').addEventListener('close', () => {
+  telegramWebApp?.enableVerticalSwipes?.();
   stopChatPolling();
   stopChatPresence(true);
   void refreshChatUnread();
@@ -721,6 +722,7 @@ function markChatMessagesRead(messages: ChatMessage[]) {
 
 function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
+  telegramWebApp?.disableVerticalSwipes?.();
   if (!dialog.open) dialog.showModal();
   stopChatPolling();
   stopChatPresence(false);
