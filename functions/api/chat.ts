@@ -4,7 +4,7 @@ type Env = { BOT_TOKEN?: string; DB: D1Like };
 
 type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
 type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
-type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number };
+type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number; reply_to_id: number | null; reply_to_display_name: string | null; reply_to_message: string | null };
 const encoder = new TextEncoder();
 const MIN_SCORE = 35;
 const ADMIN_ID = "7431567147";
@@ -60,8 +60,8 @@ function json(data: unknown, status = 200): Response {
     status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
   });
 }
-async function readBody(request: Request): Promise<{ initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown } | null> {
-  try { return await request.json() as { initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown }; }
+async function readBody(request: Request): Promise<{ initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown; replyToId?: unknown } | null> {
+  try { return await request.json() as { initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown; replyToId?: unknown }; }
   catch { return null; }
 }
 let chatPresenceSchemaReady: Promise<void> | null = null;
@@ -84,6 +84,22 @@ async function ensureChatPresenceTable(env: Env): Promise<void> {
     });
   }
   await chatPresenceSchemaReady;
+}
+let chatReplySchemaReady: Promise<void> | null = null;
+async function ensureChatReplyColumns(env: Env): Promise<void> {
+  if (!chatReplySchemaReady) {
+    chatReplySchemaReady = (async () => {
+      const columns = await env.DB.prepare("PRAGMA table_info(chat_messages)").all<{ name: string }>();
+      const names = new Set((columns.results ?? []).map((column) => column.name));
+      if (!names.has("reply_to_id")) await env.DB.prepare("ALTER TABLE chat_messages ADD COLUMN reply_to_id INTEGER").run();
+      if (!names.has("reply_to_display_name")) await env.DB.prepare("ALTER TABLE chat_messages ADD COLUMN reply_to_display_name TEXT").run();
+      if (!names.has("reply_to_message")) await env.DB.prepare("ALTER TABLE chat_messages ADD COLUMN reply_to_message TEXT").run();
+    })().catch((error) => {
+      chatReplySchemaReady = null;
+      throw error;
+    });
+  }
+  await chatReplySchemaReady;
 }
 let deletedChatSchemaReady: Promise<void> | null = null;
 async function ensureDeletedChatTable(env: Env): Promise<void> {
@@ -162,10 +178,10 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     }, 403);
   }
 
-  await Promise.all([ensureChatPresenceTable(env), ensureDeletedChatTable(env)]);
+  await Promise.all([ensureChatPresenceTable(env), ensureDeletedChatTable(env), ensureChatReplyColumns(env)]);
   const [rows, onlineUsers, deletedRows] = await Promise.all([
     env.DB.prepare(`
-      SELECT id, display_name, message, created_at,
+      SELECT id, display_name, message, created_at, reply_to_id, reply_to_display_name, reply_to_message,
         CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
       FROM chat_messages
       ORDER BY id DESC
@@ -216,6 +232,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     `).bind(user.id, sessionId, user.displayName, Math.floor(Date.now() / 1000)).run();
     return json({ ok: true });
   }
+  await ensureChatReplyColumns(env);
   if (typeof body.message !== "string") return json({ error: "متن پیام نامعتبر است." }, 400);
   const message = body.message.trim();
   if (!message || message.length > MAX_MESSAGE_LENGTH) return json({ error: "پیام باید بین ۱ تا ۵۰۰ کاراکتر باشد." }, 400);
@@ -226,10 +243,26 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   `).bind(user.id).first<{ count: number }>();
   if ((recent?.count ?? 0) > 0) return json({ error: "برای ارسال پیام بعدی کمی صبر کن." }, 429);
 
+  let replyToId: number | null = null;
+  let replyToDisplayName: string | null = null;
+  let replyToMessage: string | null = null;
+  if (body.replyToId !== undefined && body.replyToId !== null) {
+    if (!Number.isSafeInteger(body.replyToId) || Number(body.replyToId) <= 0) {
+      return json({ error: "شناسه پیام برای پاسخ معتبر نیست." }, 400);
+    }
+    const target = await env.DB.prepare(
+      "SELECT id, display_name, message FROM chat_messages WHERE id = ?"
+    ).bind(Number(body.replyToId)).first<{ id: number; display_name: string; message: string }>();
+    if (!target) return json({ error: "پیام اصلی دیگر در دسترس نیست." }, 404);
+    replyToId = target.id;
+    replyToDisplayName = target.display_name;
+    replyToMessage = target.message.slice(0, MAX_MESSAGE_LENGTH);
+  }
   await env.DB.prepare(`
-    INSERT INTO chat_messages (telegram_user_id, display_name, message)
-    VALUES (?, ?, ?)
-  `).bind(user.id, user.displayName, message).run();
+    INSERT INTO chat_messages (
+      telegram_user_id, display_name, message, reply_to_id, reply_to_display_name, reply_to_message
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(user.id, user.displayName, message, replyToId, replyToDisplayName, replyToMessage).run();
   await env.DB.prepare(`
     DELETE FROM chat_messages
     WHERE id NOT IN (SELECT id FROM chat_messages ORDER BY id DESC LIMIT 100)
