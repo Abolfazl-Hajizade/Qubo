@@ -269,6 +269,10 @@ dialog.dialog:not([open]) { display: none; }
 .chat-online { color: #7ed5a1; font-size: .72rem; font-weight: 800; white-space: nowrap; }
 .chat-content { flex: 1 1 0; min-height: 0; height: auto; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: 12px 14px max(10px, env(safe-area-inset-bottom)); }
 .chat-content[hidden], .chat-locked[hidden] { display: none; }
+/* Keep a short conversation anchored above the composer; when it grows,
+   the auto margin collapses and the message list becomes scrollable. */
+.chat-messages > :first-child { margin-top: auto; }
+
 .chat-messages { flex: 1 1 0; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 3px 0 8px; display: flex; flex-direction: column; align-items: stretch; direction: ltr; gap: 4px; overscroll-behavior: contain; }
 .chat-start-date {
   align-self: center;
