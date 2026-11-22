@@ -617,6 +617,7 @@ function isChatAdmin() {
 }
 let chatPollTimer: number | undefined;
 let chatPresenceActive = false;
+let chatPresenceHeartbeatTimer: number | undefined;
 let unreadPollTimer: number | undefined;
 let chatLoading = false;
 function getChatPresenceSessionId(): string {
@@ -647,6 +648,8 @@ async function sendChatPresence(action: 'presence_enter' | 'presence_heartbeat' 
   }
 }
 function stopChatPresence(sendLeave: boolean) {
+  if (chatPresenceHeartbeatTimer !== undefined) window.clearInterval(chatPresenceHeartbeatTimer);
+  chatPresenceHeartbeatTimer = undefined;
   if (chatPresenceActive && sendLeave) void sendChatPresence('presence_leave', true);
   chatPresenceActive = false;
 }
@@ -654,6 +657,9 @@ function startChatPresence() {
   if (chatPresenceActive) return;
   chatPresenceActive = true;
   void sendChatPresence('presence_enter');
+  chatPresenceHeartbeatTimer = window.setInterval(() => {
+    if (chatPresenceActive) void sendChatPresence('presence_heartbeat');
+  }, 15_000);
 }
 function getChatNameColor(name: string): string {
   let hash = 2166136261;
