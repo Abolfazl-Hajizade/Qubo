@@ -85,6 +85,21 @@ async function ensureChatPresenceTable(env: Env): Promise<void> {
   }
   await chatPresenceSchemaReady;
 }
+let deletedChatSchemaReady: Promise<void> | null = null;
+async function ensureDeletedChatTable(env: Env): Promise<void> {
+  if (!deletedChatSchemaReady) {
+    deletedChatSchemaReady = env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS chat_deleted_messages (
+        message_id INTEGER PRIMARY KEY,
+        deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run().then(() => undefined).catch((error) => {
+      deletedChatSchemaReady = null;
+      throw error;
+    });
+  }
+  await deletedChatSchemaReady;
+}
 async function getOnlineChatUsers(env: Env): Promise<Array<{ telegram_user_id: string; display_name: string }>> {
   const cutoff = Math.floor(Date.now() / 1000) - 90;
   await env.DB.prepare("DELETE FROM chat_presence WHERE last_seen < ?").bind(cutoff).run();
@@ -147,8 +162,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     }, 403);
   }
 
-  await ensureChatPresenceTable(env);
-  const [rows, onlineUsers] = await Promise.all([
+  await Promise.all([ensureChatPresenceTable(env), ensureDeletedChatTable(env)]);
+  const [rows, onlineUsers, deletedRows] = await Promise.all([
     env.DB.prepare(`
       SELECT id, display_name, message, created_at,
         CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
@@ -157,6 +172,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
       LIMIT 100
     `).bind(user.id).all<ChatRow>(),
     getOnlineChatUsers(env),
+    env.DB.prepare("SELECT message_id FROM chat_deleted_messages ORDER BY message_id").all<{ message_id: number }>(),
   ]);
   return json({
     hidden: false,
@@ -165,6 +181,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     required_score: MIN_SCORE,
     messages: (rows.results ?? []).reverse(),
     online_users: onlineUsers,
+    deleted_ids: (deletedRows.results ?? []).map((row) => row.message_id),
   });
 }
 
@@ -232,7 +249,10 @@ export async function onRequestDelete({ request, env }: { request: Request; env:
   if (!rawId || !/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) <= 0) {
     return json({ error: "شناسه پیام نامعتبر است." }, 400);
   }
-  const result = await env.DB.prepare("DELETE FROM chat_messages WHERE id = ?")
+  await ensureDeletedChatTable(env);
+  await env.DB.prepare("INSERT OR IGNORE INTO chat_deleted_messages (message_id) VALUES (?)")
     .bind(Number(rawId)).run();
-  return json({ ok: true });
+  await env.DB.prepare("DELETE FROM chat_messages WHERE id = ?")
+    .bind(Number(rawId)).run();
+  return json({ ok: true, deleted_id: Number(rawId) });
 }
