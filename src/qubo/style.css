@@ -1242,7 +1242,8 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  height: 0;
+  height: auto;
+  align-self: stretch;
   max-height: none;
   overflow-x: hidden;
   overflow-y: scroll !important;
