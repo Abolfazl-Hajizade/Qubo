@@ -888,6 +888,7 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
   const initData = telegramWebApp?.initData;
   if (!initData || !isChatAdmin() || !Number.isSafeInteger(messageId) || messageId <= 0) return;
   if (!window.confirm('این پیام برای همه حذف شود؟')) return;
+  const wasLatestMessage = loadLocalChatMessages().at(-1)?.id === messageId;
   button.disabled = true;
   try {
     const response = await fetch(`/api/chat?id=${encodeURIComponent(String(messageId))}`, {
@@ -897,6 +898,12 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
     const data = await response.json() as { error?: string };
     if (!response.ok) throw new Error(data.error || 'حذف پیام ناموفق بود.');
     await refreshChat();
+    if (wasLatestMessage) {
+      requestAnimationFrame(() => {
+        const list = $('chat-messages');
+        list.scrollTop = list.scrollHeight;
+      });
+    }
   } catch (error) {
     button.disabled = false;
     $('chat-status').textContent = error instanceof Error ? error.message : 'حذف پیام ناموفق بود.';
