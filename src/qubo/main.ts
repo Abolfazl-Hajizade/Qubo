@@ -655,6 +655,14 @@ function startChatPresence() {
   chatPresenceActive = true;
   void sendChatPresence('presence_enter');
 }
+function getChatNameColor(name: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = Math.imul(hash ^ name.charCodeAt(index), 16777619);
+  }
+  return `hsl(${(hash >>> 0) % 360} 82% 70%)`;
+}
+
 function renderChatPresence(users: Array<{ telegram_user_id: string; display_name: string }>) {
   const container = $('chat-presence');
   container.replaceChildren();
@@ -670,6 +678,7 @@ function renderChatPresence(users: Array<{ telegram_user_id: string; display_nam
     dot.setAttribute('aria-hidden', 'true');
     const name = document.createElement('span');
     name.textContent = user.display_name;
+    name.style.color = getChatNameColor(user.display_name);
     item.append(dot, name);
     container.append(item);
   }
@@ -847,6 +856,8 @@ function renderChatMessages(messages: ChatMessage[]) {
     top.className = 'chat-message-top';
     const name = document.createElement('strong');
     name.textContent = message.display_name;
+    name.style.color = getChatNameColor(message.display_name);
+    name.style.textShadow = 'none';
     // Hide the sender name on the current user's own messages; keep names for everyone else.
     if (message.is_own) top.classList.add('chat-message-top-own');
     else top.append(name);
