@@ -925,3 +925,17 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
   background-color: #26395f;
   background-image: linear-gradient(180deg, #26395f 0%, #f0a77d 62%, #f8d9a0 100%);
 }
+
+/* Give each sender a calm, distinct chat bubble in the Matrix palette. */
+.chat-message {
+  background: rgba(7, 13, 10, .94);
+  border: 1px solid rgba(145, 170, 151, .24);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .24), inset 0 0 10px rgba(145, 170, 151, .025);
+}
+.chat-message.is-own {
+  background: linear-gradient(145deg, rgba(5, 38, 19, .96), rgba(3, 25, 13, .96));
+  border-color: rgba(0, 255, 104, .42);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, .24), inset 0 0 14px rgba(0, 255, 104, .07);
+}
+.chat-message-top strong { color: #a6b9aa; }
+.chat-message.is-own .chat-message-top strong { color: #8dffb0; }
