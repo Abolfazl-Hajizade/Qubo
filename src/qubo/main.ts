@@ -400,6 +400,8 @@ function saveRemoteCheckpoint(value: number): Promise<boolean> {
 
 async function submitScoreAfterCheckpoints(score: number) {
   if ((telegramWebApp?.initData && !checkpointSyncReady) || !await checkpointSyncQueue) return;
+  const scoreCheckpoint = Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
+  if (scoreCheckpoint !== checkpoint) return;
   await submitScore(score);
 }
 
