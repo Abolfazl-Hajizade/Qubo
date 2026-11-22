@@ -12,6 +12,7 @@ const BEST_KEY = 'qubo.best';
 const STATS_KEY = 'qubo.stats';
 const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
+// This branch is a local-only test build: start at 270 and never write game progress to production APIs.
 const PREVIEW_MODE = true;
 const PREVIEW_START_SCORE = 270;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
