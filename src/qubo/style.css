@@ -978,3 +978,48 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 .chat-message:not(.is-own) p {
   color: #eff8ff;
 }
+
+
+/* Keep the global chat focused on messages and a compact composer at the bottom. */
+.chat-content {
+  height: calc(100dvh - 82px - env(safe-area-inset-top));
+  min-height: 0;
+  padding: 4px 10px max(8px, env(safe-area-inset-bottom));
+  gap: 0;
+}
+.chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 0 5px;
+}
+.chat-status,
+.chat-footnote {
+  display: none !important;
+}
+.chat-form {
+  flex: 0 0 auto;
+  gap: 6px;
+  padding: 3px 5px;
+  border-radius: 18px;
+  margin: 0;
+}
+.chat-form input {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: .88rem;
+}
+.chat-send-btn {
+  flex-basis: 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 13px;
+}
+.chat-send-btn svg {
+  width: 18px;
+  height: 18px;
+}
+@media (min-width: 640px) {
+  .chat-content {
+    height: calc(min(100dvh, 900px) - 82px);
+  }
+}
