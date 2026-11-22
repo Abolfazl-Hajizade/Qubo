@@ -55,6 +55,7 @@ type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => voi
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
+telegramWebApp?.disableVerticalSwipes?.();
 let checkpointSyncReady = !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
 let waitingForCheckpointSync = false;
@@ -112,7 +113,6 @@ $('leaderboard-btn').addEventListener('click', () => screens.records());
 $('chat-btn').addEventListener('click', openChat);
 $('chat-close-btn').addEventListener('click', () => ($('chat-dialog') as HTMLDialogElement).close());
 $('chat-dialog').addEventListener('close', () => {
-  telegramWebApp?.enableVerticalSwipes?.();
   stopChatPolling();
   stopChatPresence(true);
   void refreshChatUnread();
