@@ -1167,3 +1167,15 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
   padding-right: 14px;
   padding-left: 14px;
 }
+
+
+/* Tone down message-card glow while keeping the Matrix glass look. */
+.chat-message,
+.chat-message.is-own {
+  border-color: rgba(0, 255, 104, .22);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 3px rgba(0, 255, 104, .015);
+}
+.chat-message:not(.is-own) {
+  border-color: rgba(66, 169, 255, .32);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .18), inset 0 0 3px rgba(91, 185, 255, .035);
+}
