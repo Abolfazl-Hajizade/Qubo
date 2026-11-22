@@ -51,21 +51,28 @@ const endDialog = $<HTMLDialogElement>('end-dialog');
 
 const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory, renderRecords: loadLeaderboard });
 
-type TelegramWebApp = { initData: string; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void };
+type TelegramWebApp = { initData: string; viewportHeight?: number; viewportStableHeight?: number; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void; onEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void; offEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void };
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
 telegramWebApp?.disableVerticalSwipes?.();
 
-// Keep the chat viewport in sync with Android's visual viewport when the keyboard opens.
+// Use Telegram's own viewport events inside Mini Apps so the chat follows the
+// actual WebView area when the Android keyboard opens or closes.
 function updateChatViewportHeight() {
-  const height = window.visualViewport?.height ?? window.innerHeight;
+  const telegramHeight = telegramWebApp?.viewportHeight;
+  const height = typeof telegramHeight === 'number' && telegramHeight > 0
+    ? telegramHeight
+    : window.visualViewport?.height ?? window.innerHeight;
   document.documentElement.style.setProperty('--chat-viewport-height', `${Math.round(height)}px`);
 }
 updateChatViewportHeight();
-window.addEventListener('resize', updateChatViewportHeight);
-window.visualViewport?.addEventListener('resize', updateChatViewportHeight);
-window.visualViewport?.addEventListener('scroll', updateChatViewportHeight);
+if (telegramWebApp?.onEvent) {
+  telegramWebApp.onEvent('viewportChanged', updateChatViewportHeight);
+} else {
+  window.addEventListener('resize', updateChatViewportHeight);
+  window.visualViewport?.addEventListener('resize', updateChatViewportHeight);
+}
 let checkpointSyncReady = !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
 let waitingForCheckpointSync = false;
@@ -898,8 +905,6 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
   const initData = telegramWebApp?.initData;
   if (!initData || !isChatAdmin() || !Number.isSafeInteger(messageId) || messageId <= 0) return;
   if (!window.confirm('این پیام برای همه حذف شود؟')) return;
-  const wasLatestMessage = loadLocalChatMessages().at(-1)?.id === messageId;
-  const previousScrollTop = $('chat-messages').scrollTop;
   button.disabled = true;
   try {
     const response = await fetch(`/api/chat?id=${encodeURIComponent(String(messageId))}`, {
@@ -909,12 +914,6 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
     const data = await response.json() as { error?: string };
     if (!response.ok) throw new Error(data.error || 'حذف پیام ناموفق بود.');
     await refreshChat();
-    if (wasLatestMessage) {
-      requestAnimationFrame(() => {
-        const list = $('chat-messages');
-        list.scrollTop = previousScrollTop + 48;
-      });
-    }
   } catch (error) {
     button.disabled = false;
     $('chat-status').textContent = error instanceof Error ? error.message : 'حذف پیام ناموفق بود.';
