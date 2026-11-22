@@ -1069,26 +1069,22 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 }
 
 
-/* Static graphite background for the global chat; remove the animated Matrix rain. */
+/* Restore the original Matrix chat background and code-rain layer. */
 .chat-dialog {
-  background: #343a40;
+  background: #020604;
 }
 .chat-dialog::before {
-  content: none;
-  display: none;
-  animation: none;
+  content: "01001011 00110101 10100110 01001101 11001010 00101101 10110010 01010101 01101001 10010110 00110100 11001011 01011010 00100111 10100101 01110010 01001101 10011010 00110101 01101001 11000100 00101110 10101001 01010011";
+  display: block;
+  animation: matrix-chat-rain 22s linear infinite;
 }
 .chat-header {
-  background: #2b3035;
-  border-bottom-color: #4a5158;
+  background: rgba(0, 5, 2, .96);
+  border-bottom-color: rgba(0, 255, 104, .28);
 }
-.chat-content,
-.chat-messages {
-  background: #343a40;
-}
-.chat-locked {
-  background: transparent;
-}
+.chat-content { background: transparent; }
+.chat-messages { background: rgba(0, 4, 2, .16); }
+.chat-locked { background: transparent; }
 
 
 /* Live chat presence */
@@ -1105,6 +1101,7 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
   scrollbar-width: none;
 }
 .chat-presence::-webkit-scrollbar { display: none; }
+.chat-presence { background: rgba(0, 5, 2, .9); border-bottom-color: rgba(0, 255, 104, .28); }
 .chat-presence-count {
   flex: 0 0 auto;
   color: #aeb8c2;
