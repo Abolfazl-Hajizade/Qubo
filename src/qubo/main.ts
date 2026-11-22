@@ -815,7 +815,7 @@ async function refreshChat() {
     form.hidden = false;
     form.style.display = '';
     const chatMessages = syncLocalChatHistory(data.messages ?? [], data.deleted_ids ?? []);
-    const chatMessageSignature = JSON.stringify(chatMessages.map(({ id, message, display_name, is_own, created_at }) => (
+    const chatMessageSignature = JSON.stringify(chatMessages.map(({ id, message, display_name, is_own, created_at, reply_to_id, reply_to_display_name, reply_to_message }) => (
       [id, message, display_name, is_own, created_at, reply_to_id, reply_to_display_name, reply_to_message]
     )));
     const messageList = $('chat-messages');
