@@ -552,6 +552,7 @@ function isChatAdmin() {
 let chatPollTimer: number | undefined;
 let unreadPollTimer: number | undefined;
 let chatLoading = false;
+let unreadRefreshInFlight = false;
 const CHAT_LAST_READ_KEY = 'qubo.global-chat.last-read';
 
 function getLastReadChatId(): number | null {
@@ -578,7 +579,8 @@ function updateChatUnreadBadge(count: number) {
 async function refreshChatUnread() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
   const initData = telegramWebApp?.initData;
-  if (!initData || dialog.open || !screens.is('home')) return;
+  if (!initData || dialog.open || !screens.is('home') || unreadRefreshInFlight) return;
+  unreadRefreshInFlight = true;
   try {
     const lastRead = getLastReadChatId();
     const response = await fetch(`/api/chat?unread_after=${encodeURIComponent(String(lastRead ?? 0))}`, {
@@ -586,6 +588,8 @@ async function refreshChatUnread() {
     });
     const data = await response.json() as { latest_id?: number; unread_count?: number; eligible?: boolean };
     if (!response.ok || !Number.isSafeInteger(data.latest_id)) return;
+    // Ignore a response if another action marked newer messages as read while this request was in flight.
+    if (getLastReadChatId() !== lastRead) return;
     // On a player's first visit, establish a baseline instead of showing the entire chat history as new.
     if (lastRead === null) {
       setLastReadChatId(data.latest_id!);
@@ -595,6 +599,8 @@ async function refreshChatUnread() {
     updateChatUnreadBadge(data.unread_count ?? 0);
   } catch {
     // The badge is best-effort; a temporary network issue must not interrupt the game.
+  } finally {
+    unreadRefreshInFlight = false;
   }
 }
 
