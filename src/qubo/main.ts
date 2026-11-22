@@ -113,8 +113,10 @@ $('chat-btn').addEventListener('click', openChat);
 $('chat-close-btn').addEventListener('click', () => ($('chat-dialog') as HTMLDialogElement).close());
 $('chat-dialog').addEventListener('close', () => {
   stopChatPolling();
+  stopChatPresence(true);
   void refreshChatUnread();
 });
+window.addEventListener('pagehide', () => stopChatPresence(true));
 $('chat-form').addEventListener('submit', sendChatMessage);
 startUnreadChatPolling();
 window.addEventListener('pageshow', () => { void refreshChatUnread(); });
@@ -550,8 +552,71 @@ function isChatAdmin() {
   }
 }
 let chatPollTimer: number | undefined;
+let chatPresenceTimer: number | undefined;
+let chatPresenceActive = false;
 let unreadPollTimer: number | undefined;
 let chatLoading = false;
+function getChatPresenceSessionId(): string {
+  const key = 'qubo.global-chat.presence-session';
+  try {
+    const saved = sessionStorage.getItem(key);
+    if (saved && /^[a-f0-9-]{16,64}$/i.test(saved)) return saved;
+    const created = crypto.randomUUID();
+    sessionStorage.setItem(key, created);
+    return created;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+const chatPresenceSessionId = getChatPresenceSessionId();
+async function sendChatPresence(action: 'presence_enter' | 'presence_heartbeat' | 'presence_leave', keepalive = false) {
+  const initData = telegramWebApp?.initData;
+  if (!initData) return;
+  try {
+    await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initData, action, sessionId: chatPresenceSessionId }),
+      keepalive,
+    });
+  } catch {
+    // The server-side 90-second expiry clears abandoned sessions if a leave request cannot arrive.
+  }
+}
+function stopChatPresence(sendLeave: boolean) {
+  if (chatPresenceTimer !== undefined) window.clearInterval(chatPresenceTimer);
+  chatPresenceTimer = undefined;
+  if (chatPresenceActive && sendLeave) void sendChatPresence('presence_leave', true);
+  chatPresenceActive = false;
+}
+function startChatPresence() {
+  if (chatPresenceActive) return;
+  chatPresenceActive = true;
+  void sendChatPresence('presence_enter');
+  chatPresenceTimer = window.setInterval(() => {
+    if (( $('chat-dialog') as HTMLDialogElement).open) void sendChatPresence('presence_heartbeat');
+    else stopChatPresence(true);
+  }, 30_000);
+}
+function renderChatPresence(users: Array<{ telegram_user_id: string; display_name: string }>) {
+  const container = $('chat-presence');
+  container.replaceChildren();
+  const label = document.createElement('span');
+  label.className = 'chat-presence-count';
+  label.textContent = `${users.length} online`;
+  container.append(label);
+  for (const user of users) {
+    const item = document.createElement('span');
+    item.className = 'chat-presence-user';
+    const dot = document.createElement('i');
+    dot.className = 'chat-presence-dot';
+    dot.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span');
+    name.textContent = user.display_name;
+    item.append(dot, name);
+    container.append(item);
+  }
+}
 let unreadRefreshInFlight = false;
 const CHAT_LAST_READ_KEY = 'qubo.global-chat.last-read';
 
@@ -620,6 +685,8 @@ function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
   if (!dialog.open) dialog.showModal();
   stopChatPolling();
+  stopChatPresence(false);
+  $('chat-presence').replaceChildren();
   $('chat-locked').hidden = true;
   $('chat-content').hidden = true;
   $('chat-status').textContent = 'در حال اتصال به چت...';
@@ -652,6 +719,7 @@ async function refreshChat() {
       best_score?: number;
       required_score?: number;
       messages?: ChatMessage[];
+      online_users?: Array<{ telegram_user_id: string; display_name: string }>;
       error?: string;
     };
     if (response.status === 403 && data.eligible === false) {
@@ -671,6 +739,8 @@ async function refreshChat() {
     form.style.display = '';
     renderChatMessages(data.messages ?? []);
     markChatMessagesRead(data.messages ?? []);
+    renderChatPresence(data.online_users ?? []);
+    startChatPresence();
     $('chat-status').textContent = 'چت هر ۲ ثانیه به‌روزرسانی می‌شود.';
     stopChatPolling();
     chatPollTimer = window.setInterval(() => { void refreshChat(); }, 2_000);
@@ -793,6 +863,7 @@ function showChatHidden(message: string) {
   if (note) note.textContent = 'برای مشاهده و ارسال پیام، امتیاز ۳۵ یا بالاتر لازم است.';
   $('chat-required-score').textContent = '';
   stopChatPolling();
+  stopChatPresence(true);
 }
 
 async function sendChatMessage(event: SubmitEvent) {
