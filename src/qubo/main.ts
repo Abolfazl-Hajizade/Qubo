@@ -899,6 +899,7 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
   if (!initData || !isChatAdmin() || !Number.isSafeInteger(messageId) || messageId <= 0) return;
   if (!window.confirm('این پیام برای همه حذف شود؟')) return;
   const wasLatestMessage = loadLocalChatMessages().at(-1)?.id === messageId;
+  const previousScrollTop = $('chat-messages').scrollTop;
   button.disabled = true;
   try {
     const response = await fetch(`/api/chat?id=${encodeURIComponent(String(messageId))}`, {
@@ -911,7 +912,7 @@ async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
     if (wasLatestMessage) {
       requestAnimationFrame(() => {
         const list = $('chat-messages');
-        list.scrollTop = list.scrollHeight;
+        list.scrollTop = previousScrollTop + 48;
       });
     }
   } catch (error) {
