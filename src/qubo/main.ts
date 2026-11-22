@@ -687,6 +687,21 @@ function renderChatMessages(messages: ChatMessage[]) {
   const list = $('chat-messages');
   const previousScrollTop = list.scrollTop;
   list.replaceChildren();
+
+  // Show the conversation's starting date once, above the messages.
+  const firstMessageDate = messages
+    .map((message) => new Date(message.created_at))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+  if (firstMessageDate) {
+    const dateRow = document.createElement('li');
+    dateRow.className = 'chat-start-date';
+    dateRow.textContent = `شروع گفتگو: ${new Intl.DateTimeFormat(undefined, {
+      year: 'numeric', month: 'long', day: 'numeric',
+    }).format(firstMessageDate)}`;
+    list.append(dateRow);
+  }
+
   for (const message of messages) {
     const item = document.createElement('li');
     item.className = message.is_own ? 'chat-message is-own' : 'chat-message';
@@ -694,14 +709,9 @@ function renderChatMessages(messages: ChatMessage[]) {
     top.className = 'chat-message-top';
     const name = document.createElement('strong');
     name.textContent = message.display_name;
-    const time = document.createElement('time');
-    const parsed = new Date(message.created_at);
-    time.textContent = Number.isNaN(parsed.getTime())
-      ? '' : new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(parsed);
     // Hide the sender name on the current user's own messages; keep names for everyone else.
     if (message.is_own) top.classList.add('chat-message-top-own');
     else top.append(name);
-    top.append(time);
     const body = document.createElement('p');
     body.textContent = message.message;
     item.append(top, body);
