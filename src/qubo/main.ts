@@ -798,6 +798,7 @@ async function refreshChat() {
 function renderChatMessages(messages: ChatMessage[]) {
   const list = $('chat-messages');
   const previousScrollTop = list.scrollTop;
+  const wasAtBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
   list.replaceChildren();
 
   // Show the conversation's starting date once, above the messages.
@@ -872,7 +873,7 @@ function renderChatMessages(messages: ChatMessage[]) {
     }
     list.append(item);
   }
-  list.scrollTop = previousScrollTop;
+  list.scrollTop = wasAtBottom ? list.scrollHeight : previousScrollTop;
 }
 
 async function deleteChatMessage(messageId: number, button: HTMLButtonElement) {
