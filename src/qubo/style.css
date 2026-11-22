@@ -1095,3 +1095,42 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 .chat-locked {
   background: transparent;
 }
+
+
+/* Live chat presence */
+.chat-presence {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 6px 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: #2f353b;
+  border-bottom: 1px solid #4a5158;
+  scrollbar-width: none;
+}
+.chat-presence::-webkit-scrollbar { display: none; }
+.chat-presence-count {
+  flex: 0 0 auto;
+  color: #aeb8c2;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+.chat-presence-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  color: #e1e7ec;
+  font-size: 11px;
+}
+.chat-presence-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #27d46b;
+  box-shadow: 0 0 7px rgba(39, 212, 107, .65);
+}
