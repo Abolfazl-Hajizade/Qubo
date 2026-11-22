@@ -116,6 +116,16 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     return json({ error: "Checkpoint نامعتبر است." }, 400);
   }
 
+  const scoreRow = await env.DB.prepare(
+    "SELECT best_score FROM leaderboard WHERE telegram_user_id = ?"
+  ).bind(user.id).first<{ best_score: number }>();
+  const recordedBestScore = scoreRow ? Number(scoreRow.best_score) : 0;
+  const minimumScore = checkpoint - CHECKPOINT_STEP;
+  if (recordedBestScore < minimumScore) {
+    await banAndDeleteUser(env.DB, user.id, `checkpoint_score_mismatch:${recordedBestScore}->${checkpoint}`);
+    return json({ banned: true, error: "امتیاز ثبت‌شده برای این checkpoint کافی نبود؛ حساب مسدود شد." }, 403);
+  }
+
   const current = await currentCheckpoint(env, user.id);
   if (checkpoint === current) {
     await saveTelegramUser(env, user);
