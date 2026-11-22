@@ -711,7 +711,8 @@ function renderChatMessages(messages: ChatMessage[]) {
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'chat-delete-btn';
-      remove.textContent = 'حذف پیام';
+      remove.title = 'حذف پیام';
+      remove.setAttribute('aria-label', 'حذف پیام');
       remove.addEventListener('click', () => { void deleteChatMessage(message.id, remove); });
       actions.append(remove);
       item.append(actions);
