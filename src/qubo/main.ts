@@ -541,6 +541,51 @@ async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
 }
 
 type ChatMessage = { id: number; display_name: string; message: string; created_at: string; is_own: boolean | number };
+function getChatLocalStorageKeys() {
+  try {
+    const params = new URLSearchParams(telegramWebApp?.initData ?? '');
+    const user = JSON.parse(params.get('user') ?? 'null') as { id?: number } | null;
+    const accountId = String(user?.id ?? 'unknown');
+    return {
+      messages: `qubo.global-chat.messages.${accountId}`,
+      deleted: `qubo.global-chat.deleted.${accountId}`,
+    };
+  } catch {
+    return { messages: 'qubo.global-chat.messages.unknown', deleted: 'qubo.global-chat.deleted.unknown' };
+  }
+}
+function loadLocalChatMessages(): ChatMessage[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(getChatLocalStorageKeys().messages) ?? '[]') as ChatMessage[];
+    return Array.isArray(value) ? value.filter((message) =>
+      message && Number.isSafeInteger(message.id) && typeof message.message === 'string'
+      && typeof message.display_name === 'string' && typeof message.created_at === 'string',
+    ) : [];
+  } catch { return []; }
+}
+function loadLocalDeletedChatIds(): number[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(getChatLocalStorageKeys().deleted) ?? '[]') as number[];
+    return Array.isArray(value) ? value.filter((id) => Number.isSafeInteger(id) && id > 0) : [];
+  } catch { return []; }
+}
+function syncLocalChatHistory(serverMessages: ChatMessage[], serverDeletedIds: number[]): ChatMessage[] {
+  const keys = getChatLocalStorageKeys();
+  const deletedIds = new Set([...loadLocalDeletedChatIds(), ...serverDeletedIds]);
+  const messages = new Map<number, ChatMessage>();
+  for (const message of [...loadLocalChatMessages(), ...serverMessages]) {
+    if (!deletedIds.has(message.id)) messages.set(message.id, message);
+  }
+  const merged = [...messages.values()].sort((a, b) => a.id - b.id);
+  try {
+    localStorage.setItem(keys.deleted, JSON.stringify([...deletedIds]));
+    localStorage.setItem(keys.messages, JSON.stringify(merged));
+  } catch {
+    // Keep the live chat usable if local storage is full or unavailable.
+  }
+  return merged;
+}
+
 const CHAT_ADMIN_ID = '7431567147';
 function isChatAdmin() {
   try {
@@ -712,6 +757,7 @@ async function refreshChat() {
       best_score?: number;
       required_score?: number;
       messages?: ChatMessage[];
+      deleted_ids?: number[];
       online_users?: Array<{ telegram_user_id: string; display_name: string }>;
       error?: string;
     };
@@ -731,8 +777,9 @@ async function refreshChat() {
     const form = $('chat-form') as HTMLFormElement;
     form.hidden = false;
     form.style.display = '';
-    renderChatMessages(data.messages ?? []);
-    markChatMessagesRead(data.messages ?? []);
+    const chatMessages = syncLocalChatHistory(data.messages ?? [], data.deleted_ids ?? []);
+    renderChatMessages(chatMessages);
+    markChatMessagesRead(chatMessages);
     renderChatPresence(data.online_users ?? []);
     startChatPresence();
     $('chat-status').textContent = 'چت هر ۲ ثانیه به‌روزرسانی می‌شود.';
