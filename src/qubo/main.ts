@@ -721,11 +721,38 @@ function renderChatMessages(messages: ChatMessage[]) {
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'chat-delete-btn';
-      remove.title = 'حذف پیام';
-      remove.setAttribute('aria-label', 'حذف پیام');
+      remove.textContent = 'حذف پیام';
       remove.addEventListener('click', () => { void deleteChatMessage(message.id, remove); });
       actions.append(remove);
       item.append(actions);
+
+      // Reveal the delete action only after a deliberate long-press (or right-click).
+      let holdTimer = 0;
+      const cancelHold = () => {
+        if (holdTimer) window.clearTimeout(holdTimer);
+        holdTimer = 0;
+      };
+      item.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        cancelHold();
+        holdTimer = window.setTimeout(() => {
+          item.classList.add('is-delete-menu-open');
+          holdTimer = 0;
+        }, 550);
+      });
+      for (const eventName of ['pointerup', 'pointerleave', 'pointercancel']) {
+        item.addEventListener(eventName, cancelHold);
+      }
+      item.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        item.classList.add('is-delete-menu-open');
+      });
+      item.addEventListener('click', (event) => {
+        if (event.target === remove) return;
+        if (item.classList.contains('is-delete-menu-open')) {
+          item.classList.remove('is-delete-menu-open');
+        }
+      });
     }
     list.append(item);
   }
