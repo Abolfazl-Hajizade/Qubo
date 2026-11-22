@@ -1029,3 +1029,15 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 .chat-messages {
   justify-content: safe flex-end;
 }
+
+
+/* Match Telegram's native system-font feel in global chat. */
+.chat-message,
+.chat-message-top,
+.chat-message-top strong,
+.chat-message-top time,
+.chat-message p,
+.chat-start-date,
+.chat-form input {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
