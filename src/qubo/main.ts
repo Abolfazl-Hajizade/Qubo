@@ -12,6 +12,8 @@ const BEST_KEY = 'qubo.best';
 const STATS_KEY = 'qubo.stats';
 const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
+const PREVIEW_MODE = true;
+const PREVIEW_START_SCORE = 270;
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_FRAME_DELTA = 0.1;
 const INPUT_BUFFER_MS = 102; // experimental timing adjustment for variable-timestep physics
@@ -22,7 +24,7 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', numberingSystem: 'latn',
 });
 
-let world: World = createWorld();
+let world: World = createWorld(Math.random, PREVIEW_START_SCORE);
 let raf = 0;
 let last = 0;
 let paused = false;
@@ -37,11 +39,11 @@ let takeoffAgeVisual = Infinity;
 let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
-let best = loadJSON<number>(BEST_KEY, 0);
+let best = Math.max(loadJSON<number>(BEST_KEY, 0), PREVIEW_START_SCORE);
 const savedProgress = loadJSON<unknown>(PROGRESS_KEY, null);
-let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
-  ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
-  : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
+let checkpoint = Math.max(PREVIEW_START_SCORE, typeof savedProgress === 'number' && Number.isFinite(savedProgress)
+  ? Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP
+  : Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
 if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
 
 const canvas = $<HTMLCanvasElement>('stage');
@@ -73,7 +75,7 @@ if (telegramWebApp?.onEvent) {
   window.addEventListener('resize', updateChatViewportHeight);
   window.visualViewport?.addEventListener('resize', updateChatViewportHeight);
 }
-let checkpointSyncReady = !telegramWebApp?.initData;
+let checkpointSyncReady = PREVIEW_MODE || !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
 let waitingForCheckpointSync = false;
 let checkpointSyncFailed = false;
@@ -88,7 +90,7 @@ if (isTelegramWebView && 'serviceWorker' in navigator) {
     .catch(() => { /* service workers may be unavailable in embedded browsers */ });
 }
 resetSaberLocalHistory();
-checkpointInitialization = syncCheckpoint();
+checkpointInitialization = PREVIEW_MODE ? Promise.resolve(true) : syncCheckpoint();
 
 function resetSaberLocalHistory() {
   // One-time local cleanup for Saber only; Telegram's signed initData identifies the account.
@@ -358,6 +360,7 @@ function loop(now: number) {
 }
 
 async function recordGameStart() {
+  if (PREVIEW_MODE) return;
   const initData = telegramWebApp?.initData;
   if (!initData) return;
   try {
@@ -372,6 +375,7 @@ async function recordGameStart() {
 }
 
 function saveRemoteCheckpoint(value: number): Promise<boolean> {
+  if (PREVIEW_MODE) return Promise.resolve(true);
   const initData = telegramWebApp?.initData;
   if (!initData) return Promise.resolve(true);
   if (!checkpointSyncReady) return Promise.resolve(false);
@@ -399,6 +403,7 @@ function saveRemoteCheckpoint(value: number): Promise<boolean> {
 }
 
 async function submitScoreAfterCheckpoints(score: number) {
+  if (PREVIEW_MODE) return;
   if ((telegramWebApp?.initData && !checkpointSyncReady) || !await checkpointSyncQueue) return;
   const scoreCheckpoint = Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
   if (scoreCheckpoint !== checkpoint) return;
@@ -406,6 +411,7 @@ async function submitScoreAfterCheckpoints(score: number) {
 }
 
 async function syncCheckpoint(): Promise<boolean> {
+  if (PREVIEW_MODE) return true;
   const initData = telegramWebApp?.initData;
   if (!initData) return true;
   try {
@@ -448,6 +454,7 @@ async function syncCheckpoint(): Promise<boolean> {
 }
 
 async function submitScore(score: number) {
+  if (PREVIEW_MODE) return;
   const initData = telegramWebApp?.initData;
   if (!initData) return;
   try {
