@@ -236,6 +236,8 @@ dialog.dialog:not([open]) { display: none; }
 #home #chat-btn { width: 100%; justify-content: center; margin-top: 10px; background: #244b70; color: #fff; }
 #home #chat-btn:active { background: #193b5c; }
 .chat-dialog {
+  display: flex;
+  flex-direction: column;
   width: 100vw;
   max-width: none;
   height: var(--chat-viewport-height, 100dvh);
@@ -251,6 +253,7 @@ dialog.dialog:not([open]) { display: none; }
 }
 .chat-dialog::backdrop { background: rgba(5, 12, 20, .82); }
 .chat-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -263,7 +266,7 @@ dialog.dialog:not([open]) { display: none; }
 .chat-heading h2 { margin: 0; font-size: 1.1rem; }
 .chat-heading span { color: #aab6c8; font-size: .78rem; }
 .chat-online { color: #7ed5a1; font-size: .72rem; font-weight: 800; white-space: nowrap; }
-.chat-content { height: calc(var(--chat-viewport-height, 100dvh) - 82px - env(safe-area-inset-top)); display: flex; flex-direction: column; padding: 12px 14px max(10px, env(safe-area-inset-bottom)); }
+.chat-content { flex: 1 1 0; min-height: 0; height: auto; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: 12px 14px max(10px, env(safe-area-inset-bottom)); }
 .chat-content[hidden], .chat-locked[hidden] { display: none; }
 .chat-messages { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 3px 0 8px; display: flex; flex-direction: column; align-items: stretch; direction: ltr; gap: 4px; overscroll-behavior: contain; }
 .chat-messages { justify-content: safe flex-end; }
@@ -331,7 +334,7 @@ dialog.dialog:not([open]) { display: none; }
 .chat-required-score { font-size: .85rem; }
 @media (min-width: 640px) {
   .chat-dialog { width: min(100vw, 560px); height: min(var(--chat-viewport-height, 100dvh), 900px); margin: auto; border-radius: 20px; }
-  .chat-content { height: calc(min(var(--chat-viewport-height, 100dvh), 900px) - 82px); }
+  .chat-content { flex: 1 1 0; min-height: 0; height: auto; }
 }
 
 
@@ -1010,7 +1013,9 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 }
 @media (min-width: 640px) {
   .chat-content {
-    height: calc(min(var(--chat-viewport-height, 100dvh), 900px) - 82px);
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
   }
 }
 
