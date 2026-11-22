@@ -722,6 +722,7 @@ async function refreshChat() {
       online_users?: Array<{ telegram_user_id: string; display_name: string }>;
       error?: string;
     };
+    if (!dialog.open) return;
     if (response.status === 403 && data.eligible === false) {
       showChatHidden(`برای مشاهده و ارسال پیام در چت جهانی، حداقل امتیاز لازم ۳۵ است. امتیاز فعلی شما: ${numberFormat.format(data.best_score ?? 0)}`);
       $('chat-required-score').textContent = `امتیاز لازم: ۳۵ · امتیاز فعلی: ${numberFormat.format(data.best_score ?? 0)}`;
