@@ -722,7 +722,6 @@ function markChatMessagesRead(messages: ChatMessage[]) {
 
 function openChat() {
   const dialog = $('chat-dialog') as HTMLDialogElement;
-  telegramWebApp?.disableVerticalSwipes?.();
   if (!dialog.open) dialog.showModal();
   stopChatPolling();
   stopChatPresence(false);
