@@ -56,6 +56,16 @@ const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebAp
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
 telegramWebApp?.disableVerticalSwipes?.();
+
+// Keep the chat viewport in sync with Android's visual viewport when the keyboard opens.
+function updateChatViewportHeight() {
+  const height = window.visualViewport?.height ?? window.innerHeight;
+  document.documentElement.style.setProperty('--chat-viewport-height', `${Math.round(height)}px`);
+}
+updateChatViewportHeight();
+window.addEventListener('resize', updateChatViewportHeight);
+window.visualViewport?.addEventListener('resize', updateChatViewportHeight);
+window.visualViewport?.addEventListener('scroll', updateChatViewportHeight);
 let checkpointSyncReady = !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
 let waitingForCheckpointSync = false;
