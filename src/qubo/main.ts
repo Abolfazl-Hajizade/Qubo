@@ -779,7 +779,14 @@ async function refreshChat() {
     form.hidden = false;
     form.style.display = '';
     const chatMessages = syncLocalChatHistory(data.messages ?? [], data.deleted_ids ?? []);
-    renderChatMessages(chatMessages);
+    const chatMessageSignature = JSON.stringify(chatMessages.map(({ id, message, display_name, is_own, created_at }) => (
+      [id, message, display_name, is_own, created_at]
+    )));
+    const messageList = $('chat-messages');
+    if (messageList.dataset.renderedMessages !== chatMessageSignature) {
+      renderChatMessages(chatMessages);
+      messageList.dataset.renderedMessages = chatMessageSignature;
+    }
     markChatMessagesRead(chatMessages);
     renderChatPresence(data.online_users ?? []);
     startChatPresence();
