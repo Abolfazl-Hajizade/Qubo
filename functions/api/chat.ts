@@ -64,17 +64,26 @@ async function readBody(request: Request): Promise<{ initData?: unknown; message
   try { return await request.json() as { initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown }; }
   catch { return null; }
 }
+let chatPresenceSchemaReady: Promise<void> | null = null;
 async function ensureChatPresenceTable(env: Env): Promise<void> {
-  await env.DB.prepare(`
-    CREATE TABLE IF NOT EXISTS chat_presence (
-      telegram_user_id TEXT NOT NULL,
-      session_id TEXT NOT NULL,
-      display_name TEXT NOT NULL,
-      last_seen INTEGER NOT NULL,
-      PRIMARY KEY (telegram_user_id, session_id)
-    )
-  `).run();
-  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_chat_presence_last_seen ON chat_presence(last_seen)").run();
+  if (!chatPresenceSchemaReady) {
+    chatPresenceSchemaReady = (async () => {
+      await env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS chat_presence (
+          telegram_user_id TEXT NOT NULL,
+          session_id TEXT NOT NULL,
+          display_name TEXT NOT NULL,
+          last_seen INTEGER NOT NULL,
+          PRIMARY KEY (telegram_user_id, session_id)
+        )
+      `).run();
+      await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_chat_presence_last_seen ON chat_presence(last_seen)").run();
+    })().catch((error) => {
+      chatPresenceSchemaReady = null;
+      throw error;
+    });
+  }
+  await chatPresenceSchemaReady;
 }
 async function getOnlineChatUsers(env: Env): Promise<Array<{ telegram_user_id: string; display_name: string }>> {
   const cutoff = Math.floor(Date.now() / 1000) - 90;
