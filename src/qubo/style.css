@@ -238,7 +238,7 @@ dialog.dialog:not([open]) { display: none; }
 .chat-dialog {
   width: 100vw;
   max-width: none;
-  height: 100dvh;
+  height: var(--chat-viewport-height, 100dvh);
   max-height: none;
   margin: 0;
   padding: 0;
@@ -263,7 +263,7 @@ dialog.dialog:not([open]) { display: none; }
 .chat-heading h2 { margin: 0; font-size: 1.1rem; }
 .chat-heading span { color: #aab6c8; font-size: .78rem; }
 .chat-online { color: #7ed5a1; font-size: .72rem; font-weight: 800; white-space: nowrap; }
-.chat-content { height: calc(100dvh - 82px - env(safe-area-inset-top)); display: flex; flex-direction: column; padding: 12px 14px max(10px, env(safe-area-inset-bottom)); }
+.chat-content { height: calc(var(--chat-viewport-height, 100dvh) - 82px - env(safe-area-inset-top)); display: flex; flex-direction: column; padding: 12px 14px max(10px, env(safe-area-inset-bottom)); }
 .chat-content[hidden], .chat-locked[hidden] { display: none; }
 .chat-messages { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 3px 0 8px; display: flex; flex-direction: column; align-items: stretch; direction: ltr; gap: 4px; overscroll-behavior: contain; }
 .chat-messages { justify-content: safe flex-end; }
@@ -330,8 +330,8 @@ dialog.dialog:not([open]) { display: none; }
 .chat-locked strong { display: block; margin-top: 16px; color: #9bc7ff; line-height: 1.7; }
 .chat-required-score { font-size: .85rem; }
 @media (min-width: 640px) {
-  .chat-dialog { width: min(100vw, 560px); height: min(100dvh, 900px); margin: auto; border-radius: 20px; }
-  .chat-content { height: calc(min(100dvh, 900px) - 82px); }
+  .chat-dialog { width: min(100vw, 560px); height: min(var(--chat-viewport-height, 100dvh), 900px); margin: auto; border-radius: 20px; }
+  .chat-content { height: calc(min(var(--chat-viewport-height, 100dvh), 900px) - 82px); }
 }
 
 
@@ -1010,7 +1010,7 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 }
 @media (min-width: 640px) {
   .chat-content {
-    height: calc(min(100dvh, 900px) - 82px);
+    height: calc(min(var(--chat-viewport-height, 100dvh), 900px) - 82px);
   }
 }
 
