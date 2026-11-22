@@ -285,13 +285,14 @@ dialog.dialog:not([open]) { display: none; }
 .chat-message.is-own .chat-message-top strong { color: #d2e7ff; }
 .chat-message-actions { display: flex; justify-content: flex-end; margin-top: 5px; }
 .chat-delete-btn {
-  border: 1px solid rgba(255, 125, 125, .45);
-  border-radius: 8px;
-  padding: 4px 8px;
-  background: rgba(130, 35, 45, .28);
-  color: #ffb6b6;
-  font: inherit;
-  font-size: .72rem;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f04444;
+  box-shadow: 0 0 0 2px rgba(240, 68, 68, .16);
   cursor: pointer;
 }
 .chat-delete-btn:disabled { opacity: .5; }
