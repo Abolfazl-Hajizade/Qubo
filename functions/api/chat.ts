@@ -60,9 +60,33 @@ function json(data: unknown, status = 200): Response {
     status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
   });
 }
-async function readBody(request: Request): Promise<{ initData?: unknown; message?: unknown } | null> {
-  try { return await request.json() as { initData?: unknown; message?: unknown }; }
+async function readBody(request: Request): Promise<{ initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown } | null> {
+  try { return await request.json() as { initData?: unknown; message?: unknown; action?: unknown; sessionId?: unknown }; }
   catch { return null; }
+}
+async function ensureChatPresenceTable(env: Env): Promise<void> {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS chat_presence (
+      telegram_user_id TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      last_seen INTEGER NOT NULL,
+      PRIMARY KEY (telegram_user_id, session_id)
+    )
+  `).run();
+  await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_chat_presence_last_seen ON chat_presence(last_seen)").run();
+}
+async function getOnlineChatUsers(env: Env): Promise<Array<{ telegram_user_id: string; display_name: string }>> {
+  const cutoff = Math.floor(Date.now() / 1000) - 90;
+  await env.DB.prepare("DELETE FROM chat_presence WHERE last_seen < ?").bind(cutoff).run();
+  const rows = await env.DB.prepare(`
+    SELECT telegram_user_id, MAX(display_name) AS display_name
+    FROM chat_presence
+    WHERE last_seen >= ?
+    GROUP BY telegram_user_id
+    ORDER BY display_name COLLATE NOCASE
+  `).bind(cutoff).all<{ telegram_user_id: string; display_name: string }>();
+  return rows.results ?? [];
 }
 async function getUser(request: Request, env: Env): Promise<AuthenticatedUser | null> {
   if (!env.BOT_TOKEN) return null;
@@ -114,19 +138,24 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     }, 403);
   }
 
-  const rows = await env.DB.prepare(`
-    SELECT id, display_name, message, created_at,
-      CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
-    FROM chat_messages
-    ORDER BY id DESC
-    LIMIT 100
-  `).bind(user.id).all<ChatRow>();
+  await ensureChatPresenceTable(env);
+  const [rows, onlineUsers] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, display_name, message, created_at,
+        CASE WHEN telegram_user_id = ? THEN 1 ELSE 0 END AS is_own
+      FROM chat_messages
+      ORDER BY id DESC
+      LIMIT 100
+    `).bind(user.id).all<ChatRow>(),
+    getOnlineChatUsers(env),
+  ]);
   return json({
     hidden: false,
     eligible: access.eligible,
     best_score: access.bestScore,
     required_score: MIN_SCORE,
     messages: (rows.results ?? []).reverse(),
+    online_users: onlineUsers,
   });
 }
 
@@ -143,6 +172,24 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     return json({ banned: true, error: "به دلیل تلاش برای ارسال پیام در چت با امتیاز کمتر از ۳۵، حساب شما مسدود شد." }, 403);
   }
   await saveTelegramUser(env, user);
+  if (body.action === "presence_enter" || body.action === "presence_heartbeat" || body.action === "presence_leave") {
+    const sessionId = String(body.sessionId ?? "");
+    if (!/^[a-f0-9-]{16,64}$/i.test(sessionId)) return json({ error: "شناسه نشست نامعتبر است." }, 400);
+    await ensureChatPresenceTable(env);
+    if (body.action === "presence_leave") {
+      await env.DB.prepare("DELETE FROM chat_presence WHERE telegram_user_id = ? AND session_id = ?")
+        .bind(user.id, sessionId).run();
+      return json({ ok: true, online_users: await getOnlineChatUsers(env) });
+    }
+    await env.DB.prepare(`
+      INSERT INTO chat_presence (telegram_user_id, session_id, display_name, last_seen)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(telegram_user_id, session_id) DO UPDATE SET
+        display_name = excluded.display_name,
+        last_seen = excluded.last_seen
+    `).bind(user.id, sessionId, user.displayName, Math.floor(Date.now() / 1000)).run();
+    return json({ ok: true });
+  }
   if (typeof body.message !== "string") return json({ error: "متن پیام نامعتبر است." }, 400);
   const message = body.message.trim();
   if (!message || message.length > MAX_MESSAGE_LENGTH) return json({ error: "پیام باید بین ۱ تا ۵۰۰ کاراکتر باشد." }, 400);
