@@ -957,3 +957,24 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 .chat-message:not(.is-own) p {
   color: #2b2035;
 }
+
+/* Other players: blue glass bubbles with a soft neon-blue glow. */
+.chat-message:not(.is-own) {
+  background: linear-gradient(145deg, rgba(8, 31, 62, .78), rgba(10, 57, 101, .72));
+  border: 1px solid rgba(66, 169, 255, .58);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, .24),
+    0 0 12px rgba(35, 145, 255, .18),
+    inset 0 0 14px rgba(91, 185, 255, .13);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.chat-message:not(.is-own) .chat-message-top strong {
+  color: #9bd6ff;
+  text-shadow: 0 0 8px rgba(67, 169, 255, .38);
+}
+.chat-message:not(.is-own) .chat-message-top time {
+  color: #a9cce8;
+}
+.chat-message:not(.is-own) p {
+  color: #eff8ff;
+}
