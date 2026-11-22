@@ -1073,3 +1073,25 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 .chat-form:has(input:not(:placeholder-shown)) .chat-send-btn:active {
   background: #ff4b55;
 }
+
+
+/* Static graphite background for the global chat; remove the animated Matrix rain. */
+.chat-dialog {
+  background: #343a40;
+}
+.chat-dialog::before {
+  content: none;
+  display: none;
+  animation: none;
+}
+.chat-header {
+  background: #2b3035;
+  border-bottom-color: #4a5158;
+}
+.chat-content,
+.chat-messages {
+  background: #343a40;
+}
+.chat-locked {
+  background: transparent;
+}
