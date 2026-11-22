@@ -728,6 +728,7 @@ function renderChatMessages(messages: ChatMessage[]) {
 
       // Reveal the delete action only after a deliberate long-press (or right-click).
       let holdTimer = 0;
+      let longPressTriggered = false;
       const cancelHold = () => {
         if (holdTimer) window.clearTimeout(holdTimer);
         holdTimer = 0;
@@ -737,6 +738,7 @@ function renderChatMessages(messages: ChatMessage[]) {
         cancelHold();
         holdTimer = window.setTimeout(() => {
           item.classList.add('is-delete-menu-open');
+          longPressTriggered = true;
           holdTimer = 0;
         }, 550);
       });
@@ -749,9 +751,11 @@ function renderChatMessages(messages: ChatMessage[]) {
       });
       item.addEventListener('click', (event) => {
         if (event.target === remove) return;
-        if (item.classList.contains('is-delete-menu-open')) {
-          item.classList.remove('is-delete-menu-open');
+        if (longPressTriggered) {
+          longPressTriggered = false;
+          return;
         }
+        if (item.classList.contains('is-delete-menu-open')) item.classList.remove('is-delete-menu-open');
       });
     }
     list.append(item);
