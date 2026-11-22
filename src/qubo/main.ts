@@ -120,24 +120,6 @@ $('chat-dialog').addEventListener('close', () => {
 window.addEventListener('pagehide', () => stopChatPresence(true));
 $('chat-form').addEventListener('submit', sendChatMessage);
 
-let chatTouchStartY: number | null = null;
-const chatMessageList = $('chat-messages');
-chatMessageList.addEventListener('touchstart', (event) => {
-  chatTouchStartY = event.touches.length === 1 ? event.touches[0].clientY : null;
-}, { passive: true });
-chatMessageList.addEventListener('touchmove', (event) => {
-  if (chatTouchStartY === null || event.touches.length !== 1) return;
-  const nextY = event.touches[0].clientY;
-  const deltaY = chatTouchStartY - nextY;
-  chatTouchStartY = nextY;
-  const maxScrollTop = chatMessageList.scrollHeight - chatMessageList.clientHeight;
-  if (maxScrollTop <= 0) return;
-  chatMessageList.scrollTop = Math.max(0, Math.min(maxScrollTop, chatMessageList.scrollTop + deltaY));
-  if (event.cancelable) event.preventDefault();
-}, { passive: false });
-for (const eventName of ['touchend', 'touchcancel']) {
-  chatMessageList.addEventListener(eventName, () => { chatTouchStartY = null; }, { passive: true });
-}
 startUnreadChatPolling();
 window.addEventListener('pageshow', () => { void refreshChatUnread(); });
 
