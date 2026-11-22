@@ -939,3 +939,19 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
 }
 .chat-message-top strong { color: #a6b9aa; }
 .chat-message.is-own .chat-message-top strong { color: #8dffb0; }
+
+/* Other players use the same layered bubble treatment in soft lavender. */
+.chat-message:not(.is-own) {
+  background: linear-gradient(145deg, rgba(224, 211, 239, .97), rgba(198, 178, 220, .97));
+  border-color: rgba(193, 164, 220, .72);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, .24), inset 0 0 14px rgba(255, 255, 255, .24);
+}
+.chat-message:not(.is-own) .chat-message-top strong {
+  color: #684b80;
+}
+.chat-message:not(.is-own) .chat-message-top time {
+  color: #766487;
+}
+.chat-message:not(.is-own) p {
+  color: #2b2035;
+}
