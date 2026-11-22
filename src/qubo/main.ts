@@ -698,7 +698,10 @@ function renderChatMessages(messages: ChatMessage[]) {
     const parsed = new Date(message.created_at);
     time.textContent = Number.isNaN(parsed.getTime())
       ? '' : new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(parsed);
-    top.append(name, time);
+    // Hide the sender name on the current user's own messages; keep names for everyone else.
+    if (message.is_own) top.classList.add('chat-message-top-own');
+    else top.append(name);
+    top.append(time);
     const body = document.createElement('p');
     body.textContent = message.message;
     item.append(top, body);
