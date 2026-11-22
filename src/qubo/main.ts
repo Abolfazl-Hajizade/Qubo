@@ -552,7 +552,6 @@ function isChatAdmin() {
   }
 }
 let chatPollTimer: number | undefined;
-let chatPresenceTimer: number | undefined;
 let chatPresenceActive = false;
 let unreadPollTimer: number | undefined;
 let chatLoading = false;
@@ -584,8 +583,6 @@ async function sendChatPresence(action: 'presence_enter' | 'presence_heartbeat' 
   }
 }
 function stopChatPresence(sendLeave: boolean) {
-  if (chatPresenceTimer !== undefined) window.clearInterval(chatPresenceTimer);
-  chatPresenceTimer = undefined;
   if (chatPresenceActive && sendLeave) void sendChatPresence('presence_leave', true);
   chatPresenceActive = false;
 }
@@ -593,10 +590,6 @@ function startChatPresence() {
   if (chatPresenceActive) return;
   chatPresenceActive = true;
   void sendChatPresence('presence_enter');
-  chatPresenceTimer = window.setInterval(() => {
-    if (( $('chat-dialog') as HTMLDialogElement).open) void sendChatPresence('presence_heartbeat');
-    else stopChatPresence(true);
-  }, 30_000);
 }
 function renderChatPresence(users: Array<{ telegram_user_id: string; display_name: string }>) {
   const container = $('chat-presence');
