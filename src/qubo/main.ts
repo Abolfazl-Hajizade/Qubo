@@ -13,10 +13,8 @@ const STATS_KEY = 'qubo.stats';
 const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
 
-// The opening stage grants its first checkpoint at 15; later stages keep 30-point milestones.
+// Checkpoints remain every 30 points; 15 is only a one-time restart threshold.
 function checkpointForScore(score: number): number {
-  if (score < 15) return 0;
-  if (score < 30) return 15;
   return Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
 }
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
@@ -247,7 +245,7 @@ function start() {
     return;
   }
   if (endDialog.open) endDialog.close();
-  world = createWorld(Math.random, checkpoint);
+  world = createWorld(Math.random, Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0));
   paused = false;
   started = false;
   pendingLaunchUntil = 0;

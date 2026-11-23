@@ -21,8 +21,6 @@ const encoder = new TextEncoder();
 const CHECKPOINT_STEP = 30;
 
 function checkpointForScore(score: number): number {
-  if (score < 15) return 0;
-  if (score < 30) return 15;
   return Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
 }
 
@@ -156,7 +154,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
       .bind(user.id).first<{ best_score: number }>(),
   ]);
   const checkpoint = Math.max(
-    checkpointRow ? Number(checkpointRow.checkpoint) : 0,
+    checkpointRow ? checkpointForScore(Number(checkpointRow.checkpoint)) : 0,
     bestRow ? checkpointForScore(Number(bestRow.best_score)) : 0,
   );
   const scoreCheckpoint = checkpointForScore(score);

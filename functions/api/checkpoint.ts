@@ -12,13 +12,11 @@ const encoder = new TextEncoder();
 const CHECKPOINT_STEP = 30;
 
 function checkpointForScore(score: number): number {
-  if (score < 15) return 0;
-  if (score < 30) return 15;
   return Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
 }
 
 function nextCheckpoint(current: number): number {
-  return current === 0 ? 15 : current === 15 ? 30 : current + CHECKPOINT_STEP;
+  return current + CHECKPOINT_STEP;
 }
 
 function hex(bytes: ArrayBuffer): string {
@@ -94,7 +92,8 @@ async function currentCheckpoint(env: Env, userId: string): Promise<number> {
       .bind(userId).first<{ best_score: number }>(),
   ]);
   const checkpointFromScore = score ? checkpointForScore(Number(score.best_score)) : 0;
-  return Math.max(saved ? Number(saved.checkpoint) : 0, checkpointFromScore);
+  const savedCheckpoint = saved ? checkpointForScore(Number(saved.checkpoint)) : 0;
+  return Math.max(savedCheckpoint, checkpointFromScore);
 }
 
 export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
@@ -122,7 +121,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
 
   const checkpoint = body.checkpoint;
   if (typeof checkpoint !== "number" || !Number.isSafeInteger(checkpoint)
-      || checkpoint < 0 || checkpoint > 100_000 || (checkpoint !== 15 && (checkpoint < 30 || checkpoint % CHECKPOINT_STEP !== 0))) {
+      || checkpoint < 0 || checkpoint > 100_000 || (checkpoint < CHECKPOINT_STEP || checkpoint % CHECKPOINT_STEP !== 0)) {
     return json({ error: "Checkpoint نامعتبر است." }, 400);
   }
 
@@ -130,7 +129,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     "SELECT best_score FROM leaderboard WHERE telegram_user_id = ?"
   ).bind(user.id).first<{ best_score: number }>();
   const recordedBestScore = scoreRow ? Number(scoreRow.best_score) : 0;
-  const minimumScore = checkpoint === 15 ? 0 : checkpoint - CHECKPOINT_STEP;
+  const minimumScore = checkpoint - CHECKPOINT_STEP;
   if (recordedBestScore < minimumScore) {
     await banAndDeleteUser(env.DB, user.id, `checkpoint_score_mismatch:${recordedBestScore}->${checkpoint}`);
     return json({ banned: true, error: "امتیاز ثبت‌شده برای این checkpoint کافی نبود؛ حساب مسدود شد." }, 403);
