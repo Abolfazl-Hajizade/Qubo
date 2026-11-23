@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="Free offline puzzle, board and card games." />
-    <meta name="theme-color" content="#062a20" />
+    <meta name="theme-color" content="#071a3d" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
@@ -13,7 +13,22 @@
     <!-- Sets the theme the player picked before the first paint; see src/theme.ts. -->
     <script>try{var t=localStorage.getItem('games.theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
     <!-- The paper colour from base.css, so the page never shows the browser's white canvas while the stylesheet loads. -->
-    <style>html, body { background: #062a20; }</style>
+    <style>
+      /* Telegram-safe homepage background diagnostic: apply before any external CSS or JavaScript. */
+      html.home-page,
+      html.home-page body.home-page,
+      html.home-page body.home-page #app,
+      html.home-page body.home-page #app > main.screen.wide.home {
+        background: #071a3d !important;
+        background-color: #071a3d !important;
+        background-image: none !important;
+      }
+      html.home-page body.home-page::before,
+      html.home-page body.home-page::after {
+        content: none !important;
+        display: none !important;
+      }
+    </style>
     <link rel="stylesheet" href="/src/style.css" />
     <title>Games</title>
   </head>
