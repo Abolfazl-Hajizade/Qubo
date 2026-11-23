@@ -166,7 +166,7 @@ async function refreshAnnouncements(markRead=false) {
     $('announcement-admin').hidden=!data.is_admin;renderAnnouncements(data.announcements,data.is_admin);
     updateAnnouncementBadge(data.announcements.filter(x=>!x.is_read).length);
     if(markRead){await Promise.all(data.announcements.filter(x=>!x.is_read).map(x=>announcementRequest('mark_read',{id:x.id})));updateAnnouncementBadge(0);data.announcements.forEach(x=>x.is_read=1);renderAnnouncements(data.announcements,data.is_admin);}
-  }catch(e){if(isAnnouncementAdmin()){const items=loadPreviewAnnouncementDemo();$('announcement-admin').hidden=false;renderAnnouncements(items,true);updateAnnouncementBadge(items.filter(x=>!x.is_read).length);}else{$('announcement-list').textContent=e instanceof Error?e.message:'دریافت اعلان‌ها ناموفق بود.';}}
+  }catch(e){if(isAnnouncementAdmin()){const items=loadPreviewAnnouncementDemo();if(markRead){items.forEach(x=>x.is_read=1);savePreviewAnnouncementDemo(items);} $('announcement-admin').hidden=false;renderAnnouncements(items,true);updateAnnouncementBadge(markRead?0:items.filter(x=>!x.is_read).length);}else{$('announcement-list').textContent=e instanceof Error?e.message:'دریافت اعلان‌ها ناموفق بود.';}}
   finally{announcementRequestInFlight=false;}
 }
 function openAnnouncements(){const d=$('announcement-dialog') as HTMLDialogElement;if(!d.open)d.showModal();void refreshAnnouncements(true);}
