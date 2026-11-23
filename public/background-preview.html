@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06251c">
+  <title>Qubo — پس‌زمینه سبز و برفی</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; }
+    body {
+      min-height: 100vh;
+      overflow: hidden;
+      color: #f1fff6;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(25, 78, 53, .24), transparent 62%),
+        linear-gradient(180deg, #082b20 0%, #06251c 58%, #041b15 100%);
+      font-family: system-ui, sans-serif;
+    }
+    .snow {
+      position: fixed; inset: -100% 0 0; pointer-events: none;
+      background-repeat: no-repeat; will-change: transform;
+    }
+    .snow.one {
+      opacity: .72;
+      background-image:
+        radial-gradient(2px 2px at 7% 8%, #fff 98%, transparent),
+        radial-gradient(1.5px 1.5px at 19% 21%, rgba(245,255,250,.9) 98%, transparent),
+        radial-gradient(2px 2px at 34% 13%, rgba(255,255,255,.85) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 48% 29%, #fff 98%, transparent),
+        radial-gradient(2px 2px at 63% 7%, rgba(240,255,247,.9) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 77% 19%, #fff 98%, transparent),
+        radial-gradient(2px 2px at 91% 11%, rgba(245,255,250,.9) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 13% 43%, #fff 98%, transparent),
+        radial-gradient(2px 2px at 29% 36%, rgba(245,255,250,.85) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 57% 48%, #fff 98%, transparent),
+        radial-gradient(2px 2px at 72% 39%, rgba(245,255,250,.9) 98%, transparent),
+        radial-gradient(1.5px 1.5px at 86% 51%, #fff 98%, transparent);
+      animation: fall 22s linear infinite;
+    }
+    .snow.two {
+      opacity: .48;
+      background-image:
+        radial-gradient(3px 3px at 16% 16%, #fff 98%, transparent),
+        radial-gradient(2.5px 2.5px at 41% 6%, rgba(240,255,247,.9) 98%, transparent),
+        radial-gradient(3px 3px at 69% 25%, #fff 98%, transparent),
+        radial-gradient(2px 2px at 94% 31%, rgba(240,255,247,.9) 98%, transparent),
+        radial-gradient(2.5px 2.5px at 25% 57%, #fff 98%, transparent),
+        radial-gradient(3px 3px at 54% 43%, rgba(240,255,247,.9) 98%, transparent),
+        radial-gradient(2px 2px at 81% 63%, #fff 98%, transparent);
+      animation: drift 30s linear infinite;
+    }
+    main {
+      position: relative; z-index: 1; min-height: 100vh;
+      display: grid; place-content: center; text-align: center; padding: 2rem;
+    }
+    h1 { margin: 0; font-size: clamp(2.5rem, 8vw, 5.5rem); letter-spacing: -.04em; text-shadow: 0 2px 18px rgba(0,12,8,.28); }
+    p { color: rgba(232,255,241,.78); font-size: 1rem; }
+    @keyframes fall { from { transform: translate3d(0,0,0); } to { transform: translate3d(-2%,100%,0); } }
+    @keyframes drift { from { transform: translate3d(1%,0,0); } to { transform: translate3d(-3%,100%,0); } }
+    @media (prefers-reduced-motion: reduce) { .snow { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="snow one" aria-hidden="true"></div>
+  <div class="snow two" aria-hidden="true"></div>
+  <main>
+    <h1>Qubo</h1>
+    <p>پس‌زمینه سبز تیره با بارش آرام و طبیعی برف</p>
+  </main>
+</body>
+</html>
