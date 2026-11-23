@@ -1,31 +1,29 @@
-/* Temporary plain-grey homepage diagnostic. No gradients, images, or snowfall. */
+/* The home screen background is deliberately solid; keep it consistent in browsers and Telegram WebView. */
 html.home-page,
-body.home-page {
-  background: #b8b8b8 !important;
-  background-color: #b8b8b8 !important;
-  color: #222 !important;
+body.home-page,
+body.home-page #app,
+body.home-page #app > main.screen.wide.home {
+  background: #071a3d !important;
+  background-color: #071a3d !important;
+  background-image: none !important;
+  color: #f4f6fb !important;
 }
-
 body.home-page::before,
 body.home-page::after {
   content: none !important;
   display: none !important;
 }
-
 body.home-page #app {
   position: relative;
   z-index: 1;
-  background: transparent !important;
 }
-
-.home .wordmark,
-.home .section-label {
-  color: #222 !important;
+body.home-page .wordmark,
+body.home-page .stamps,
+body.home-page .section-label,
+body.home-page .home-foot {
+  color: #f4f6fb !important;
   text-shadow: none !important;
 }
-
-.home .stamps,
-.home .stamps span + span::before,
-.home .home-foot {
-  color: #333 !important;
+body.home-page .section-label::before {
+  background: #8db7ff !important;
 }
