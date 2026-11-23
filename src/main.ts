@@ -3,6 +3,7 @@
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import "./pwa";
+import "./home-snow.css";
 import { showGameOfTheDay } from "./gotd";
 import { checkForUpdate } from "./update";
 
