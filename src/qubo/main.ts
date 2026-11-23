@@ -125,6 +125,47 @@ function resetSaberLocalHistory() {
   }
 }
 
+
+type AdminAnnouncement = { id:number; message:string; created_at:string; is_read:number };
+let announcementPollTimer:number|undefined, announcementRequestInFlight=false;
+async function announcementRequest(action?:string, extra:Record<string,unknown>={}) {
+  const initData=telegramWebApp?.initData; if(!initData) throw new Error('این بخش فقط داخل تلگرام در دسترس است.');
+  const response=await fetch('/api/announcements',action?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({initData,action,...extra})}:{headers:{'x-telegram-init-data':initData}});
+  const data=await response.json() as {error?:string;announcements?:AdminAnnouncement[];is_admin?:boolean};
+  if(!response.ok) throw new Error(data.error||'ارتباط با سرور ناموفق بود.'); return data;
+}
+function updateAnnouncementBadge(count:number) {
+  const badge=$('announcement-unread-badge'); badge.hidden=count<=0; badge.textContent=count>99?'99+':String(count);
+}
+function renderAnnouncements(items:AdminAnnouncement[],admin:boolean) {
+  const list=$('announcement-list'); list.replaceChildren();
+  if(!items.length){const p=document.createElement('p');p.className='announcement-empty';p.textContent='هنوز اعلانی ثبت نشده است.';list.append(p);return;}
+  for(const item of items){
+    const card=document.createElement('article');card.className='announcement-card'+(item.is_read?'':' is-unread');
+    const top=document.createElement('div');top.className='announcement-card-top';
+    const tag=document.createElement('span');tag.className='announcement-tag';tag.textContent=item.is_read?'READ':'NEW';
+    const date=document.createElement('time');date.textContent=new Date(item.created_at.replace(' ','T')+'Z').toLocaleString();top.append(tag,date);
+    const p=document.createElement('p');p.textContent=item.message;card.append(top,p);
+    if(admin){const del=document.createElement('button');del.type='button';del.className='announcement-delete';del.textContent='Delete';del.addEventListener('click',async()=>{if(!confirm('این اعلان حذف شود؟'))return;try{await announcementRequest('delete',{id:item.id});await refreshAnnouncements(false);}catch(e){$('announcement-status').textContent=e instanceof Error?e.message:'حذف ناموفق بود.';}});card.append(del);}
+    list.append(card);
+  }
+}
+async function refreshAnnouncements(markRead=false) {
+  if(announcementRequestInFlight)return;announcementRequestInFlight=true;
+  try{
+    const data=await announcementRequest() as {announcements:AdminAnnouncement[];is_admin:boolean};
+    $('announcement-admin').hidden=!data.is_admin;renderAnnouncements(data.announcements,data.is_admin);
+    updateAnnouncementBadge(data.announcements.filter(x=>!x.is_read).length);
+    if(markRead){await Promise.all(data.announcements.filter(x=>!x.is_read).map(x=>announcementRequest('mark_read',{id:x.id})));updateAnnouncementBadge(0);data.announcements.forEach(x=>x.is_read=1);renderAnnouncements(data.announcements,data.is_admin);}
+  }catch(e){$('announcement-list').textContent=e instanceof Error?e.message:'دریافت اعلان‌ها ناموفق بود.';}
+  finally{announcementRequestInFlight=false;}
+}
+function openAnnouncements(){const d=$('announcement-dialog') as HTMLDialogElement;if(!d.open)d.showModal();void refreshAnnouncements(true);}
+$('announcement-btn').addEventListener('click',openAnnouncements);
+$('announcement-close-btn').addEventListener('click',()=>$('announcement-dialog').close());
+$('announcement-form').addEventListener('submit',async e=>{e.preventDefault();const input=$('announcement-input') as HTMLTextAreaElement;const status=$('announcement-status');if(!input.value.trim())return;status.textContent='در حال انتشار…';try{await announcementRequest('publish',{message:input.value.trim()});input.value='';status.textContent='اعلان برای همه بازیکنان منتشر شد.';await refreshAnnouncements(false);}catch(error){status.textContent=error instanceof Error?error.message:'انتشار ناموفق بود.';}});
+function startAnnouncementPolling(){if(announcementPollTimer!==undefined)window.clearInterval(announcementPollTimer);void refreshAnnouncements(false);announcementPollTimer=window.setInterval(()=>{if(screens.is('home')&&!($('announcement-dialog') as HTMLDialogElement).open)void refreshAnnouncements(false);},15000);}
+
 $('play-btn').addEventListener('click', start);
 $('guide-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).showModal());
 $('guide-close-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).close());
@@ -141,6 +182,7 @@ window.addEventListener('pagehide', () => stopChatPresence(true));
 $('chat-form').addEventListener('submit', sendChatMessage);
 
 startUnreadChatPolling();
+startAnnouncementPolling();
 window.addEventListener('pageshow', () => { void refreshChatUnread(); });
 
 $('end-again').addEventListener('click', () => { endDialog.close(); start(); });
