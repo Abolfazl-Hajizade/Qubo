@@ -51,31 +51,36 @@ body:has(#home:not([hidden]))::after {
   body:has(#home:not([hidden]))::after { animation: none; }
 }
 
-/* Frosted glass: retain each button's hue, but let the home backdrop show through. */
-#home .btn {
-  -webkit-backdrop-filter: blur(16px) saturate(145%);
-  backdrop-filter: blur(16px) saturate(145%);
-  border: 1px solid rgba(255, 255, 255, .34);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 8px 22px rgba(8, 3, 22, .18);
+/* True frosted glass: translucent fills reveal the blurred page behind each button. */
+#home .btn,
+#home .btn:active {
+  background: rgba(255, 255, 255, .16) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, .42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 8px 22px rgba(8, 3, 22, .16);
 }
+
+/* Keep a hint of each button's original color, without making its surface opaque. */
 #home #play-btn.btn-primary,
 #home #play-btn.btn-primary:active {
-  background-color: color-mix(in srgb, var(--coral) 42%, transparent);
+  background: rgba(198, 58, 80, .38) !important;
 }
 #home #history-btn.history-link,
 #home #history-btn.history-link:active {
-  background-color: rgba(23, 59, 112, .42);
+  background: rgba(23, 59, 112, .38) !important;
 }
 #home .home-title-row .guide-btn,
 #home .home-title-row .guide-btn:active {
-  background-color: rgba(197, 203, 211, .38);
+  background: rgba(197, 203, 211, .30) !important;
 }
 #home #chat-btn,
 #home #chat-btn:active {
-  background-color: rgba(36, 75, 112, .42);
+  background: rgba(36, 75, 112, .38) !important;
 }
-#home #leaderboard-btn {
-  background-color: rgba(255, 255, 255, .22);
+#home #leaderboard-btn,
+#home #leaderboard-btn:active {
+  background: rgba(255, 255, 255, .16) !important;
 }
 #home .btn:active {
   filter: brightness(1.06);
