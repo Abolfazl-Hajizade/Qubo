@@ -3,14 +3,22 @@
 /* Qubo prints in cocoa, the arcade ink. */
 :root { --c: var(--coral); }
 
-/* Use the same storm backdrop on the home screen and around the active playfield. */
-body:has(#game:not([hidden])), body:has(#home:not([hidden])) {
+/* Keep the storm backdrop for gameplay only. */
+body:has(#game:not([hidden])) {
   background-color: #27333d;
   background-image:
     repeating-linear-gradient(108deg, transparent 0 18px, rgba(190, 211, 224, 0.12) 19px 20px, transparent 21px 40px),
     radial-gradient(ellipse at 18% 12%, rgba(10, 17, 25, 0.92) 0, rgba(24, 34, 43, 0.58) 23%, transparent 48%),
     radial-gradient(ellipse at 82% 30%, rgba(10, 17, 25, 0.78) 0, rgba(31, 43, 53, 0.52) 25%, transparent 52%),
     linear-gradient(180deg, #101923 0%, #27333d 48%, #46515a 100%);
+  background-attachment: fixed;
+}
+
+/* The Qubo home/menu screen uses a clean solid deep-blue backdrop. */
+body:has(#home:not([hidden])) {
+  background: #071a3d !important;
+  background-color: #071a3d !important;
+  background-image: none !important;
   background-attachment: fixed;
 }
 
