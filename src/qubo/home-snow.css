@@ -1,3 +1,37 @@
+/* Match the global chat's animated Matrix code-rain backdrop on the home screen. */
+body:has(#home:not([hidden])) {
+  background: #020604;
+}
+body:has(#home:not([hidden]))::before {
+  content: "01001011 00110101 10100110 01001101 11001010 00101101 10110010 01010101 01101001 10010110 00110100 11001011 01011010 00100111 10100101 01110010 01001101 10011010 00110101 01101001 11000100 00101110 10101001 01010011";
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  padding: 12px 8px;
+  color: #00ff68;
+  opacity: .17;
+  font: 600 12px/2.1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .42em;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  pointer-events: none;
+  animation: matrix-chat-rain 22s linear infinite;
+  text-shadow: 0 0 7px rgba(0, 255, 104, .55);
+}
+body:has(#home:not([hidden])) #home {
+  position: relative;
+  z-index: 1;
+}
+@keyframes matrix-chat-rain {
+  from { transform: translateY(-8%); }
+  to { transform: translateY(12%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:has(#home:not([hidden]))::before { animation: none; }
+}
+
+
 /* Match the home screen background to the global chat's dark backdrop. */
 body:has(#home:not([hidden])) {
   position: relative;
