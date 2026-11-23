@@ -163,7 +163,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { pa
 
 repairTemporaryTestHistory();
 renderHome();
-showStageOneCheckpointNotice();
+if (telegramWebApp?.initData) {
+  void checkpointInitialization.then((synced) => {
+    if (synced && Math.max(best, checkpoint) < CHECKPOINT_STEP) showStageOneCheckpointNotice();
+  });
+} else if (Math.max(best, checkpoint) < CHECKPOINT_STEP) {
+  showStageOneCheckpointNotice();
+}
 
 function showStageOneCheckpointNotice() {
   const dialog = document.createElement('dialog');
