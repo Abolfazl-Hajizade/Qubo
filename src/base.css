@@ -100,11 +100,6 @@ button {
   padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
 }
 
-/* Let the active game use the full available phone width; keep vertical safe-area padding. */
-#app:has(#game:not([hidden])) {
-  padding-left: 0;
-  padding-right: 0;
-}
 
 .screen {
   width: 100%;
