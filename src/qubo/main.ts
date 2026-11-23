@@ -162,7 +162,7 @@ async function refreshAnnouncements(markRead=false) {
 }
 function openAnnouncements(){const d=$('announcement-dialog') as HTMLDialogElement;if(!d.open)d.showModal();void refreshAnnouncements(true);}
 $('announcement-btn').addEventListener('click',openAnnouncements);
-$('announcement-close-btn').addEventListener('click',()=>$('announcement-dialog').close());
+$('announcement-close-btn').addEventListener('click',()=>($('announcement-dialog') as HTMLDialogElement).close());
 $('announcement-form').addEventListener('submit',async e=>{e.preventDefault();const input=$('announcement-input') as HTMLTextAreaElement;const status=$('announcement-status');if(!input.value.trim())return;status.textContent='در حال انتشار…';try{await announcementRequest('publish',{message:input.value.trim()});input.value='';status.textContent='اعلان برای همه بازیکنان منتشر شد.';await refreshAnnouncements(false);}catch(error){status.textContent=error instanceof Error?error.message:'انتشار ناموفق بود.';}});
 function startAnnouncementPolling(){if(announcementPollTimer!==undefined)window.clearInterval(announcementPollTimer);void refreshAnnouncements(false);announcementPollTimer=window.setInterval(()=>{if(screens.is('home')&&!($('announcement-dialog') as HTMLDialogElement).open)void refreshAnnouncements(false);},15000);}
 
