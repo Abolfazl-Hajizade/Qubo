@@ -1,0 +1,89 @@
+/* Deep evergreen background with natural, scattered falling snow. */
+html:has(.home),
+body:has(.home) {
+  background-color: #062a20;
+}
+
+body:has(.home) {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(25, 78, 53, 0.24), transparent 62%),
+    linear-gradient(180deg, #082b20 0%, #06251c 58%, #041b15 100%);
+  color: #f1fff6;
+}
+
+/* Sparse, irregular flakes: no tiled grid or repeating matrix pattern. */
+body:has(.home)::before,
+body:has(.home)::after {
+  content: "";
+  position: fixed;
+  inset: -100% 0 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+body:has(.home)::before {
+  opacity: 0.72;
+  background-image:
+    radial-gradient(2px 2px at 7% 8%, #fff 98%, transparent),
+    radial-gradient(1.5px 1.5px at 19% 21%, rgba(245,255,250,.9) 98%, transparent),
+    radial-gradient(2px 2px at 34% 13%, rgba(255,255,255,.85) 98%, transparent),
+    radial-gradient(1.5px 1.5px at 48% 29%, #fff 98%, transparent),
+    radial-gradient(2px 2px at 63% 7%, rgba(240,255,247,.9) 98%, transparent),
+    radial-gradient(1.5px 1.5px at 77% 19%, #fff 98%, transparent),
+    radial-gradient(2px 2px at 91% 11%, rgba(245,255,250,.9) 98%, transparent),
+    radial-gradient(1.5px 1.5px at 13% 43%, #fff 98%, transparent),
+    radial-gradient(2px 2px at 29% 36%, rgba(245,255,250,.85) 98%, transparent),
+    radial-gradient(1.5px 1.5px at 57% 48%, #fff 98%, transparent),
+    radial-gradient(2px 2px at 72% 39%, rgba(245,255,250,.9) 98%, transparent),
+    radial-gradient(1.5px 1.5px at 86% 51%, #fff 98%, transparent);
+  animation: qubo-snow-fall 22s linear infinite;
+}
+
+body:has(.home)::after {
+  opacity: 0.48;
+  background-image:
+    radial-gradient(3px 3px at 16% 16%, #fff 98%, transparent),
+    radial-gradient(2.5px 2.5px at 41% 6%, rgba(240,255,247,.9) 98%, transparent),
+    radial-gradient(3px 3px at 69% 25%, #fff 98%, transparent),
+    radial-gradient(2px 2px at 94% 31%, rgba(240,255,247,.9) 98%, transparent),
+    radial-gradient(2.5px 2.5px at 25% 57%, #fff 98%, transparent),
+    radial-gradient(3px 3px at 54% 43%, rgba(240,255,247,.9) 98%, transparent),
+    radial-gradient(2px 2px at 81% 63%, #fff 98%, transparent);
+  animation: qubo-snow-drift 30s linear infinite;
+}
+
+#app:has(.home) {
+  position: relative;
+  z-index: 1;
+}
+
+.home .wordmark,
+.home .section-label {
+  color: #f1fff6;
+  text-shadow: 0 2px 18px rgba(0, 12, 8, 0.28);
+}
+
+.home .stamps,
+.home .stamps span + span::before,
+.home .home-foot {
+  color: rgba(232, 255, 241, 0.78);
+}
+
+@keyframes qubo-snow-fall {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-2%, 100%, 0); }
+}
+
+@keyframes qubo-snow-drift {
+  from { transform: translate3d(1%, 0, 0); }
+  to { transform: translate3d(-3%, 100%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(.home)::before,
+  body:has(.home)::after {
+    animation: none;
+  }
+}
