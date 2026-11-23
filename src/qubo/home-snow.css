@@ -51,87 +51,21 @@ body:has(#home:not([hidden]))::after {
   body:has(#home:not([hidden]))::after { animation: none; }
 }
 
-/* Liquid-glass buttons: real backdrop blur, translucent color, and layered reflections. */
-#home .btn,
-#home .btn:active {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .48);
-  background-color: rgba(255, 255, 255, .17) !important;
-  background-image:
-    linear-gradient(145deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.10) 34%, rgba(255,255,255,.025) 68%, rgba(255,255,255,.15) 100%),
-    linear-gradient(115deg, rgba(255,255,255,.10), transparent 42%, rgba(255,255,255,.08));
-  -webkit-backdrop-filter: blur(24px) saturate(185%) contrast(108%);
-  backdrop-filter: blur(24px) saturate(185%) contrast(108%);
+/* Restore the original button colors, with a lime-green glass outline. */
+#home .btn {
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: blur(14px) saturate(135%);
+  border: 1.5px solid #b7f34a;
   box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,.58),
-    inset 0 -1px 0 rgba(255,255,255,.13),
-    0 9px 24px rgba(8,3,22,.22),
-    0 2px 5px rgba(255,255,255,.10);
-  text-shadow: 0 1px 2px rgba(12,8,25,.28);
-  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
-}
-
-/* A curved specular highlight gives the surface its glass-like reflection. */
-#home .btn::before {
-  content: "";
-  position: absolute;
-  inset: 1px 2px auto;
-  height: 48%;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.075) 48%, transparent);
-  opacity: .9;
-  pointer-events: none;
-  z-index: 0;
-}
-#home .btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(112deg, transparent 22%, rgba(255,255,255,.16) 48%, transparent 72%);
-  opacity: .5;
-  pointer-events: none;
-  z-index: 0;
-}
-#home .btn > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Preserve each button's identity with a translucent colored glass tint. */
-#home #play-btn.btn-primary,
-#home #play-btn.btn-primary:active {
-  background-color: rgba(198, 58, 80, .31) !important;
-}
-#home #history-btn.history-link,
-#home #history-btn.history-link:active {
-  background-color: rgba(23, 59, 112, .32) !important;
-}
-#home .home-title-row .guide-btn,
-#home .home-title-row .guide-btn:active {
-  background-color: rgba(197, 203, 211, .27) !important;
-}
-#home #chat-btn,
-#home #chat-btn:active {
-  background-color: rgba(36, 75, 112, .32) !important;
-}
-#home #leaderboard-btn,
-#home #leaderboard-btn:active {
-  background-color: rgba(255, 255, 255, .17) !important;
+    inset 0 1px 0 rgba(255,255,255,.24),
+    0 0 0 1px rgba(183,243,74,.18),
+    0 8px 22px rgba(8,3,22,.18);
 }
 #home .btn:active {
-  filter: brightness(1.08);
-  transform: translateY(1px) scale(.99);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.48),
-    0 4px 12px rgba(8,3,22,.2);
+  filter: brightness(1.06);
+  transform: translateY(1px);
 }
 #home .btn:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, .9);
+  outline: 2px solid #c9ff62;
   outline-offset: 3px;
-}
-@media (prefers-reduced-transparency: reduce) {
-  #home .btn { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
