@@ -12,6 +12,13 @@ const BEST_KEY = 'qubo.best';
 const STATS_KEY = 'qubo.stats';
 const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
+
+// The opening stage grants its first checkpoint at 15; later stages keep 30-point milestones.
+function checkpointForScore(score: number): number {
+  if (score < 15) return 0;
+  if (score < 30) return 15;
+  return Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
+}
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_FRAME_DELTA = 0.1;
 const INPUT_BUFFER_MS = 102; // experimental timing adjustment for variable-timestep physics
@@ -40,8 +47,8 @@ let backdropTransitionAge = 1;
 let best = loadJSON<number>(BEST_KEY, 0);
 const savedProgress = loadJSON<unknown>(PROGRESS_KEY, null);
 let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
-  ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
-  : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
+  ? checkpointForScore(savedProgress)
+  : checkpointForScore(best);
 if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
 
 const canvas = $<HTMLCanvasElement>('stage');
@@ -337,7 +344,7 @@ function loop(now: number) {
       if (takeoffAgeVisual < 1) takeoffAgeVisual += frameDelta;
     }
     setScore();
-    const reachedCheckpoint = Math.floor(world.score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
+    const reachedCheckpoint = checkpointForScore(world.score);
     if (reachedCheckpoint > checkpoint) {
       checkpoint = reachedCheckpoint;
       saveJSON(PROGRESS_KEY, checkpoint);
@@ -400,7 +407,7 @@ function saveRemoteCheckpoint(value: number): Promise<boolean> {
 
 async function submitScoreAfterCheckpoints(score: number) {
   if ((telegramWebApp?.initData && !checkpointSyncReady) || !await checkpointSyncQueue) return;
-  const scoreCheckpoint = Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
+  const scoreCheckpoint = checkpointForScore(score);
   if (scoreCheckpoint !== checkpoint) return;
   await submitScore(score);
 }
@@ -415,7 +422,7 @@ async function syncCheckpoint(): Promise<boolean> {
     if (!response.ok) return false;
     const data = await response.json() as { checkpoint?: number; hasCheckpoint?: boolean };
     const remote = Number.isSafeInteger(data.checkpoint) && (data.checkpoint ?? -1) >= 0
-      ? Math.floor((data.checkpoint ?? 0) / CHECKPOINT_STEP) * CHECKPOINT_STEP
+      ? checkpointForScore(data.checkpoint ?? 0)
       : 0;
     // The server is authoritative. Unverified local-only progress is never uploaded as a checkpoint.
     if (checkpoint !== remote) {
