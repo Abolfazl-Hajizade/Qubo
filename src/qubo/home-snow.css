@@ -2,11 +2,11 @@
 body:has(#home:not([hidden])) {
   position: relative;
   isolation: isolate;
-  background-color: #241447;
+  background-color: #190d31;
   background-image:
     radial-gradient(ellipse at 18% 18%, rgba(211, 177, 255, .34), transparent 35%),
     radial-gradient(ellipse at 82% 28%, rgba(124, 91, 196, .42), transparent 42%),
-    linear-gradient(180deg, #241044 0%, #51317f 48%, #9b83c8 100%);
+    linear-gradient(180deg, #190b32 0%, #3e2869 48%, #8974b5 100%);
   background-attachment: fixed;
 }
 body:has(#home:not([hidden]))::before,
@@ -18,7 +18,7 @@ body:has(#home:not([hidden]))::after {
   pointer-events: none;
 }
 body:has(#home:not([hidden]))::before {
-  opacity: .42;
+  opacity: .5;
   background:
     radial-gradient(ellipse 150px 42px at 12% 24%, rgba(31, 24, 55, .72) 0 55%, transparent 72%),
     radial-gradient(ellipse 190px 55px at 22% 22%, rgba(47, 34, 76, .78) 0 52%, transparent 72%),
