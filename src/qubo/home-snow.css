@@ -46,6 +46,18 @@ body:has(#home:not([hidden]))::after {
   from { transform: translateX(-2vw); }
   to { transform: translateX(3vw); }
 }
+/* Keep the winter background static on phones to avoid animation jank. */
+@media (max-width: 768px) {
+  body:has(#home:not([hidden])) {
+    background-attachment: scroll;
+  }
+  body:has(#home:not([hidden]))::before,
+  body:has(#home:not([hidden]))::after {
+    animation: none;
+    position: absolute;
+    inset: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   body:has(#home:not([hidden]))::before,
   body:has(#home:not([hidden]))::after { animation: none; }
