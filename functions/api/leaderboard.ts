@@ -18,6 +18,13 @@ type AuthenticatedUser = {
 };
 
 const encoder = new TextEncoder();
+const CHECKPOINT_STEP = 30;
+
+function checkpointForScore(score: number): number {
+  if (score < 15) return 0;
+  if (score < 30) return 15;
+  return Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
+}
 
 function hex(bytes: ArrayBuffer): string {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -150,9 +157,9 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   ]);
   const checkpoint = Math.max(
     checkpointRow ? Number(checkpointRow.checkpoint) : 0,
-    bestRow ? Math.floor(Number(bestRow.best_score) / 30) * 30 : 0,
+    bestRow ? checkpointForScore(Number(bestRow.best_score)) : 0,
   );
-  const scoreCheckpoint = Math.floor(score / 30) * 30;
+  const scoreCheckpoint = checkpointForScore(score);
   if (scoreCheckpoint !== checkpoint) {
     await banAndDeleteUser(env.DB, user.id, "score_checkpoint_mismatch:" + score + "->" + checkpoint);
     return json({ banned: true, error: "امتیاز با checkpoint ثبت‌شده مطابقت نداشت؛ حساب مسدود شد." }, 403);
