@@ -1,10 +1,10 @@
 /* Deep evergreen background with natural, scattered falling snow. */
-html:has(.home),
-body:has(.home) {
+html.home-page,
+body.home-page {
   background-color: #062a20;
 }
 
-body:has(.home) {
+body.home-page {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(25, 78, 53, 0.24), transparent 62%),
     linear-gradient(180deg, #082b20 0%, #06251c 58%, #041b15 100%);
@@ -12,8 +12,8 @@ body:has(.home) {
 }
 
 /* Sparse, irregular flakes: no tiled grid or repeating matrix pattern. */
-body:has(.home)::before,
-body:has(.home)::after {
+body.home-page::before,
+body.home-page::after {
   content: "";
   position: fixed;
   inset: -100% 0 0;
@@ -23,7 +23,7 @@ body:has(.home)::after {
   will-change: transform;
 }
 
-body:has(.home)::before {
+body.home-page::before {
   opacity: 0.72;
   background-image:
     radial-gradient(2px 2px at 7% 8%, #fff 98%, transparent),
@@ -41,7 +41,7 @@ body:has(.home)::before {
   animation: qubo-snow-fall 22s linear infinite;
 }
 
-body:has(.home)::after {
+body.home-page::after {
   opacity: 0.48;
   background-image:
     radial-gradient(3px 3px at 16% 16%, #fff 98%, transparent),
@@ -54,7 +54,7 @@ body:has(.home)::after {
   animation: qubo-snow-drift 30s linear infinite;
 }
 
-#app:has(.home) {
+body.home-page #app {
   position: relative;
   z-index: 1;
 }
@@ -82,8 +82,8 @@ body:has(.home)::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body:has(.home)::before,
-  body:has(.home)::after {
+  body.home-page::before,
+  body.home-page::after {
     animation: none;
   }
 }
