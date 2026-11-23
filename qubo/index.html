@@ -34,6 +34,7 @@
 
           <button id="history-btn" class="btn history-link"><span>History &amp; stats</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
           <button id="leaderboard-btn" class="btn history-link">🏆 Global Leaderboard</button>
+          <button id="announcement-btn" class="btn history-link announcement-home-btn" type="button"><span class="announcement-bell" aria-hidden="true">🔔</span><span>Admin Announcements</span><span id="announcement-unread-badge" class="chat-unread-badge" hidden>0</span></button>
           <button id="chat-btn" class="btn history-link"><span class="chat-live-indicator" aria-hidden="true"></span>Global Chat<span id="chat-unread-badge" class="chat-unread-badge" hidden aria-label="پیام خوانده‌نشده">0</span></button>
 
         </div>
@@ -132,6 +133,20 @@
           </form>
           <p class="chat-footnote">لطفاً محترمانه گفتگو کنید · حداکثر ۵۰۰ کاراکتر</p>
         </section>
+      </dialog>
+
+      <dialog id="announcement-dialog" class="dialog announcement-dialog" aria-labelledby="announcement-title">
+        <header class="announcement-header">
+          <button id="announcement-close-btn" class="icon-btn" type="button" aria-label="Back to menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
+          <div><h2 id="announcement-title">🔔 Announcements</h2><span>Messages from Qubo admin</span></div><span class="announcement-live">INFO</span>
+        </header>
+        <section id="announcement-admin" class="announcement-admin" hidden>
+          <form id="announcement-form"><label for="announcement-input">Send a message to all players</label>
+            <textarea id="announcement-input" maxlength="1000" rows="3" placeholder="Write an announcement..." required></textarea>
+            <button class="btn btn-primary" type="submit">Publish announcement</button></form>
+          <p id="announcement-status" class="announcement-status" aria-live="polite"></p>
+        </section>
+        <section id="announcement-list" class="announcement-list" aria-live="polite"><p class="announcement-empty">Loading announcements…</p></section>
       </dialog>
 
       <!-- Bilingual game guide -->
