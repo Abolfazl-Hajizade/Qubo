@@ -11,14 +11,6 @@ type AuthenticatedUser = { id: string; username: string | null; firstName: strin
 const encoder = new TextEncoder();
 const CHECKPOINT_STEP = 30;
 
-function checkpointForScore(score: number): number {
-  return Math.floor(score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
-}
-
-function nextCheckpoint(current: number): number {
-  return current + CHECKPOINT_STEP;
-}
-
 function hex(bytes: ArrayBuffer): string {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -91,9 +83,8 @@ async function currentCheckpoint(env: Env, userId: string): Promise<number> {
     env.DB.prepare("SELECT best_score FROM leaderboard WHERE telegram_user_id = ?")
       .bind(userId).first<{ best_score: number }>(),
   ]);
-  const checkpointFromScore = score ? checkpointForScore(Number(score.best_score)) : 0;
-  const savedCheckpoint = saved ? checkpointForScore(Number(saved.checkpoint)) : 0;
-  return Math.max(savedCheckpoint, checkpointFromScore);
+  const checkpointFromScore = score ? Math.floor(Number(score.best_score) / CHECKPOINT_STEP) * CHECKPOINT_STEP : 0;
+  return Math.max(saved && Number(saved.checkpoint) !== 15 ? Number(saved.checkpoint) : 0, checkpointFromScore);
 }
 
 export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
@@ -121,7 +112,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
 
   const checkpoint = body.checkpoint;
   if (typeof checkpoint !== "number" || !Number.isSafeInteger(checkpoint)
-      || checkpoint < 0 || checkpoint > 100_000 || (checkpoint < CHECKPOINT_STEP || checkpoint % CHECKPOINT_STEP !== 0)) {
+      || checkpoint < 0 || checkpoint > 100_000 || checkpoint % CHECKPOINT_STEP !== 0) {
     return json({ error: "Checkpoint نامعتبر است." }, 400);
   }
 
@@ -140,7 +131,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
     await saveTelegramUser(env, user);
     return json({ ok: true, duplicate: true, checkpoint: current });
   }
-  if (checkpoint < current || checkpoint !== nextCheckpoint(current)) {
+  if (checkpoint < current || checkpoint !== current + CHECKPOINT_STEP) {
     await banAndDeleteUser(env.DB, user.id, `checkpoint_sequence:${current}->${checkpoint}`);
     return json({ banned: true, error: "ترتیب checkpoint نامعتبر بود؛ حساب مسدود شد." }, 403);
   }
