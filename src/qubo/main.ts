@@ -183,7 +183,7 @@ function showStageOneCheckpointNotice() {
   panel.style.cssText = 'box-sizing:border-box;padding:26px 22px;border:1px solid rgba(255,255,255,.14);border-radius:20px;background:#111b2a;color:#f4f7fb;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.4);font-family:inherit;';
   const title = document.createElement('h2');
   title.id = 'qubo-stage-one-notice-title';
-  title.textContent = 'اطلاعیه';
+  title.textContent = 'پیام مدیر';
   title.style.cssText = 'margin:0 0 14px;font-size:20px;font-weight:800;';
   const message = document.createElement('p');
   message.textContent = 'کسانی که توی مرحلهٔ اول به امتیاز ۱۵ برسند، بازی بعدی از امتیاز ۱۵ براشون شروع میشه.';
