@@ -163,6 +163,38 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { pa
 
 repairTemporaryTestHistory();
 renderHome();
+showStageOneCheckpointNotice();
+
+function showStageOneCheckpointNotice() {
+  const dialog = document.createElement('dialog');
+  dialog.setAttribute('aria-labelledby', 'qubo-stage-one-notice-title');
+  dialog.style.cssText = 'border:0;padding:0;background:transparent;max-width:min( calc(100vw - 32px), 420px );width:100%;color:inherit;';
+  const style = document.createElement('style');
+  style.textContent = 'dialog.qubo-stage-one-notice::backdrop{background:rgba(5,10,18,.72);backdrop-filter:blur(4px)}';
+  dialog.className = 'qubo-stage-one-notice';
+  const panel = document.createElement('div');
+  panel.dir = 'rtl';
+  panel.style.cssText = 'box-sizing:border-box;padding:26px 22px;border:1px solid rgba(255,255,255,.14);border-radius:20px;background:#111b2a;color:#f4f7fb;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.4);font-family:inherit;';
+  const title = document.createElement('h2');
+  title.id = 'qubo-stage-one-notice-title';
+  title.textContent = 'اطلاعیه';
+  title.style.cssText = 'margin:0 0 14px;font-size:20px;font-weight:800;';
+  const message = document.createElement('p');
+  message.textContent = 'کسانی که توی مرحلهٔ اول به امتیاز ۱۵ برسند، بازی بعدی از امتیاز ۱۵ براشون شروع میشه.';
+  message.style.cssText = 'margin:0 0 22px;font-size:15px;line-height:2;color:#e4eaf2;';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.textContent = 'متوجه شدم';
+  close.style.cssText = 'min-width:132px;border:0;border-radius:12px;padding:11px 22px;background:#72d6a0;color:#10251b;font:inherit;font-weight:800;cursor:pointer;';
+  close.addEventListener('click', () => dialog.close());
+  panel.append(title, message, close);
+  dialog.append(panel);
+  document.head.append(style);
+  document.body.append(dialog);
+  dialog.addEventListener('close', () => { dialog.remove(); style.remove(); }, { once: true });
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  dialog.showModal();
+}
 
 function renderHome() {
   $('home-best').textContent = best ? `Best ${numberFormat.format(best)}` : '';
