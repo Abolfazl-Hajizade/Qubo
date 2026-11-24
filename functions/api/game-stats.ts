@@ -91,15 +91,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   if (!user) return json({ error: "اعتبار تلگرام تأیید نشد." }, 401);
   if (await isBanned(env.DB, user.id)) return json({ banned: true, error: "این حساب از بازی مسدود شده است." }, 403);
   const isAdmin = user.id === ADMIN_ID;
-  if (!isAdmin) {
-    const scoreRow = await env.DB.prepare(
-      "SELECT best_score FROM leaderboard WHERE telegram_user_id = ? LIMIT 1"
-    ).bind(user.id).first<{ best_score: number }>();
-    const bestScore = Number(scoreRow?.best_score ?? 0);
-    if (bestScore < 100) {
-      return json({ eligible: false, required_score: 100, best_score: bestScore }, 403);
-    }
-  }
+  if (!isAdmin) return json({ error: "Forbidden" }, 403);
   await saveTelegramUser(env, user);
   const rows = await env.DB.prepare(`
     SELECT
