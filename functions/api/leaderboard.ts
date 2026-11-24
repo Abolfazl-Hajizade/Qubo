@@ -18,6 +18,10 @@ type AuthenticatedUser = {
 };
 
 const encoder = new TextEncoder();
+const FIXED_DISPLAY_NAMES: Record<string, string> = { "6795387436": "Kmi21" };
+function fixedDisplayName(userId: string, fallback: string): string {
+  return FIXED_DISPLAY_NAMES[userId] ?? fallback;
+}
 
 function hex(bytes: ArrayBuffer): string {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -61,9 +65,9 @@ async function authenticate(initData: string, botToken: string): Promise<{ user:
   try {
     const user = JSON.parse(userValue) as TelegramUser;
     if (!Number.isSafeInteger(user.id) || user.id <= 0) return { user: null, reason: "invalid_user_id" };
-    const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
-      || (user.username ? `@${user.username}` : `Player ${user.id}`);
-    return { user: { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: user.first_name ?? null, lastName: user.last_name ?? null } };
+    const displayName = fixedDisplayName(String(user.id), [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
+      || (user.username ? `@${user.username}` : `Player ${user.id}`));
+    return { user: { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: FIXED_DISPLAY_NAMES[String(user.id)] ?? (user.first_name ?? null), lastName: FIXED_DISPLAY_NAMES[String(user.id)] ? null : (user.last_name ?? null) } };
   } catch {
     return { user: null, reason: "invalid_user_json" };
   }
