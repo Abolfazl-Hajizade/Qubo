@@ -6,6 +6,10 @@ type TelegramUser = { id: number; first_name?: string; last_name?: string; usern
 type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
 type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number; reply_to_id: number | null; reply_to_display_name: string | null; reply_to_message: string | null };
 const encoder = new TextEncoder();
+const FIXED_DISPLAY_NAMES: Record<string, string> = { "6795387436": "Kmi21" };
+function fixedDisplayName(userId: string, fallback: string): string {
+  return FIXED_DISPLAY_NAMES[userId] ?? fallback;
+}
 const MIN_SCORE = 35;
 const ADMIN_ID = "7431567147";
 
@@ -39,9 +43,9 @@ async function authenticate(initData: string, botToken: string): Promise<Authent
   try {
     const user = JSON.parse(userValue) as TelegramUser;
     if (!Number.isSafeInteger(user.id) || user.id <= 0) return null;
-    const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
-      || (user.username ? `@${user.username}` : `Player ${user.id}`);
-    return { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: user.first_name ?? null, lastName: user.last_name ?? null };
+    const displayName = fixedDisplayName(String(user.id), [user.first_name, user.last_name].filter(Boolean).join(" ").trim()
+      || (user.username ? `@${user.username}` : `Player ${user.id}`));
+    return { id: String(user.id), displayName: displayName.slice(0, 80), username: user.username ?? null, firstName: FIXED_DISPLAY_NAMES[String(user.id)] ?? (user.first_name ?? null), lastName: FIXED_DISPLAY_NAMES[String(user.id)] ? null : (user.last_name ?? null) };
   } catch { return null; }
 }
 async function saveTelegramUser(env: Env, user: AuthenticatedUser): Promise<void> {
