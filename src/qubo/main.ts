@@ -551,8 +551,8 @@ async function loadLeaderboard() {
   } catch (error) {
     $('records-status').textContent = error instanceof Error ? error.message : 'Unable to load global records.';
   }
-  // The endpoint is admin-only; regular players never receive or see this private panel.
-  void loadPrivateGameStats(initData, $('records-me'));
+  // Private game counts are requested only by the admin.
+  if (isChatAdmin()) void loadPrivateGameStats(initData, $('records-me'));
 }
 
 async function loadPrivateGameStats(initData: string, anchor: HTMLElement) {
