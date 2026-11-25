@@ -1670,14 +1670,14 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   }
   ctx.lineWidth = 1.8;
   ctx.stroke();
-  // Blue eyes in the endless world; original eye palette before 800.
-  ctx.fillStyle = endlessWorld ? '#36a9ff' : p.paper;
+  // White eyes from stage 840; keep the blue eye palette for stages 800–839.
+  ctx.fillStyle = rainbowEra ? '#ffffff' : endlessWorld ? '#36a9ff' : p.paper;
   for (const ex of [CUBE / 2 - 20, CUBE / 2 - 8]) {
     ctx.beginPath();
     ctx.arc(ex, -CUBE / 2 + 12, 5.2, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.fillStyle = endlessWorld ? '#eaf8ff' : '#05090e';
+  ctx.fillStyle = rainbowEra ? '#05090e' : endlessWorld ? '#eaf8ff' : '#05090e';
   for (const ex of [CUBE / 2 - 18.2, CUBE / 2 - 6.2]) {
     ctx.beginPath();
     ctx.arc(ex, -CUBE / 2 + 12.5, 2, 0, Math.PI * 2);
