@@ -1304,3 +1304,30 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="27"] {
   font-size: 1.2rem;
   cursor: pointer;
 }
+
+
+/* Rainbow atmosphere continues beyond the playfield from stage 840 onward. */
+body:has(#game:not([hidden]))[data-qubo-backdrop="29"] {
+  background-color: #21102f;
+  background-image:
+    radial-gradient(ellipse at 15% 20%, rgba(255, 49, 88, .42), transparent 42%),
+    radial-gradient(ellipse at 82% 18%, rgba(255, 156, 53, .38), transparent 40%),
+    radial-gradient(ellipse at 78% 78%, rgba(84, 232, 121, .34), transparent 42%),
+    radial-gradient(ellipse at 18% 82%, rgba(54, 217, 255, .38), transparent 44%),
+    linear-gradient(125deg, #4b174d, #183b64, #18513f, #62301b, #4b174d);
+  background-size: 180% 180%;
+  animation: qubo-rainbow-surround 16s ease-in-out infinite;
+  background-attachment: fixed;
+}
+body:has(#game:not([hidden]))[data-qubo-backdrop="29"] #game .board-frame {
+  outline: 1px solid rgba(255, 255, 255, .28);
+  outline-offset: 3px;
+  box-shadow: 0 0 24px rgba(198, 107, 255, .18), 0 0 34px rgba(54, 217, 255, .12);
+}
+@keyframes qubo-rainbow-surround {
+  0%, 100% { background-position: 0% 30%; }
+  50% { background-position: 100% 70%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:has(#game:not([hidden]))[data-qubo-backdrop="29"] { animation: none; }
+}
