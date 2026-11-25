@@ -260,6 +260,7 @@ function renderHistory() {
 
 // Give the 30–60 world a gradual night → dawn → daylight progression.
 function backdropForScore(score: number) {
+  if (score >= 840) return 29;
   if (score >= 800) return 28;
   const worldIndex = Math.floor(score / 30) % 26;
   if (score >= 30 && score < 40) return 26;
@@ -1200,7 +1201,8 @@ function drawBackdrop(index: number, time: number) {
   const colors = index === 26 ? ['#071426', '#101f3c', '#263b59']
     : index === 27 ? ['#26395f', '#f0a77d', '#f8d9a0']
       : index === 28 ? ['#090b28', '#211747', '#092c3c']
-        : palettes[index];
+        : index === 29 ? ['#ff3158', '#36d9ff', '#c66bff']
+          : palettes[index];
   gradient.addColorStop(0, colors[0]);
   gradient.addColorStop(0.62, colors[1]);
   gradient.addColorStop(1, colors[2]);
@@ -1326,6 +1328,32 @@ function drawBackdrop(index: number, time: number) {
       ctx.beginPath();ctx.arc(x,y,1.2+(i%3)*.45,0,Math.PI*2);ctx.fill();
     }
     ctx.globalAlpha=1;ctx.shadowBlur=0;
+  } else if (index === 29) {
+    // Endless rainbow ocean: seven vivid color bands flow in layered waves.
+    const rainbow = ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'];
+    for (let layer = 0; layer < 7; layer++) {
+      const color = rainbow[layer];
+      const baseY = 112 + layer * 43;
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 5) {
+        const y = baseY
+          + Math.sin(x * 0.018 + time * 1.15 + layer * 0.82) * (18 + layer * 1.4)
+          + Math.sin(x * 0.037 - time * 0.72 + layer) * 8;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.globalAlpha = 0.48;
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    const glow = ctx.createRadialGradient(180, 210, 12, 180, 210, 230);
+    glow.addColorStop(0, 'rgba(255,255,255,0.16)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
   } else if (index === 0) {
     // Original Qubo storm atmosphere is preserved as the opening world.
     ctx.save();
@@ -1593,7 +1621,9 @@ function currentCubeOutlineColor() {
       ? [20, 86, 160]
       : index === 27
         ? [255, 139, 120]
-        : [1, 3, 5].map((i) => Number.parseInt((cubeOutlineColors[index] ?? cubeOutlineColors[0]).slice(i, i + 2), 16));
+        : index === 29
+          ? [255, 255, 255]
+          : [1, 3, 5].map((i) => Number.parseInt((cubeOutlineColors[index] ?? cubeOutlineColors[0]).slice(i, i + 2), 16));
   if (previousBackdropIndex === 0 && backdropIndex === 0) return 'rgba(190, 205, 216, 0.72)';
   const from = colorAt(previousBackdropIndex);
   const to = colorAt(backdropIndex);
@@ -1615,20 +1645,20 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   // Scale around the cube centre; keep all physics coordinates independent from this effect.
   ctx.scale(scaleX, scaleY);
   const endlessWorld = world.score >= 800;
-  if (endlessWorld) {
-    const rainbowCube = ctx.createLinearGradient(-CUBE / 2, -CUBE / 2, CUBE / 2, CUBE / 2);
-    ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
-      rainbowCube.addColorStop(i / (colors.length - 1), color);
-    });
-    ctx.fillStyle = rainbowCube;
-  } else {
-    ctx.fillStyle = '#05090e';
-  }
+  const rainbowEra = world.score >= 840;
+  ctx.fillStyle = '#05090e';
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
-  ctx.strokeStyle = currentCubeOutlineColor();
-  ctx.lineWidth = 1.4;
+  if (rainbowEra) {
+    const rainbowOutline = ctx.createLinearGradient(-CUBE / 2, -CUBE / 2, CUBE / 2, CUBE / 2);
+    const colors = ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'];
+    colors.forEach((color, i) => rainbowOutline.addColorStop((i / (colors.length - 1) + (performance.now() / 5000)) % 1, color));
+    ctx.strokeStyle = rainbowOutline;
+  } else {
+    ctx.strokeStyle = endlessWorld ? '#ff8fcf' : currentCubeOutlineColor();
+  }
+  ctx.lineWidth = 1.8;
   ctx.stroke();
   // Blue eyes in the endless world; original eye palette before 800.
   ctx.fillStyle = endlessWorld ? '#36a9ff' : p.paper;
