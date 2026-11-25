@@ -1201,7 +1201,7 @@ function drawBackdrop(index: number, time: number) {
   const colors = index === 26 ? ['#071426', '#101f3c', '#263b59']
     : index === 27 ? ['#26395f', '#f0a77d', '#f8d9a0']
       : index === 28 ? ['#090b28', '#211747', '#092c3c']
-        : index === 29 ? ['#ff3158', '#36d9ff', '#c66bff']
+        : index === 29 ? ['#68727b', '#929ba2', '#c1c6c9']
           : palettes[index];
   gradient.addColorStop(0, colors[0]);
   gradient.addColorStop(0.62, colors[1]);
@@ -1329,31 +1329,53 @@ function drawBackdrop(index: number, time: number) {
     }
     ctx.globalAlpha=1;ctx.shadowBlur=0;
   } else if (index === 29) {
-    // Endless rainbow ocean: seven vivid color bands flow in layered waves.
-    const rainbow = ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'];
-    for (let layer = 0; layer < 7; layer++) {
-      const color = rainbow[layer];
-      const baseY = 112 + layer * 43;
-      ctx.beginPath();
-      ctx.moveTo(0, H);
-      for (let x = 0; x <= W; x += 5) {
-        const y = baseY
-          + Math.sin(x * 0.018 + time * 1.15 + layer * 0.82) * (18 + layer * 1.4)
-          + Math.sin(x * 0.037 - time * 0.72 + layer) * 8;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(W, H);
-      ctx.closePath();
-      ctx.globalAlpha = 0.48;
-      ctx.fillStyle = color;
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    const glow = ctx.createRadialGradient(180, 210, 12, 180, 210, 230);
-    glow.addColorStop(0, 'rgba(255,255,255,0.16)');
-    glow.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = glow;
+    // Stage 840+: a moving overcast sky with layered, soft grey storm clouds.
+    const haze = ctx.createLinearGradient(0, 0, 0, H);
+    haze.addColorStop(0, 'rgba(35, 42, 48, .18)');
+    haze.addColorStop(.55, 'rgba(218, 222, 224, .12)');
+    haze.addColorStop(1, 'rgba(55, 62, 68, .24)');
+    ctx.fillStyle = haze;
     ctx.fillRect(0, 0, W, H);
+
+    const cloudLayer = (count: number, speed: number, yBase: number, scale: number, color: string, alpha: number) => {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      for (let i = 0; i < count; i++) {
+        const span = W + 190;
+        const x = ((i * (W / count) + time * speed) % span) - 95;
+        const y = yBase + Math.sin(time * .22 + i * 1.7) * 7 + (i % 3) * 13;
+        const w = (48 + (i % 4) * 17) * scale;
+        const h = (19 + (i % 3) * 7) * scale;
+        const cloud = ctx.createRadialGradient(x, y, 3, x, y, w);
+        cloud.addColorStop(0, color);
+        cloud.addColorStop(.68, color);
+        cloud.addColorStop(1, 'rgba(75, 82, 88, 0)');
+        ctx.fillStyle = cloud;
+        ctx.beginPath();
+        ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+        ctx.ellipse(x - w * .34, y + h * .12, w * .58, h * .78, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + w * .3, y + h * .08, w * .62, h * .86, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    };
+    cloudLayer(7, 5.5, 72, 1.05, 'rgba(238, 241, 242, .92)', .88);
+    cloudLayer(8, -8, 165, 1.28, 'rgba(117, 126, 133, .94)', .82);
+    cloudLayer(9, 11, 275, 1.48, 'rgba(77, 85, 92, .96)', .92);
+
+    // Subtle drifting rain haze; no lightning or bright colors.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(238, 242, 244, .16)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 34; i++) {
+      const x = (i * 47.3 + time * (9 + i % 4)) % W;
+      const y = (i * 71.9 + time * (24 + i % 3) + H) % H;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - 2, y + 8 + (i % 3) * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
   } else if (index === 0) {
     // Original Qubo storm atmosphere is preserved as the opening world.
     ctx.save();
