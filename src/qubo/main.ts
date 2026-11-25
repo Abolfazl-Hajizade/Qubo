@@ -1663,7 +1663,7 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   if (rainbowEra) {
     const rainbowOutline = ctx.createLinearGradient(-CUBE / 2, -CUBE / 2, CUBE / 2, CUBE / 2);
     const colors = ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'];
-    colors.forEach((color, i) => rainbowOutline.addColorStop((i / (colors.length - 1) + (performance.now() / 5000)) % 1, color));
+    colors.forEach((color, i) => rainbowOutline.addColorStop(i / (colors.length - 1), color));
     ctx.strokeStyle = rainbowOutline;
   } else {
     ctx.strokeStyle = endlessWorld ? '#ff8fcf' : currentCubeOutlineColor();
