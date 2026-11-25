@@ -1323,3 +1323,11 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="29"] #game .board-frame {
   outline-offset: 3px;
   box-shadow: 0 0 24px rgba(198, 107, 255, .18), 0 0 34px rgba(54, 217, 255, .12);
 }
+
+
+/* Stage 840+: use a plain grey outer page background. */
+body:has(#game:not([hidden]))[data-qubo-backdrop="29"] {
+  background: #808080 !important;
+  background-image: none !important;
+  background-color: #808080 !important;
+}
