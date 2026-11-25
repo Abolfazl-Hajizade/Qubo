@@ -1646,7 +1646,17 @@ function drawCube(x: number, bottom: number, tilt: number, supportAngle = 0, sca
   ctx.scale(scaleX, scaleY);
   const endlessWorld = world.score >= 800;
   const rainbowEra = world.score >= 840;
-  ctx.fillStyle = '#05090e';
+  if (rainbowEra) {
+    ctx.fillStyle = '#05090e';
+  } else if (endlessWorld) {
+    const rainbowCube = ctx.createLinearGradient(-CUBE / 2, -CUBE / 2, CUBE / 2, CUBE / 2);
+    ['#ff3158', '#ff9c35', '#ffe45c', '#54e879', '#36d9ff', '#5478ff', '#c66bff'].forEach((color, i, colors) => {
+      rainbowCube.addColorStop(i / (colors.length - 1), color);
+    });
+    ctx.fillStyle = rainbowCube;
+  } else {
+    ctx.fillStyle = '#05090e';
+  }
   ctx.beginPath();
   ctx.rect(-CUBE / 2, -CUBE / 2, CUBE, CUBE);
   ctx.fill();
