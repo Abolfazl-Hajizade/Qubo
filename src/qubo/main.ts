@@ -37,12 +37,7 @@ let takeoffAgeVisual = Infinity;
 let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
-let best = loadJSON<number>(BEST_KEY, 0);
-const savedProgress = loadJSON<unknown>(PROGRESS_KEY, null);
-let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
-  ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
-  : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
-if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
+
 
 const canvas = $<HTMLCanvasElement>('stage');
 const ctx = canvas.getContext('2d')!;
@@ -53,6 +48,21 @@ const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory, re
 
 type TelegramWebApp = { initData: string; viewportHeight?: number; viewportStableHeight?: number; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void; onEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void; offEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void };
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
+const hasTelegramIdentity = Boolean(telegramWebApp?.initData);
+let best = hasTelegramIdentity ? loadJSON<number>(BEST_KEY, 0) : 0;
+const savedProgress = hasTelegramIdentity ? loadJSON<unknown>(PROGRESS_KEY, null) : null;
+let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
+  ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
+  : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
+if (hasTelegramIdentity && typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
+if (!hasTelegramIdentity) {
+  try {
+    localStorage.removeItem(BEST_KEY);
+    localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    // A blocked local store must never interrupt the game.
+  }
+}
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
 telegramWebApp?.disableVerticalSwipes?.();
@@ -336,7 +346,7 @@ function stopLoop() { cancelAnimationFrame(raf); raf = 0; }
 
 function finish() {
   const isBest = world.score > best;
-  if (isBest) { best = world.score; saveJSON(BEST_KEY, best); }
+  if (isBest) { best = world.score; if (hasTelegramIdentity) saveJSON(BEST_KEY, best); }
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
   saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
   history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
@@ -379,7 +389,7 @@ function loop(now: number) {
     const reachedCheckpoint = Math.floor(world.score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
     if (reachedCheckpoint > checkpoint) {
       checkpoint = reachedCheckpoint;
-      saveJSON(PROGRESS_KEY, checkpoint);
+      if (hasTelegramIdentity) saveJSON(PROGRESS_KEY, checkpoint);
       void saveRemoteCheckpoint(checkpoint);
     }
     const nextBackdrop = backdropForScore(world.score);
