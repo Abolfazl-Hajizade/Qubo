@@ -289,7 +289,7 @@ function start() {
     return;
   }
   if (endDialog.open) endDialog.close();
-  world = createWorld(Math.random, Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0));
+  world = createWorld(Math.random, hasTelegramIdentity ? Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0) : 0);
   paused = false;
   started = false;
   pendingLaunchUntil = 0;
