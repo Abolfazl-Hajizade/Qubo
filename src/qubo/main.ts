@@ -73,7 +73,11 @@ if (telegramWebApp?.onEvent) {
   window.addEventListener('resize', updateChatViewportHeight);
   window.visualViewport?.addEventListener('resize', updateChatViewportHeight);
 }
-let checkpointSyncReady = !telegramWebApp?.initData;
+// Preview-only query flag: starts at stage 840 without touching Telegram progress or stats.
+// Isolated stage-840 preview: do not sync checkpoints, record starts, or submit scores.
+// Preview deployment trigger: stage 840 isolated test.
+const stage840Preview = new URLSearchParams(location.search).get('preview') === '840';
+let checkpointSyncReady = stage840Preview || !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
 let waitingForCheckpointSync = false;
 let checkpointSyncFailed = false;
@@ -88,7 +92,7 @@ if (isTelegramWebView && 'serviceWorker' in navigator) {
     .catch(() => { /* service workers may be unavailable in embedded browsers */ });
 }
 resetSaberLocalHistory();
-checkpointInitialization = syncCheckpoint();
+checkpointInitialization = stage840Preview ? Promise.resolve(true) : syncCheckpoint();
 
 function resetSaberLocalHistory() {
   // One-time local cleanup for Saber only; Telegram's signed initData identifies the account.
@@ -279,7 +283,7 @@ function start() {
     return;
   }
   if (endDialog.open) endDialog.close();
-  world = createWorld(Math.random, Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0));
+  world = createWorld(Math.random, stage840Preview ? 840 : Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0));
   paused = false;
   started = false;
   pendingLaunchUntil = 0;
@@ -301,7 +305,7 @@ function start() {
 
 function down() {
   if (paused) { paused = false; setStatus(''); last = performance.now(); return; }
-  if (!started) { started = true; setStatus(''); last = performance.now(); void recordGameStart(); return; } // the first tap only starts the tower tipping
+  if (!started) { started = true; setStatus(''); last = performance.now(); if (!stage840Preview) void recordGameStart(); return; } // the first tap only starts the tower tipping
   if (world.phase === 'air') {
     // A tap in the final moments before touchdown belongs to the landing,
     // even if this device dispatches it just before the collision frame.
@@ -340,7 +344,7 @@ function finish() {
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
   saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
   history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
-  if (world.score > 0) void submitScoreAfterCheckpoints(world.score);
+  if (world.score > 0 && !stage840Preview) void submitScoreAfterCheckpoints(world.score);
   $('best').textContent = String(best);
   $('end-summary').textContent = `${numberFormat.format(world.score)} ${world.score === 1 ? 'tower' : 'towers'} crossed`
     + (isBest && world.score > 0 ? '. A new best!' : `. Your best is ${numberFormat.format(best)}.`);
