@@ -74,6 +74,7 @@ if (telegramWebApp?.onEvent) {
   window.visualViewport?.addEventListener('resize', updateChatViewportHeight);
 }
 // Preview-only query flag: starts at stage 840 without touching Telegram progress or stats.
+// Isolated stage-840 preview: do not sync checkpoints, record starts, or submit scores.
 const stage840Preview = new URLSearchParams(location.search).get('preview') === '840';
 let checkpointSyncReady = stage840Preview || !telegramWebApp?.initData;
 let checkpointInitialization: Promise<boolean> = Promise.resolve(true);
