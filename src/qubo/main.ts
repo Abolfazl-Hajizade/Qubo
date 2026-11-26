@@ -53,35 +53,6 @@ const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory, re
 
 type TelegramWebApp = { initData: string; viewportHeight?: number; viewportStableHeight?: number; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void; onEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void; offEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void };
 const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
-
-let gameAccessReady = false;
-let gameAccessAllowed = false;
-const accessStatus = $('access-status');
-async function initializeGameAccess() {
-  const initData = telegramWebApp?.initData ?? '';
-  try {
-    const response = await fetch('/api/access', {
-      headers: initData ? { 'x-telegram-init-data': initData } : {},
-      cache: 'no-store',
-    });
-    const data = await response.json() as { allowed?: boolean; error?: string };
-    gameAccessAllowed = response.ok && data.allowed === true;
-    if (!gameAccessAllowed) {
-      accessStatus.textContent = data.error || 'برای بازی، از طریق ربات تلگرام وارد Qubo شوید.';
-      accessStatus.hidden = false;
-    } else {
-      accessStatus.hidden = true;
-    }
-  } catch {
-    gameAccessAllowed = false;
-    accessStatus.textContent = 'بررسی دسترسی ناموفق بود. اتصال اینترنت را بررسی و صفحه را دوباره بارگذاری کنید.';
-    accessStatus.hidden = false;
-  } finally {
-    gameAccessReady = true;
-    ($('play-btn') as HTMLButtonElement).disabled = !gameAccessAllowed;
-  }
-}
-void initializeGameAccess();
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
 telegramWebApp?.disableVerticalSwipes?.();
@@ -299,12 +270,6 @@ function backdropForScore(score: number) {
 }
 
 function start() {
-  if (!gameAccessReady || !gameAccessAllowed) {
-    accessStatus.hidden = false;
-    if (!gameAccessReady) accessStatus.textContent = 'در حال بررسی دسترسی...';
-    else accessStatus.textContent = 'برای بازی، از طریق ربات تلگرام وارد Qubo شوید.';
-    return;
-  }
   if (telegramWebApp?.initData && !checkpointSyncReady && !checkpointSyncFailed) {
     if (!waitingForCheckpointSync) {
       waitingForCheckpointSync = true;
