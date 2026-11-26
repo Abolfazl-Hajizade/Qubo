@@ -12,6 +12,10 @@ const BEST_KEY = 'qubo.best';
 const STATS_KEY = 'qubo.stats';
 const PROGRESS_KEY = 'qubo.progress';
 const CHECKPOINT_STEP = 30;
+
+type TelegramWebApp = { initData: string; viewportHeight?: number; viewportStableHeight?: number; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void; onEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void; offEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void };
+const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
+const hasTelegramIdentity = Boolean(telegramWebApp?.initData);
 const history = createHistory<{ endedAt: number; score: number; best: boolean }>('qubo.history');
 const MAX_FRAME_DELTA = 0.1;
 const INPUT_BUFFER_MS = 102; // experimental timing adjustment for variable-timestep physics
@@ -38,11 +42,20 @@ let backdropIndex = 0;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
 let best = loadJSON<number>(BEST_KEY, 0);
-const savedProgress = loadJSON<unknown>(PROGRESS_KEY, null);
-let checkpoint = typeof savedProgress === 'number' && Number.isFinite(savedProgress)
-  ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
-  : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP);
-if (typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
+// Checkpoints are persisted in the browser only for authenticated Telegram Mini App sessions.
+// A normal browser session must neither read nor retain a local checkpoint.
+let savedProgress: unknown = null;
+if (hasTelegramIdentity) {
+  savedProgress = loadJSON<unknown>(PROGRESS_KEY, null);
+} else {
+  try { localStorage.removeItem(PROGRESS_KEY); } catch { /* local storage may be unavailable */ }
+}
+let checkpoint = hasTelegramIdentity
+  ? (typeof savedProgress === 'number' && Number.isFinite(savedProgress)
+    ? Math.max(0, Math.floor(savedProgress / CHECKPOINT_STEP) * CHECKPOINT_STEP)
+    : Math.max(0, Math.floor(best / CHECKPOINT_STEP) * CHECKPOINT_STEP))
+  : 0;
+if (hasTelegramIdentity && typeof savedProgress !== 'number' && checkpoint > 0) saveJSON(PROGRESS_KEY, checkpoint);
 
 const canvas = $<HTMLCanvasElement>('stage');
 const ctx = canvas.getContext('2d')!;
@@ -51,8 +64,6 @@ const endDialog = $<HTMLDialogElement>('end-dialog');
 
 const screens = new Screens({ leaveGame: stopLoop, renderHome, renderHistory, renderRecords: loadLeaderboard });
 
-type TelegramWebApp = { initData: string; viewportHeight?: number; viewportStableHeight?: number; ready?: () => void; expand?: () => void; disableVerticalSwipes?: () => void; enableVerticalSwipes?: () => void; onEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void; offEvent?: (eventType: 'viewportChanged', handler: (event: { isStateStable?: boolean }) => void) => void };
-const telegramWebApp = (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 telegramWebApp?.ready?.();
 telegramWebApp?.expand?.();
 telegramWebApp?.disableVerticalSwipes?.();
@@ -379,7 +390,7 @@ function loop(now: number) {
     const reachedCheckpoint = Math.floor(world.score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
     if (reachedCheckpoint > checkpoint) {
       checkpoint = reachedCheckpoint;
-      saveJSON(PROGRESS_KEY, checkpoint);
+      if (hasTelegramIdentity) saveJSON(PROGRESS_KEY, checkpoint);
       void saveRemoteCheckpoint(checkpoint);
     }
     const nextBackdrop = backdropForScore(world.score);
