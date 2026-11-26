@@ -18,7 +18,8 @@ const lazy = new Set([...gameFiles.values()].flat());
 const href = (file: string) => new URL(file, self.registration.scope).href;
 
 // The app shell, and anything no game claims, is downloaded when the worker installs.
-precacheAndRoute(manifest.filter((e) => !lazy.has(e.url)));
+// Never serve HTML navigations from the service-worker cache: each page load must reach the server-side access gate.
+precacheAndRoute(manifest.filter((e) => !lazy.has(e.url) && !e.url.endsWith('.html')));
 cleanupOutdatedCaches();
 self.skipWaiting();
 clientsClaim();
