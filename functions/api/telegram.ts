@@ -20,7 +20,7 @@ type TelegramUpdate = {
 const ADMIN_TELEGRAM_ID = "7431567147";
 
 async function sendTelegramMessage(botToken: string, chatId: number, text: string): Promise<boolean> {
-  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+  const response = await fetch(\`https://api.telegram.org/bot\${botToken}/sendMessage\`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text }),
@@ -29,54 +29,52 @@ async function sendTelegramMessage(botToken: string, chatId: number, text: strin
 }
 
 function safeText(value: unknown, fallback: string): string {
-  const text = String(value ?? "").replace(/[\\r\\n\\t]+/g, " ").trim();
+  const text = String(value ?? "").replace(/[\r\n\t]+/g, " ").trim();
   return (text || fallback).slice(0, 80);
 }
 
 async function sendMemberList(env: Env, chatId: number): Promise<boolean> {
   if (!env.BOT_TOKEN || !env.DB) return false;
 
-  const rows = await env.DB.prepare(`
+  const rows = await env.DB.prepare(\`
     SELECT
       t.telegram_user_id,
       t.username,
       TRIM(COALESCE(t.first_name, '') || ' ' || COALESCE(t.last_name, '')) AS telegram_name,
       l.display_name,
-      l.best_score,
-      l.updated_at AS record_updated_at
+      l.best_score
     FROM telegram_users t
     LEFT JOIN leaderboard l ON l.telegram_user_id = t.telegram_user_id
     ORDER BY COALESCE(l.best_score, 0) DESC, t.updated_at DESC
-  `).bind().all<{
+  \`).bind().all<{
     telegram_user_id: string;
     username: string | null;
     telegram_name: string;
     display_name: string | null;
     best_score: number | null;
-    record_updated_at: string | null;
   }>();
 
   const players = rows.results ?? [];
   const lines = [
-    `👥 فهرست بازیکنان Qubo — ${players.length} نفر`,
+    \`👥 فهرست بازیکنان Qubo — \${players.length} نفر\`,
     "",
     ...players.map((player, index) => {
       const name = safeText(player.telegram_name, safeText(player.display_name, "بدون نام"));
-      const username = player.username ? `@${safeText(player.username, "ندارد")}` : "ندارد";
+      const username = player.username ? \`@\${safeText(player.username, "ندارد")}\` : "ندارد";
       const score = player.best_score == null ? "ثبت نشده" : String(Number(player.best_score) || 0);
       return [
-        `${index + 1}. ${name}`,
-        `🆔 ${player.telegram_user_id}`,
-        `👤 ${username}`,
-        `🏆 آخرین رکورد ثبت‌شده: ${score}`,
-      ].join("\\n");
+        \`\${index + 1}. \${name}\`,
+        \`🆔 \${player.telegram_user_id}\`,
+        \`👤 \${username}\`,
+        \`🏆 آخرین رکورد ثبت‌شده: \${score}\`,
+      ].join("\n");
     }),
   ];
 
   const chunks: string[] = [];
   let current = "";
   for (const line of lines) {
-    const next = current ? `${current}\\n${line}` : line;
+    const next = current ? \`\${current}\n\${line}\` : line;
     if (next.length > 3500 && current) {
       chunks.push(current);
       current = line;
@@ -114,7 +112,7 @@ export async function onRequestPost({
 
   if (update.inline_query) {
     const inlineResponse = await fetch(
-      `https://api.telegram.org/bot${env.BOT_TOKEN}/answerInlineQuery`,
+      \`https://api.telegram.org/bot\${env.BOT_TOKEN}/answerInlineQuery\`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -179,7 +177,7 @@ export async function onRequestPost({
   }
 
   const telegramResponse = await fetch(
-    `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
+    \`https://api.telegram.org/bot\${env.BOT_TOKEN}/sendMessage\`,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
