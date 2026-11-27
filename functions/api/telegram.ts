@@ -37,11 +37,11 @@ async function sendMemberList(env: Env, chatId: number): Promise<boolean> {
   if (!env.BOT_TOKEN || !env.DB) return false;
 
   const rows = await env.DB.prepare(
-    "SELECT t.telegram_user_id, t.username, " +
+    "SELECT l.telegram_user_id, t.username, " +
     "TRIM(COALESCE(t.first_name, '') || ' ' || COALESCE(t.last_name, '')) AS telegram_name, " +
     "l.display_name, l.best_score " +
-    "FROM telegram_users t LEFT JOIN leaderboard l ON l.telegram_user_id = t.telegram_user_id " +
-    "ORDER BY COALESCE(l.best_score, 0) DESC, t.updated_at DESC"
+    "FROM leaderboard l LEFT JOIN telegram_users t ON t.telegram_user_id = l.telegram_user_id " +
+    "ORDER BY COALESCE(l.best_score, 0) DESC, l.updated_at DESC"
   ).bind().all<{
     telegram_user_id: string;
     username: string | null;
