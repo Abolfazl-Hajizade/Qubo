@@ -98,10 +98,12 @@ export async function onRequestPost({
     return new Response("Bot is not configured", { status: 500 });
   }
 
-  // Telegram sends this header when the webhook is configured with secret_token.
-  // This check becomes active once TELEGRAM_WEBHOOK_SECRET is configured in Pages.
+  // Fail closed: never process webhook updates unless the secret is configured
+  // and the request carries Telegram's matching secret header.
+  if (!env.TELEGRAM_WEBHOOK_SECRET) {
+    return new Response("Webhook secret is not configured", { status: 503 });
+  }
   if (
-    env.TELEGRAM_WEBHOOK_SECRET &&
     request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.TELEGRAM_WEBHOOK_SECRET
   ) {
     return new Response("Unauthorized", { status: 401 });
