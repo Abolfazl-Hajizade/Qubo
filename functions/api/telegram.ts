@@ -1,10 +1,14 @@
+import type { D1Like } from "../_shared/bans";
+
 type Env = {
   BOT_TOKEN?: string;
+  DB?: D1Like;
 };
 
 type TelegramUpdate = {
   message?: {
-    chat?: { id?: number };
+    from?: { id?: number };
+    chat?: { id?: number; type?: string };
     text?: string;
   };
   inline_query?: {
@@ -12,6 +16,81 @@ type TelegramUpdate = {
     query?: string;
   };
 };
+
+const ADMIN_TELEGRAM_ID = "7431567147";
+
+async function sendTelegramMessage(botToken: string, chatId: number, text: string): Promise<boolean> {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text }),
+  });
+  return response.ok;
+}
+
+function safeText(value: unknown, fallback: string): string {
+  const text = String(value ?? "").replace(/[\\r\\n\\t]+/g, " ").trim();
+  return (text || fallback).slice(0, 80);
+}
+
+async function sendMemberList(env: Env, chatId: number): Promise<boolean> {
+  if (!env.BOT_TOKEN || !env.DB) return false;
+
+  const rows = await env.DB.prepare(`
+    SELECT
+      t.telegram_user_id,
+      t.username,
+      TRIM(COALESCE(t.first_name, '') || ' ' || COALESCE(t.last_name, '')) AS telegram_name,
+      l.display_name,
+      l.best_score,
+      l.updated_at AS record_updated_at
+    FROM telegram_users t
+    LEFT JOIN leaderboard l ON l.telegram_user_id = t.telegram_user_id
+    ORDER BY COALESCE(l.best_score, 0) DESC, t.updated_at DESC
+  `).bind().all<{
+    telegram_user_id: string;
+    username: string | null;
+    telegram_name: string;
+    display_name: string | null;
+    best_score: number | null;
+    record_updated_at: string | null;
+  }>();
+
+  const players = rows.results ?? [];
+  const lines = [
+    `👥 فهرست بازیکنان Qubo — ${players.length} نفر`,
+    "",
+    ...players.map((player, index) => {
+      const name = safeText(player.telegram_name, safeText(player.display_name, "بدون نام"));
+      const username = player.username ? `@${safeText(player.username, "ندارد")}` : "ندارد";
+      const score = player.best_score == null ? "ثبت نشده" : String(Number(player.best_score) || 0);
+      return [
+        `${index + 1}. ${name}`,
+        `🆔 ${player.telegram_user_id}`,
+        `👤 ${username}`,
+        `🏆 آخرین رکورد ثبت‌شده: ${score}`,
+      ].join("\\n");
+    }),
+  ];
+
+  const chunks: string[] = [];
+  let current = "";
+  for (const line of lines) {
+    const next = current ? `${current}\\n${line}` : line;
+    if (next.length > 3500 && current) {
+      chunks.push(current);
+      current = line;
+    } else {
+      current = next;
+    }
+  }
+  if (current) chunks.push(current);
+
+  for (const chunk of chunks) {
+    if (!(await sendTelegramMessage(env.BOT_TOKEN, chatId, chunk))) return false;
+  }
+  return true;
+}
 
 export async function onRequestPost({
   request,
@@ -77,7 +156,23 @@ export async function onRequestPost({
 
   const message = update.message;
   const chatId = message?.chat?.id;
+  const senderId = message?.from?.id;
   const text = message?.text?.trim() ?? "";
+
+  // A normal bot chat update does not contain WebApp initData. Telegram supplies
+  // the sender's numeric ID in the update; only answer in the admin's own private chat.
+  if (
+    text === "/member" &&
+    message?.chat?.type === "private" &&
+    senderId !== undefined &&
+    String(senderId) === ADMIN_TELEGRAM_ID &&
+    chatId !== undefined &&
+    String(chatId) === ADMIN_TELEGRAM_ID
+  ) {
+    const sent = await sendMemberList(env, chatId);
+    if (!sent) return new Response("Could not send member list", { status: 502 });
+    return new Response("ok");
+  }
 
   if (!chatId || !text.startsWith("/start")) {
     return new Response("ok");
