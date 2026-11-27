@@ -2,6 +2,7 @@ import type { D1Like } from "../_shared/bans";
 
 type Env = {
   BOT_TOKEN?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
   DB?: D1Like;
 };
 
@@ -95,6 +96,15 @@ export async function onRequestPost({
 }): Promise<Response> {
   if (!env.BOT_TOKEN) {
     return new Response("Bot is not configured", { status: 500 });
+  }
+
+  // Telegram sends this header when the webhook is configured with secret_token.
+  // This check becomes active once TELEGRAM_WEBHOOK_SECRET is configured in Pages.
+  if (
+    env.TELEGRAM_WEBHOOK_SECRET &&
+    request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.TELEGRAM_WEBHOOK_SECRET
+  ) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   let update: TelegramUpdate;
