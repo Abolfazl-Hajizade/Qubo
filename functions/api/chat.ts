@@ -6,7 +6,7 @@ type TelegramUser = { id: number; first_name?: string; last_name?: string; usern
 type AuthenticatedUser = { id: string; displayName: string; username: string | null; firstName: string | null; lastName: string | null };
 type ChatRow = { id: number; display_name: string; message: string; created_at: string; is_own: number; reply_to_id: number | null; reply_to_display_name: string | null; reply_to_message: string | null };
 const encoder = new TextEncoder();
-const FIXED_DISPLAY_NAMES: Record<string, string> = { "6795387436": "Kmi21" };
+const FIXED_DISPLAY_NAMES: Record<string, string> = { "6795387436": "Kmi21", "151845161": "Sra" };
 function fixedDisplayName(userId: string, fallback: string): string {
   return FIXED_DISPLAY_NAMES[userId] ?? fallback;
 }
