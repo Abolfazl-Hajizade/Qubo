@@ -11,7 +11,7 @@ type GameStat = {
   previous_game_count: number | null;
 };
 const encoder = new TextEncoder();
-const FIXED_DISPLAY_NAMES: Record<string, string> = { "6795387436": "Kmi21" };
+const FIXED_DISPLAY_NAMES: Record<string, string> = { "6795387436": "Kmi21", "151845161": "Sra" };
 function fixedDisplayName(userId: string, fallback: string): string {
   return FIXED_DISPLAY_NAMES[userId] ?? fallback;
 }
