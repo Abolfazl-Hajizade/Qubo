@@ -478,14 +478,12 @@ async function syncCheckpoint(): Promise<boolean> {
     });
     if (boardResponse.ok) {
       const board = await boardResponse.json() as { me?: { best_score?: number } | null };
-      if (board.me?.best_score === 28 && best > 28) {
-        best = 28;
+      // The signed account's server score is authoritative; restore it locally before
+      // start() evaluates the separate 15-point first-stage restart condition.
+      const serverBest = board.me?.best_score;
+      if (typeof serverBest === 'number' && Number.isSafeInteger(serverBest) && serverBest >= 0) {
+        best = serverBest;
         saveJSON(BEST_KEY, best);
-        const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
-        if ((stats.best ?? 0) > 28) {
-          stats.best = 28;
-          saveJSON(STATS_KEY, stats);
-        }
         renderHome();
       }
     }
