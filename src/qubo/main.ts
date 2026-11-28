@@ -346,9 +346,10 @@ function pause() {
   setStatus('Paused', 'Tap to carry on');
 }
 
-function stopLoop() { cancelAnimationFrame(raf); raf = 0; }
+function stopLoop() { cancelAnimationFrame(raf); raf = 0; gameAudio.stop(); }
 
 function finish() {
+  gameAudio.stop();
   const isBest = world.score > best;
   if (isBest) { best = world.score; if (hasTelegramIdentity) saveJSON(BEST_KEY, best); }
   const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
