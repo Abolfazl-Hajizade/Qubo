@@ -185,8 +185,9 @@ function bindAudioControls() {
     enabled = !enabled;
     try { localStorage.setItem('qubo.sound.enabled', enabled ? '1' : '0'); } catch { /* storage disabled */ }
     syncToggle();
-    if (enabled) startScene(Number(document.body.dataset.quboBackdrop ?? 0));
-    else stopScene();
+    if (enabled) {
+      if (document.getElementById('game')?.hidden === false) startScene(Number(document.body.dataset.quboBackdrop ?? 0));
+    } else stopScene();
   });
   const openLab = (open: boolean) => {
     lab.hidden = !open;
