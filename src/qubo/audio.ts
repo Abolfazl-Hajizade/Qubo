@@ -192,7 +192,7 @@ function bindAudioControls() {
     lab.hidden = !open;
     labToggle.setAttribute('aria-expanded', String(open));
   };
-  labToggle.addEventListener('click', () => openLab(lab.hidden));
+  labToggle.addEventListener('click', () => openLab(Boolean(lab.hidden)));
   close?.addEventListener('click', () => openLab(false));
   preview.addEventListener('click', () => {
     enabled = true;
