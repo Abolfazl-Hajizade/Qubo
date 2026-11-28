@@ -35,9 +35,11 @@ const hasTelegramLaunchData = new URLSearchParams(location.hash.slice(1)).has('t
 const isTelegramWebView = /Telegram/i.test(navigator.userAgent) || !!telegramWebApp?.initData || hasTelegramLaunchData;
 
 if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
-  // Match the mobile Telegram policy on both mobile and desktop: don't let stale PWA caches
-  // interfere with repeated Mini App launches.
-  if (isTelegramWebView) {
+  // Cloudflare Pages preview hosts must not retain an older game shell or audio bundle.
+  // Production keeps its offline PWA cache; previews always load the current deployment.
+  const isPagesPreview = location.hostname.endsWith('.qubo-c0i.pages.dev')
+    && location.hostname !== 'qubo-c0i.pages.dev';
+  if (isPagesPreview || isTelegramWebView) {
     void navigator.serviceWorker.getRegistrations()
       .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
       .catch(() => { /* service workers may be unavailable in embedded browsers */ });
