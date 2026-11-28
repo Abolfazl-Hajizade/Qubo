@@ -39,6 +39,31 @@ let sceneBus: GainNode | null = null;
 let sceneNodes: AudioNode[] = [];
 let enabled = false;
 let activeScene = -1;
+let ambienceAudio: HTMLAudioElement | null = null;
+let woodTake = 0;
+const fieldRecordings = new Map<number, string>([
+  [0, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.1.0-preview/rain-soft.wav'],
+  [2, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
+  [3, 'https://cdn.freesound.org/previews/578/578524_5487341-hq.mp3'],
+  [4, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [21, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-stream.wav'],
+]);
+const activeSfx: HTMLAudioElement[] = [];
+function playSfx(path: string, volume: number, rate = 1) {
+  const audio = new Audio(path);
+  audio.preload = 'auto';
+  audio.volume = volume;
+  audio.playbackRate = rate;
+  activeSfx.push(audio);
+  audio.addEventListener('ended', () => {
+    const index = activeSfx.indexOf(audio);
+    if (index >= 0) activeSfx.splice(index, 1);
+  }, { once: true });
+  void audio.play().catch(() => {
+    const index = activeSfx.indexOf(audio);
+    if (index >= 0) activeSfx.splice(index, 1);
+  });
+}
 
 function getContext(): AudioContext {
   if (!ctx) {
@@ -56,7 +81,15 @@ function resumeContext() {
   return ac;
 }
 function stopScene() {
-  if (!ctx || !sceneBus) return;
+  if (ambienceAudio) {
+    ambienceAudio.pause();
+    ambienceAudio.currentTime = 0;
+    ambienceAudio = null;
+  }
+  if (!ctx || !sceneBus) {
+    activeScene = -1;
+    return;
+  }
   const oldBus = sceneBus;
   const oldNodes = sceneNodes;
   const now = ctx.currentTime;
@@ -73,14 +106,31 @@ function stopScene() {
     try { oldBus.disconnect(); } catch { /* already disconnected */ }
   }, 520);
 }
-function startScene(index: number) {
+function startScene(index: number, allowFieldRecording = true) {
   if (!enabled) return;
   const ac = resumeContext();
   const safeIndex = Math.max(0, Math.min(scenes.length - 1, Math.floor(index)));
   if (safeIndex === activeScene) return;
   stopScene();
-  const scene = scenes[safeIndex];
   activeScene = safeIndex;
+  const recordingUrl = allowFieldRecording ? fieldRecordings.get(safeIndex) : undefined;
+  if (recordingUrl) {
+    const recording = new Audio(recordingUrl);
+    recording.loop = true;
+    recording.preload = 'none';
+    recording.volume = .18;
+    ambienceAudio = recording;
+    void recording.play().catch(() => {
+      // If the field recording is unavailable or the device is offline, retain a quiet local fallback.
+      if (ambienceAudio === recording) {
+        ambienceAudio = null;
+        activeScene = -1;
+        startScene(safeIndex, false);
+      }
+    });
+    return;
+  }
+  const scene = scenes[safeIndex];
   const bus = ac.createGain();
   bus.gain.setValueAtTime(0, ac.currentTime);
   bus.gain.setTargetAtTime(.12, ac.currentTime, .9);
@@ -147,13 +197,12 @@ function tone(frequency: number, duration: number, waveform: OscillatorType, vol
 }
 function cubeSpin() {
   if (!enabled) return;
-  tone(620, .34, 'sine', .11, 105, .025);
-  tone(930, .22, 'triangle', .035, 310, .018);
+  playSfx('/qubo/audio/spin.ogg', .34, 1.08);
 }
 function cubeImpact() {
   if (!enabled) return;
-  tone(118, .22, 'sine', .2, 42, .004);
-  tone(410, .055, 'triangle', .045, 150, .002);
+  const take = woodTake++ % 2;
+  playSfx(take ? '/qubo/audio/wood-2.ogg' : '/qubo/audio/wood-1.ogg', .5, .9);
 }
 
 function bindAudioControls() {

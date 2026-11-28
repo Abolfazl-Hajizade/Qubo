@@ -47,7 +47,7 @@ function collectGameFiles(): Plugin {
       for (const game of games) {
         const own = [...reach(`${game}/index.html`)].filter((f) => !home.has(f));
         const dir = game === 'sudoku' ? 'puzzles' : `puzzles/${game}`;
-        gameFiles.push([game, [...own, ...(existsSync(`public/${dir}`) ? puzzles(dir) : [])]]);
+        gameFiles.push([game, [...own, ...(existsSync(`public/${dir}`) ? puzzles(dir) : []), ...(game === 'qubo' ? ['qubo/audio/spin.ogg', 'qubo/audio/wood-1.ogg', 'qubo/audio/wood-2.ogg'] : [])]]);
       }
     },
   };
@@ -98,7 +98,7 @@ export default defineConfig({
       injectManifest: {
         // Every file goes in the manifest, so the service worker knows each one's revision, but it downloads
         // only the home page's up front.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,txt,woff2,ogg}'],
         buildPlugins: { vite: [gameFilesModule()] },
       },
     }),
