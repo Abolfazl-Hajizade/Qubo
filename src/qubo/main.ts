@@ -2,6 +2,7 @@ import { $, Screens, onVisibility } from '../shared/screens';
 import { createHistory, loadJSON, saveJSON } from '../shared/store';
 import { CUBE, H, W, type World, createWorld, launch, pivotX, step, towerLen } from './engine';
 import { createLaunchInputBuffer } from './launch-input';
+import { initQuboAudio } from './audio';
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
@@ -30,6 +31,7 @@ let started = false;
 let pendingLaunchUntil = 0;
 let checkpointSyncQueue: Promise<boolean> = Promise.resolve(true);
 const rescueLaunchBuffer = createLaunchInputBuffer();
+const gameAudio = initQuboAudio();
 // Presentation-only squash/stretch timers; game physics and collision bounds stay untouched.
 let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
@@ -299,6 +301,7 @@ function start() {
   backdropIndex = backdropForScore(world.score);
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
+  gameAudio.stage(backdropIndex);
   screens.show('game');
   $('best').textContent = String(best);
   setScore();
@@ -330,6 +333,7 @@ function down() {
 function tryLaunch(options?: { skipRearCornerHop?: boolean }) {
   launch(world, options);
   if (world.phase === 'air' || world.phase === 'rescue') {
+    gameAudio.spin();
     pendingLaunchUntil = 0;
     takeoffAgeVisual = 0;
     landingAgeVisual = Infinity;
@@ -381,7 +385,7 @@ function loop(now: number) {
         tryLaunch(rescueLaunchBuffer.getLaunchOptions());
         if (world.phase === 'air' || world.phase === 'rescue') rescueLaunchBuffer.clear();
       }
-      if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') landingAgeVisual = 0;
+      if ((previousPhase === 'air' || previousPhase === 'rescue') && world.phase === 'scroll') { landingAgeVisual = 0; gameAudio.impact(); }
       if (landingAgeVisual < 2) landingAgeVisual += frameDelta;
       if (takeoffAgeVisual < 1) takeoffAgeVisual += frameDelta;
     }
@@ -396,6 +400,7 @@ function loop(now: number) {
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
+      gameAudio.stage(backdropIndex);
       backdropTransitionAge = 0;
     }
     if (backdropTransitionAge < 1) backdropTransitionAge = Math.min(1, backdropTransitionAge + simulatedDelta / 1.1);
