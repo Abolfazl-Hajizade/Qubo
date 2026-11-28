@@ -301,8 +301,9 @@ function start() {
   backdropIndex = backdropForScore(world.score);
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
-  gameAudio.stage(backdropIndex);
   screens.show('game');
+  document.body.dataset.quboBackdrop = String(backdropIndex);
+  gameAudio.stage(backdropIndex);
   $('best').textContent = String(best);
   setScore();
   setStatus('Tap to start', 'Time the tap: throw the cube while the tower leans, before it falls');
