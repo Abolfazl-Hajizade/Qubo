@@ -3,7 +3,7 @@
 All bundled one-shot effects are CC0 1.0 and may be used commercially without attribution.
 
 - `spin.ogg`: “Whoosh low” by MeanRaccoon, Freesound 830856, CC0 1.0. Source: https://freesound.org/people/MeanRaccoon/sounds/830856/
-- `wood-1.ogg` and `wood-2.ogg`: wooden-footstep recordings from the CC0 Open Game SFX Index (Kenney / CC0-verified OpenGameArt assets). Source index: https://github.com/Mcamento8/open-game-sfx-index
+- `wood-1.ogg` and `wood-2.ogg`: wooden-footstep recordings from TinyWorlds’ “Different Steps” OpenGameArt pack, CC0-verified. Source: https://opengameart.org/content/different-steps-on-wood-stone-leaves-gravel-and-mud (mirrored in https://github.com/Mcamento8/open-game-sfx-index).
 
 Five optional ambience streams are CC0 field recordings, loaded only when their matching stage is played:
 - Storm / rain: https://freesound.org/people/barkenov/sounds/640655/

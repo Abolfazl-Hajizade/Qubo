@@ -178,23 +178,6 @@ function startScene(index: number, allowFieldRecording = true) {
     sceneNodes.push(pulse, depth);
   }
 }
-function tone(frequency: number, duration: number, waveform: OscillatorType, volume: number, endFrequency: number, attack = .008) {
-  if (!enabled) return;
-  const ac = resumeContext();
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.type = waveform;
-  osc.frequency.setValueAtTime(frequency, ac.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), ac.currentTime + duration);
-  gain.gain.setValueAtTime(.0001, ac.currentTime);
-  gain.gain.exponentialRampToValueAtTime(volume, ac.currentTime + attack);
-  gain.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(master!);
-  osc.start();
-  osc.stop(ac.currentTime + duration + .02);
-  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
-}
 function cubeSpin() {
   if (!enabled) return;
   playSfx('/qubo/audio/spin.ogg', .34, 1.08);
