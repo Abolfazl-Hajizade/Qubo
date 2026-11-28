@@ -3,7 +3,7 @@
 All bundled one-shot effects are CC0 1.0.
 
 - `spin.ogg`: “Whoosh low” by MeanRaccoon, Freesound 830856, CC0 1.0. Source: https://freesound.org/people/MeanRaccoon/sounds/830856/
-- `wood-1.ogg`: wooden door-close foley from Kenney’s RPG Audio pack, CC0 1.0. Source pack: https://kenney.nl/assets/rpg-audio
+- `wood-2.ogg`: wooden door-close foley from Kenney’s RPG Audio pack, CC0 1.0. Source pack: https://kenney.nl/assets/rpg-audio
 
 All 30 environments now select a real CC0 field recording. Recordings are selected by closest theme and reused across environments; they stream on demand rather than being bundled locally:
 - Rain: “Soft rain.WAV” by barkenov, Freesound 640655. https://freesound.org/people/barkenov/sounds/640655/
