@@ -1344,3 +1344,68 @@ body:has(#game:not([hidden]))[data-qubo-backdrop="29"] #game .board-frame {
   outline-offset: 3px;
   box-shadow: 0 0 22px rgba(35, 43, 49, .22);
 }
+
+
+/* Accessible sound controls: real markup, independent of the canvas and screen transitions. */
+.qubo-audio-dock {
+  position: fixed;
+  z-index: 10000;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  pointer-events: none;
+}
+.qubo-audio-dock button,
+.qubo-audio-panel {
+  pointer-events: auto;
+  box-sizing: border-box;
+  font: 700 12px/1.2 var(--font-ui);
+}
+.qubo-audio-button {
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 999px;
+  background: #101923ed;
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(0,0,0,.28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.qubo-audio-button[aria-pressed="true"] { background: #176b50; border-color: #7de0b2; }
+.qubo-audio-secondary { background: #263b51ed; }
+.qubo-audio-panel {
+  position: absolute;
+  left: 0;
+  bottom: 49px;
+  width: min(300px, calc(100vw - 24px));
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 15px;
+  background: rgba(13,22,34,.97);
+  color: #f5f7fb;
+  box-shadow: 0 12px 34px rgba(0,0,0,.38);
+}
+.qubo-audio-panel[hidden] { display: none !important; }
+.qubo-audio-panel-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.qubo-audio-panel-head strong { font-size: 13px; }
+.qubo-audio-panel-head button { width:28px; height:28px; border:0; border-radius:8px; background:#263b51; color:#fff; font-size:20px; }
+.qubo-audio-panel label { display:block; margin:0 0 6px; color:#c6d2e0; font-size:11px; }
+.qubo-audio-panel select {
+  width:100%; min-height:38px; padding:8px;
+  border:1px solid #53667c; border-radius:8px;
+  background:#1c2b3c; color:#fff; font:inherit;
+}
+.qubo-audio-actions { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:9px; }
+.qubo-audio-actions button {
+  min-height:36px; padding:6px 4px; border:1px solid #52657a;
+  border-radius:8px; background:#263b51; color:#fff; font-size:10px;
+}
+.qubo-audio-panel p { margin:9px 0 0; color:#aab8c9; font-size:10px; line-height:1.45; }
+@media (max-width: 360px) {
+  .qubo-audio-button { padding:8px 10px; font-size:11px; }
+  .qubo-audio-actions { gap:4px; }
+  .qubo-audio-actions button { font-size:9px; }
+}
