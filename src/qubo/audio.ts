@@ -57,13 +57,14 @@ function stopScene() {
   ambience.gain.setTargetAtTime(0, now, .12);
   const oldNodes = [...sceneNodes];
   const oldNoise = noiseSource;
+  const oldBus = ambience;
   sceneNodes = [];
   noiseSource = null;
   currentScene = -1;
   window.setTimeout(() => {
     oldNodes.forEach((node) => { try { if (node instanceof OscillatorNode) node.stop(); } catch { /* already stopped */ } });
     try { oldNoise?.stop(); } catch { /* already stopped */ }
-    ambience?.disconnect();
+    oldBus?.disconnect();
   }, 650);
   ambience = null;
 }
