@@ -34,6 +34,70 @@ function safeText(value: unknown, fallback: string): string {
   return (text || fallback).slice(0, 80);
 }
 
+
+type BanRow = { telegram_user_id: string; reason: string; banned_at: string };
+type DeletionRow = {
+  telegram_user_id: string; username: string | null; first_name: string | null;
+  last_name: string | null; display_name: string | null; reason: string;
+  deleted_by: string; deleted_sections: string; deleted_at: string;
+};
+
+function splitTelegramText(lines: string[], maxLength = 3500): string[] {
+  const chunks: string[] = [];
+  let current = "";
+  for (const line of lines) {
+    const next = current ? current + "\n" + line : line;
+    if (next.length > maxLength && current) { chunks.push(current); current = line; }
+    else current = next;
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+async function sendBanAndDeletionLists(env: Env, chatId: number): Promise<boolean> {
+  if (!env.BOT_TOKEN || !env.DB) return false;
+  const [bannedResult, deletionResult] = await Promise.all([
+    env.DB.prepare("SELECT telegram_user_id, reason, banned_at FROM banned_users ORDER BY banned_at DESC")
+      .bind().all<BanRow>(),
+    env.DB.prepare(
+      "SELECT telegram_user_id, username, first_name, last_name, display_name, reason, deleted_by, deleted_sections, deleted_at " +
+      "FROM user_deletion_audit ORDER BY deleted_at DESC, id DESC"
+    ).bind().all<DeletionRow>(),
+  ]);
+  const banned = bannedResult.results ?? [];
+  const deleted = deletionResult.results ?? [];
+  const lines = [
+    "🚫 کاربران مسدودشده Qubo: " + banned.length, "",
+    ...(banned.length ? banned.map((u, i) => [
+      (i + 1) + ". " + safeText(u.telegram_user_id, "بدون شناسه"),
+      "دلیل: " + safeText(u.reason, "ثبت نشده"),
+      "زمان مسدودسازی: " + safeText(u.banned_at, "نامشخص"),
+    ].join("\n")) : ["موردی ثبت نشده است."]),
+    "", "🗑 سابقه حذف کاربران Qubo: " + deleted.length, "",
+    ...(deleted.length ? deleted.map((u, i) => {
+      const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
+      const name = safeText(fullName, safeText(u.display_name, "بدون نام"));
+      const username = u.username ? "@" + safeText(u.username, "نامشخص") : "ثبت نشده";
+      let sections = "نامشخص";
+      try {
+        const parsed = JSON.parse(u.deleted_sections);
+        if (Array.isArray(parsed)) sections = parsed.map(x => safeText(x, "")).join(", ") || "ثبت نشده";
+      } catch { sections = safeText(u.deleted_sections, "نامشخص"); }
+      return [
+        (i + 1) + ". " + name, "🆔 " + safeText(u.telegram_user_id, "بدون شناسه"),
+        "👤 " + username, "دلیل: " + safeText(u.reason, "ثبت نشده"),
+        "عامل حذف: " + safeText(u.deleted_by, "نامشخص"),
+        "زمان حذف: " + safeText(u.deleted_at, "نامشخص"),
+        "بخش‌های پاک‌شده: " + sections,
+      ].join("\n");
+    }) : ["موردی ثبت نشده است."]),
+  ];
+  for (const chunk of splitTelegramText(lines)) {
+    if (!(await sendTelegramMessage(env.BOT_TOKEN, chatId, chunk))) return false;
+  }
+  return true;
+}
+
 async function sendMemberList(env: Env, chatId: number): Promise<boolean> {
   if (!env.BOT_TOKEN || !env.DB) return false;
 
@@ -167,6 +231,19 @@ export async function onRequestPost({
 
   // Telegram chat updates do not contain WebApp initData. The sender's ID is
   // supplied in the update; only answer in the admin's own private chat.
+  if (
+    /^\/ban(?:@\w+)?(?:\s|$)/i.test(text) &&
+    message?.chat?.type === "private" &&
+    senderId !== undefined &&
+    String(senderId) === ADMIN_TELEGRAM_ID &&
+    chatId !== undefined &&
+    String(chatId) === ADMIN_TELEGRAM_ID
+  ) {
+    const sent = await sendBanAndDeletionLists(env, chatId);
+    if (!sent) return new Response("Could not send ban and deletion lists", { status: 502 });
+    return new Response("ok");
+  }
+
   if (
     text === "/member" &&
     message?.chat?.type === "private" &&
