@@ -210,7 +210,7 @@ function cubeSpin() {
 }
 function cubeImpact() {
   if (!enabled) return;
-  playSfx('/qubo/audio/wood-1.ogg', .5, .9);
+  playSfx('/qubo/audio/wood-2.ogg', .5, .9);
 }
 
 function bindAudioControls() {
