@@ -254,6 +254,9 @@ function bindAudioControls() {
   labToggle.addEventListener('click', () => openLab(Boolean(lab.hidden)));
   close?.addEventListener('click', () => openLab(false));
   launchStage.addEventListener('click', () => {
+    enabled = true;
+    try { localStorage.setItem('qubo.sound.enabled', '1'); } catch { /* storage disabled */ }
+    syncToggle();
     window.dispatchEvent(new CustomEvent('qubo:launch-preview-stage', { detail: { index: Number(select.value) } }));
   });
   preview.addEventListener('click', () => {
