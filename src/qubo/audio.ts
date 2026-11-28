@@ -158,7 +158,41 @@ export function initQuboAudio() {
     if (!enabled) stopScene();
     else if (currentScene < 0) startAmbience(Number(document.body.dataset.quboBackdrop ?? 0));
   });
-  document.body.append(button);
+  const testButton = document.createElement('button');
+  testButton.type = 'button';
+  testButton.textContent = 'Test stages';
+  testButton.style.cssText = button.style.cssText.replace('bottom:calc(12px + env(safe-area-inset-bottom))','bottom:calc(54px + env(safe-area-inset-bottom))');
+  const panel = document.createElement('div');
+  panel.hidden = true;
+  panel.style.cssText = 'position:fixed;z-index:31;right:12px;bottom:calc(100px + env(safe-area-inset-bottom));width:min(270px,calc(100vw - 24px));padding:12px;border:1px solid #ffffff35;border-radius:14px;background:#101923f2;color:#f4f7fb;font:12px system-ui;box-shadow:0 10px 35px #0007';
+  const label = document.createElement('label');
+  label.textContent = 'Choose a background sound';
+  label.style.cssText = 'display:block;margin-bottom:7px;font-weight:650';
+  const select = document.createElement('select');
+  select.style.cssText = 'width:100%;padding:9px;border-radius:8px;background:#202e3d;color:#fff;border:1px solid #ffffff35;font:inherit';
+  scenes.forEach((scene, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = index === 29 ? '840+ · ' + scene.name : scene.name;
+    select.append(option);
+  });
+  const controls = document.createElement('div');
+  controls.style.cssText = 'display:flex;gap:6px;margin-top:9px';
+  const playStage = document.createElement('button');
+  playStage.type = 'button'; playStage.textContent = 'Play ambience';
+  const spinTest = document.createElement('button');
+  spinTest.type = 'button'; spinTest.textContent = 'Cube spin';
+  const hitTest = document.createElement('button');
+  hitTest.type = 'button'; hitTest.textContent = 'Cube hit';
+  [playStage, spinTest, hitTest].forEach((item) => {
+    item.style.cssText = 'flex:1;padding:8px 5px;border:1px solid #ffffff35;border-radius:8px;background:#24364a;color:#fff;font:600 11px system-ui;cursor:pointer';
+  });
+  playStage.addEventListener('click', () => startAmbience(Number(select.value)));
+  spinTest.addEventListener('click', cubeSpin);
+  hitTest.addEventListener('click', cubeImpact);
+  label.append(select); controls.append(playStage, spinTest, hitTest); panel.append(label, controls);
+  testButton.addEventListener('click', () => { panel.hidden = !panel.hidden; });
+  document.body.append(panel, testButton, button);
   return {
     stage: startAmbience,
     spin: cubeSpin,
