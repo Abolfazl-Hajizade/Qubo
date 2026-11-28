@@ -18,7 +18,7 @@ All assets listed below are CC0 1.0. The game selects one distinct audio file fo
 These are finished CC0 audio files, but they are synthetic sound-design impressions, not field recordings. They are used for stylized/abstract worlds and are supplied as preview candidates; the library marks human listening/content-label approval as pending.
 
 - Stage 1 Sunny sky — nature-meadow.wav
-- Stage 5 Golden sunset — fire-camp.wav
+- Stage 5 Golden sunset — wind-grass.wav
 - Stage 6 Snowy mountains — wind-pines.wav
 - Stage 7 Volcano — fire-stove.wav
 - Stage 8 Meditation — space-library.wav
@@ -34,7 +34,7 @@ These are finished CC0 audio files, but they are synthetic sound-design impressi
 - Stage 20 Time — home-ceiling-fan.wav
 - Stage 23 Freedom — travel-boat.wav
 - Stage 24 Balance — water-lake.wav
-- Stage 25 Inner power — travel-car.wav
+- Stage 25 Inner power — fire-camp.wav
 - Stage 26 Moonlit night — animals-owl.wav
 - Stage 27 Early dawn — nature-wetland.wav
 - Stage 28 Enchanted mushroom grove — animals-frogs.wav
