@@ -1,4 +1,4 @@
-// Preview build: synthesized stage ambience and cube SFX.
+// Preview build: synthesized stage ambience, cube SFX, and sound audition controls.
 type SoundScene = { name: string; base: number; color: OscillatorType; filter: number; noise: number; pulse?: number };
 const scenes: SoundScene[] = [
   { name: 'Storm', base: 48, color: 'sawtooth', filter: 420, noise: .16 },
