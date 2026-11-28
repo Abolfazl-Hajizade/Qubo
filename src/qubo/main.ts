@@ -37,6 +37,7 @@ let landingAgeVisual = Infinity;
 let takeoffAgeVisual = Infinity;
 // Twenty-six animated environments rotate every thirty points; the short blend is visual-only.
 let backdropIndex = 0;
+let forcedPreviewBackdrop: number | null = null;
 let previousBackdropIndex = 0;
 let backdropTransitionAge = 1;
 
@@ -134,7 +135,13 @@ function resetSaberLocalHistory() {
   }
 }
 
-$('play-btn').addEventListener('click', start);
+$('play-btn').addEventListener('click', () => { forcedPreviewBackdrop = null; start(); });
+document.addEventListener('qubo:launch-preview-stage', (event) => {
+  const detail = (event as CustomEvent<{ index?: number }>).detail;
+  if (!Number.isInteger(detail?.index) || detail.index! < 0 || detail.index! > 29) return;
+  forcedPreviewBackdrop = detail.index!;
+  start();
+});
 $('guide-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).showModal());
 $('guide-close-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).close());
 $('guide-back-btn').addEventListener('click', () => ($('guide-dialog') as HTMLDialogElement).close());
@@ -152,7 +159,7 @@ $('chat-form').addEventListener('submit', sendChatMessage);
 startUnreadChatPolling();
 window.addEventListener('pageshow', () => { void refreshChatUnread(); });
 
-$('end-again').addEventListener('click', () => { endDialog.close(); start(); });
+$('end-again').addEventListener('click', () => { endDialog.close(); forcedPreviewBackdrop = null; start(); });
 $('end-menu').addEventListener('click', () => { endDialog.close(); screens.home(); });
 
 for (const el of [frame, $('hold-btn')]) {
@@ -298,7 +305,7 @@ function start() {
   rescueLaunchBuffer.clear();
   landingAgeVisual = Infinity;
   takeoffAgeVisual = Infinity;
-  backdropIndex = backdropForScore(world.score);
+  backdropIndex = forcedPreviewBackdrop ?? backdropForScore(world.score);
   previousBackdropIndex = backdropIndex;
   backdropTransitionAge = 1;
   screens.show('game');
@@ -398,7 +405,7 @@ function loop(now: number) {
       if (hasTelegramIdentity) saveJSON(PROGRESS_KEY, checkpoint);
       void saveRemoteCheckpoint(checkpoint);
     }
-    const nextBackdrop = backdropForScore(world.score);
+    const nextBackdrop = forcedPreviewBackdrop ?? backdropForScore(world.score);
     if (nextBackdrop !== backdropIndex) {
       previousBackdropIndex = backdropIndex;
       backdropIndex = nextBackdrop;
