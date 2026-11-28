@@ -370,12 +370,15 @@ function stopLoop() { cancelAnimationFrame(raf); raf = 0; gameAudio.stop(); }
 
 function finish() {
   gameAudio.stop();
-  const isBest = world.score > best;
+  const isPreviewRun = forcedPreviewBackdrop !== null;
+  const isBest = !isPreviewRun && world.score > best;
   if (isBest) { best = world.score; if (hasTelegramIdentity) saveJSON(BEST_KEY, best); }
-  const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
-  saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
-  history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
-  if (world.score > 0) void submitScoreAfterCheckpoints(world.score);
+  if (!isPreviewRun) {
+    const stats = loadJSON<{ runs?: number; best?: number }>(STATS_KEY, {});
+    saveJSON(STATS_KEY, { runs: (stats.runs ?? 0) + 1, best });
+    history.add({ endedAt: Date.now(), score: world.score, best: isBest && world.score > 0 });
+    if (world.score > 0) void submitScoreAfterCheckpoints(world.score);
+  }
   $('best').textContent = String(best);
   $('end-summary').textContent = `${numberFormat.format(world.score)} ${world.score === 1 ? 'tower' : 'towers'} crossed`
     + (isBest && world.score > 0 ? '. A new best!' : `. Your best is ${numberFormat.format(best)}.`);
@@ -412,7 +415,7 @@ function loop(now: number) {
     }
     setScore();
     const reachedCheckpoint = Math.floor(world.score / CHECKPOINT_STEP) * CHECKPOINT_STEP;
-    if (reachedCheckpoint > checkpoint) {
+    if (forcedPreviewBackdrop === null && reachedCheckpoint > checkpoint) {
       checkpoint = reachedCheckpoint;
       if (hasTelegramIdentity) saveJSON(PROGRESS_KEY, checkpoint);
       void saveRemoteCheckpoint(checkpoint);
@@ -433,6 +436,7 @@ function loop(now: number) {
 }
 
 async function recordGameStart() {
+  if (forcedPreviewBackdrop !== null) return;
   const initData = telegramWebApp?.initData;
   if (!initData) return;
   try {
