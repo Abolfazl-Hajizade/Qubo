@@ -278,6 +278,17 @@ function renderHistory() {
 }
 
 // Give the 30–60 world a gradual night → dawn → daylight progression.
+function scoreForBackdrop(index: number) {
+  if (index === 0) return 0;
+  if (index === 1) return 50;
+  if (index >= 2 && index <= 25) return index * 30;
+  if (index === 26) return 30;
+  if (index === 27) return 40;
+  if (index === 28) return 800;
+  if (index === 29) return 840;
+  return 0;
+}
+
 function backdropForScore(score: number) {
   if (score >= 840) return 29;
   if (score >= 800) return 28;
@@ -298,7 +309,8 @@ function start() {
     return;
   }
   if (endDialog.open) endDialog.close();
-  world = createWorld(Math.random, hasTelegramIdentity ? Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0) : 0);
+  const previewScore = forcedPreviewBackdrop !== null ? scoreForBackdrop(forcedPreviewBackdrop) : null;
+  world = createWorld(Math.random, previewScore ?? (hasTelegramIdentity ? Math.max(checkpoint, checkpoint < CHECKPOINT_STEP && best >= 15 ? 15 : 0) : 0));
   paused = false;
   started = false;
   pendingLaunchUntil = 0;
