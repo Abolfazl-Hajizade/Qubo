@@ -40,7 +40,6 @@ let sceneNodes: AudioNode[] = [];
 let enabled = false;
 let activeScene = -1;
 let ambienceAudio: HTMLAudioElement | null = null;
-let woodTake = 0;
 const fieldRecordings = new Map<number, string>([
   [0, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.1.0-preview/rain-soft.wav'],
   [2, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
@@ -185,8 +184,7 @@ function cubeSpin() {
 }
 function cubeImpact() {
   if (!enabled) return;
-  const take = woodTake++ % 2;
-  playSfx(take ? '/qubo/audio/wood-2.ogg' : '/qubo/audio/wood-1.ogg', .5, .9);
+  playSfx('/qubo/audio/wood-1.ogg', .5, .9);
 }
 
 function bindAudioControls() {
