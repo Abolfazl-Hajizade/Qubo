@@ -120,14 +120,15 @@ function startScene(index: number, allowFieldRecording = true) {
     recording.preload = 'none';
     recording.volume = .18;
     ambienceAudio = recording;
-    void recording.play().catch(() => {
+    const fallbackToLocalScene = () => {
       // If the field recording is unavailable or the device is offline, retain a quiet local fallback.
-      if (ambienceAudio === recording) {
-        ambienceAudio = null;
-        activeScene = -1;
-        startScene(safeIndex, false);
-      }
-    });
+      if (ambienceAudio !== recording) return;
+      ambienceAudio = null;
+      activeScene = -1;
+      startScene(safeIndex, false);
+    };
+    recording.addEventListener('error', fallbackToLocalScene, { once: true });
+    void recording.play().catch(fallbackToLocalScene);
     return;
   }
   const scene = scenes[safeIndex];
