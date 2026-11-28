@@ -38,14 +38,14 @@ let master: GainNode | null = null;
 let ambience: GainNode | null = null;
 let noiseSource: AudioBufferSourceNode | null = null;
 let sceneNodes: AudioNode[] = [];
-let enabled = true;
+let enabled = false;
 let currentScene = -1;
 
 function audioContext(): AudioContext {
   if (!context) {
     context = new AudioContext();
     master = context.createGain();
-    master.gain.value = .62;
+    master.gain.value = .48;
     master.connect(context.destination);
   }
   return context;
@@ -80,7 +80,7 @@ function startAmbience(index: number) {
   const bus = ac.createGain();
   bus.gain.value = 0;
   bus.connect(master!);
-  bus.gain.setTargetAtTime(.22, ac.currentTime, .8);
+  bus.gain.setTargetAtTime(.075, ac.currentTime, .8);
   ambience = bus;
   const filter = ac.createBiquadFilter();
   filter.type = 'lowpass';
@@ -94,7 +94,7 @@ function startAmbience(index: number) {
     osc.type = i === 0 ? scene.color : 'sine';
     osc.frequency.value = frequency;
     osc.detune.value = i === 1 ? -7 : i === 2 ? 5 : 0;
-    gain.gain.value = i === 0 ? .12 : .035 / i;
+    gain.gain.value = i === 0 ? .055 : .012 / i;
     osc.connect(gain); gain.connect(filter); osc.start();
     sceneNodes.push(osc, gain);
   });
@@ -107,7 +107,7 @@ function startAmbience(index: number) {
   const noiseGain = ac.createGain();
   noise.buffer = buffer; noise.loop = true;
   noiseFilter.type = 'lowpass'; noiseFilter.frequency.value = scene.filter;
-  noiseGain.gain.value = scene.noise;
+  noiseGain.gain.value = 0; // Keep the preview free of broadband hiss; ambience is carried by soft tones.
   noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(bus); noise.start();
   noiseSource = noise;
   sceneNodes.push(noiseFilter, noiseGain);
@@ -136,8 +136,8 @@ function playTone(frequency: number, duration: number, type: OscillatorType, vol
 
 function cubeSpin() {
   if (!enabled) return;
-  playTone(680, .16, 'sine', .09, 190);
-  playTone(1100, .1, 'triangle', .025, 420);
+  playTone(680, .22, 'sine', .16, 150);
+  playTone(1100, .16, 'sine', .07, 360);
 }
 
 function cubeImpact() {
@@ -149,22 +149,22 @@ function cubeImpact() {
 export function initQuboAudio() {
   const button = document.createElement('button');
   button.type = 'button';
-  button.textContent = '♫ Sound on';
+  button.textContent = '♫ Sound off';
   button.setAttribute('aria-label', 'Toggle game sounds');
-  button.style.cssText = 'position:fixed;z-index:30;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));border:1px solid #ffffff35;border-radius:999px;padding:9px 13px;background:#101923dd;color:#f4f7fb;font:600 12px system-ui;backdrop-filter:blur(8px);cursor:pointer';
+  button.style.cssText = 'position:fixed;z-index:2147483647;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));border:1px solid #ffffff35;border-radius:999px;padding:9px 13px;background:#101923dd;color:#f4f7fb;font:600 12px system-ui;backdrop-filter:blur(8px);cursor:pointer';
   button.addEventListener('click', () => {
     enabled = !enabled;
     button.textContent = enabled ? '♫ Sound on' : '♫ Sound off';
     if (!enabled) stopScene();
-    else if (currentScene < 0) startAmbience(Number(document.body.dataset.quboBackdrop ?? 0));
+    else startAmbience(Number(document.body.dataset.quboBackdrop ?? 0));
   });
   const testButton = document.createElement('button');
   testButton.type = 'button';
   testButton.textContent = 'Test stages';
-  testButton.style.cssText = button.style.cssText.replace('bottom:calc(12px + env(safe-area-inset-bottom))','bottom:calc(54px + env(safe-area-inset-bottom))');
+  testButton.style.cssText = button.style.cssText.replace('bottom:calc(12px + env(safe-area-inset-bottom))','bottom:calc(54px + env(safe-area-inset-bottom))'); testButton.style.zIndex = '2147483647';
   const panel = document.createElement('div');
   panel.hidden = true;
-  panel.style.cssText = 'position:fixed;z-index:31;right:12px;bottom:calc(100px + env(safe-area-inset-bottom));width:min(270px,calc(100vw - 24px));padding:12px;border:1px solid #ffffff35;border-radius:14px;background:#101923f2;color:#f4f7fb;font:12px system-ui;box-shadow:0 10px 35px #0007';
+  panel.style.cssText = 'position:fixed;z-index:2147483647;right:12px;bottom:calc(100px + env(safe-area-inset-bottom));width:min(270px,calc(100vw - 24px));padding:12px;border:1px solid #ffffff35;border-radius:14px;background:#101923f2;color:#f4f7fb;font:12px system-ui;box-shadow:0 10px 35px #0007';
   const label = document.createElement('label');
   label.textContent = 'Choose a background sound';
   label.style.cssText = 'display:block;margin-bottom:7px;font-weight:650';
