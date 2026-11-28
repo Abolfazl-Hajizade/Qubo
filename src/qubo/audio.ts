@@ -41,11 +41,37 @@ let enabled = false;
 let activeScene = -1;
 let ambienceAudio: HTMLAudioElement | null = null;
 const fieldRecordings = new Map<number, string>([
+  // Real CC0 field recordings; reused by theme where a dedicated recording is not available.
   [0, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.1.0-preview/rain-soft.wav'],
+  [1, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
   [2, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
   [3, 'https://cdn.freesound.org/previews/578/578524_5487341-hq.mp3'],
   [4, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [5, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [6, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [7, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-river.wav'],
+  [8, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/animals-cat.wav'],
+  [9, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/home-air-conditioner.wav'],
+  [10, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [11, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
+  [12, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-river.wav'],
+  [13, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
+  [14, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/animals-cat.wav'],
+  [15, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [16, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/home-air-conditioner.wav'],
+  [17, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/home-air-conditioner.wav'],
+  [18, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [19, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
+  [20, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-stream.wav'],
   [21, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-stream.wav'],
+  [22, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-river.wav'],
+  [23, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [24, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-stream.wav'],
+  [25, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/water-river.wav'],
+  [26, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/wind-breeze.wav'],
+  [27, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
+  [28, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.3.0-preview/nature-forest-day.wav'],
+  [29, 'https://github.com/DNAABR/ambient-sounds-library/releases/download/v0.1.0-preview/rain-soft.wav'],
 ]);
 const activeSfx: HTMLAudioElement[] = [];
 function playSfx(path: string, volume: number, rate = 1) {
@@ -196,7 +222,8 @@ function bindAudioControls() {
   const preview = document.getElementById('qubo-sound-stage-play');
   const spin = document.getElementById('qubo-sound-spin-test');
   const hit = document.getElementById('qubo-sound-hit-test');
-  if (!toggle || !labToggle || !lab || !select || !preview || !spin || !hit) {
+  const launchStage = document.getElementById('qubo-sound-stage-launch');
+  if (!toggle || !labToggle || !lab || !select || !preview || !spin || !hit || !launchStage) {
     console.error('Qubo audio controls are missing from the page markup.');
     return;
   }
@@ -226,6 +253,9 @@ function bindAudioControls() {
   };
   labToggle.addEventListener('click', () => openLab(Boolean(lab.hidden)));
   close?.addEventListener('click', () => openLab(false));
+  launchStage.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('qubo:launch-preview-stage', { detail: { index: Number(select.value) } }));
+  });
   preview.addEventListener('click', () => {
     enabled = true;
     try { localStorage.setItem('qubo.sound.enabled', '1'); } catch { /* storage disabled */ }
