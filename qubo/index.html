@@ -182,6 +182,21 @@
         </div>
       </dialog>
     </div>
+    <div class="qubo-audio-dock" aria-label="Qubo sound controls">
+      <button id="qubo-sound-toggle" class="qubo-audio-button" type="button" aria-pressed="false">♫ Sound off</button>
+      <button id="qubo-sound-lab-toggle" class="qubo-audio-button qubo-audio-secondary" type="button" aria-expanded="false" aria-controls="qubo-sound-lab">Sound lab</button>
+      <section id="qubo-sound-lab" class="qubo-audio-panel" hidden aria-label="Sound preview controls">
+        <div class="qubo-audio-panel-head"><strong>Sound preview</strong><button id="qubo-sound-lab-close" type="button" aria-label="Close sound preview">×</button></div>
+        <label for="qubo-sound-stage">Environment</label>
+        <select id="qubo-sound-stage"></select>
+        <div class="qubo-audio-actions">
+          <button id="qubo-sound-stage-play" type="button">Preview ambience</button>
+          <button id="qubo-sound-spin-test" type="button">Cube spin</button>
+          <button id="qubo-sound-hit-test" type="button">Cube hit</button>
+        </div>
+        <p>Audio starts after a tap, as required by your browser.</p>
+      </section>
+    </div>
     <script type="module" src="/src/qubo/main.ts"></script>
   </body>
 </html>
